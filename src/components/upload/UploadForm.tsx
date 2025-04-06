@@ -1,9 +1,9 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Upload, Music, FileImage, Tag, X, Loader2 } from "lucide-react";
+import { Upload, Music, FileImage, Tag, X, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { FileUploader } from "./FileUploader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoodSelector } from "./MoodSelector";
 import { TagInput } from "./TagInput";
+import { analyzeMusicContent } from "@/utils/audioAnalysis";
 
 const uploadFormSchema = z.object({
   title: z.string().min(2, {
@@ -50,6 +51,9 @@ export function UploadForm() {
   const [coverArt, setCoverArt] = useState<File | null>(null);
   const [coverArtPreview, setCoverArtPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzedTags, setAnalyzedTags] = useState<string[]>([]);
+  const [isAutoAnalysisEnabled, setIsAutoAnalysisEnabled] = useState(true);
 
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(uploadFormSchema),
@@ -64,9 +68,74 @@ export function UploadForm() {
     },
   });
 
-  const onAudioFileSelected = (file: File) => {
+  const lyrics = form.watch("lyrics");
+
+  // Handle audio file selection and trigger analysis
+  const onAudioFileSelected = async (file: File) => {
     setAudioFile(file);
+    
+    // Extract title from filename (optional convenience feature)
+    const fileName = file.name;
+    const titleFromFile = fileName.substring(0, fileName.lastIndexOf(".")).replace(/[-_]/g, " ");
+    
+    if (form.getValues("title") === "" && titleFromFile) {
+      form.setValue("title", titleFromFile);
+    }
+    
+    // Only auto-analyze if the feature is enabled
+    if (isAutoAnalysisEnabled) {
+      await analyzeAudioContent();
+    }
   };
+
+  // Analyze audio content when audio file changes or lyrics are updated
+  const analyzeAudioContent = async () => {
+    if (!audioFile) {
+      return;
+    }
+    
+    try {
+      setIsAnalyzing(true);
+      
+      const currentLyrics = form.getValues("lyrics") || "";
+      const results = await analyzeMusicContent(audioFile, currentLyrics);
+      
+      // Update form with analyzed data
+      if (!form.getValues("genre")) {
+        form.setValue("genre", results.genre);
+      }
+      
+      if (!form.getValues("mood")) {
+        form.setValue("mood", results.mood);
+      }
+      
+      // Update suggested tags
+      setAnalyzedTags(results.suggestedTags);
+      
+      // Automatically add suggested tags if no tags have been added yet
+      if (form.getValues("tags").length === 0) {
+        form.setValue("tags", results.suggestedTags);
+      }
+      
+      toast.success("Track analyzed successfully!");
+    } catch (error) {
+      console.error("Analysis error:", error);
+      toast.error("Failed to analyze track");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Re-analyze when lyrics are substantially changed
+  useEffect(() => {
+    if (audioFile && lyrics && lyrics.length > 50 && isAutoAnalysisEnabled) {
+      const debounceTimer = setTimeout(() => {
+        analyzeAudioContent();
+      }, 2000);
+      
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [lyrics]);
 
   const onCoverArtSelected = (file: File) => {
     setCoverArt(file);
@@ -115,6 +184,7 @@ export function UploadForm() {
       setAudioFile(null);
       setCoverArt(null);
       setCoverArtPreview(null);
+      setAnalyzedTags([]);
     } catch (error) {
       console.error("Upload error:", error);
       toast.error("Failed to upload track. Please try again.");
@@ -126,6 +196,21 @@ export function UploadForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Sparkles className="w-5 h-5 text-yellow-500" />
+            <span className="font-medium">AI-powered analysis</span>
+          </div>
+          <Button
+            type="button"
+            variant={isAutoAnalysisEnabled ? "default" : "outline"}
+            size="sm"
+            onClick={() => setIsAutoAnalysisEnabled(!isAutoAnalysisEnabled)}
+          >
+            {isAutoAnalysisEnabled ? "Auto-Analysis: On" : "Auto-Analysis: Off"}
+          </Button>
+        </div>
+
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="bg-card border border-border rounded-md p-4">
@@ -176,6 +261,32 @@ export function UploadForm() {
                 />
               )}
             </div>
+            
+            {isAnalyzing && (
+              <div className="bg-primary/5 border border-primary/20 rounded-md p-4 flex items-center space-x-3">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span>Analyzing track to suggest metadata...</span>
+              </div>
+            )}
+            
+            {analyzedTags.length > 0 && !isAnalyzing && (
+              <div className="bg-primary/5 border border-primary/20 rounded-md p-4">
+                <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
+                  <Tag className="h-4 w-4" />
+                  Suggested tags from analysis:
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {analyzedTags.map((tag, index) => (
+                    <span 
+                      key={index}
+                      className="bg-primary/20 text-primary px-2 py-1 text-xs rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -214,10 +325,10 @@ export function UploadForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Genre</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isAnalyzing}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select genre" />
+                          <SelectValue placeholder={isAnalyzing ? "Analyzing genre..." : "Select genre"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -248,7 +359,7 @@ export function UploadForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Mood</FormLabel>
-                    <MoodSelector value={field.value} onChange={field.onChange} />
+                    <MoodSelector value={field.value} onChange={field.onChange} loading={isAnalyzing} />
                     <FormMessage />
                   </FormItem>
                 )}
@@ -293,7 +404,14 @@ export function UploadForm() {
               name="lyrics"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Lyrics (Optional)</FormLabel>
+                  <FormLabel>
+                    Lyrics (Optional)
+                    {isAutoAnalysisEnabled && (
+                      <span className="text-xs text-muted-foreground ml-2">
+                        (Helps AI detect mood and themes)
+                      </span>
+                    )}
+                  </FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="Add lyrics to your track" 
@@ -308,20 +426,34 @@ export function UploadForm() {
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isUploading} className="w-full md:w-auto">
-            {isUploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload Track
-              </>
-            )}
-          </Button>
+        <div className="flex justify-between items-center">
+          {audioFile && !isAnalyzing && isAutoAnalysisEnabled && (
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={() => analyzeAudioContent()}
+              disabled={isUploading}
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              Re-analyze Track
+            </Button>
+          )}
+          
+          <div className="ml-auto">
+            <Button type="submit" disabled={isUploading || isAnalyzing} className="w-full md:w-auto">
+              {isUploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Track
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </form>
     </Form>

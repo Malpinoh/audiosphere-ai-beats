@@ -11,9 +11,10 @@ import {
 interface MoodSelectorProps {
   value: string;
   onChange: (value: string) => void;
+  loading?: boolean;
 }
 
-export function MoodSelector({ value, onChange }: MoodSelectorProps) {
+export function MoodSelector({ value, onChange, loading = false }: MoodSelectorProps) {
   const moods = [
     { value: "happy", label: "Happy" },
     { value: "sad", label: "Sad" },
@@ -28,9 +29,9 @@ export function MoodSelector({ value, onChange }: MoodSelectorProps) {
   ];
 
   return (
-    <Select onValueChange={onChange} value={value}>
+    <Select onValueChange={onChange} value={value} disabled={loading}>
       <SelectTrigger>
-        <SelectValue placeholder="Select mood" />
+        <SelectValue placeholder={loading ? "Analyzing mood..." : "Select mood"} />
       </SelectTrigger>
       <SelectContent>
         {moods.map((mood) => (
