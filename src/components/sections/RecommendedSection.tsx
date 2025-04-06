@@ -1,4 +1,6 @@
 
+import React from "react";
+import { Link } from "react-router-dom";
 import { ArtistCard } from "@/components/ui/artist-card";
 import { PlaylistCard } from "@/components/ui/playlist-card";
 import { Section } from "@/components/sections/FeaturedSection";
@@ -121,6 +123,24 @@ export function FeaturedPlaylists() {
       {featuredPlaylists.map(playlist => (
         <div key={playlist.id} className="min-w-[220px] max-w-[220px]">
           <PlaylistCard {...playlist} />
+        </div>
+      ))}
+    </Section>
+  );
+}
+
+// Personalized recommendations section component for home page
+export function PersonalizedRecommendations() {
+  return (
+    <Section 
+      title="Recommended for You" 
+      subtitle="Based on your listening history"
+      seeAllLink="/recommendations"
+    >
+      {/* Show first 5 trending artists as placeholder */}
+      {trendingArtists.slice(0, 5).map(artist => (
+        <div key={artist.id} className="min-w-[220px] max-w-[220px]">
+          <ArtistCard {...artist} />
         </div>
       ))}
     </Section>

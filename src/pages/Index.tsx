@@ -2,7 +2,7 @@
 import MainLayout from "@/components/layout/MainLayout";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { FeaturedTracks } from "@/components/sections/FeaturedSection";
-import { TrendingArtists, FeaturedPlaylists } from "@/components/sections/RecommendedSection";
+import { TrendingArtists, FeaturedPlaylists, PersonalizedRecommendations } from "@/components/sections/RecommendedSection";
 import { BrowseByGenre } from "@/components/sections/GenreSection";
 
 const Index = () => {
@@ -11,6 +11,7 @@ const Index = () => {
       <HeroSection />
       
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        <PersonalizedRecommendations />
         <FeaturedTracks />
         <TrendingArtists />
         <BrowseByGenre />
