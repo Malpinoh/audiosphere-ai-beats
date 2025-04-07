@@ -1,8 +1,11 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrackCard } from "@/components/ui/track-card";
+import { Link } from "react-router-dom";
+import { useTracks, Track } from "@/hooks/use-tracks";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SectionProps {
   title: string;
@@ -14,7 +17,7 @@ interface SectionProps {
 // Common section wrapper for various featured sections
 export function Section({ title, subtitle, children, seeAllLink }: SectionProps) {
   const [scrollPosition, setScrollPosition] = useState(0);
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const scroll = (direction: 'left' | 'right') => {
     const container = scrollContainerRef.current;
@@ -55,7 +58,7 @@ export function Section({ title, subtitle, children, seeAllLink }: SectionProps)
           </Button>
           {seeAllLink && (
             <Button variant="link" asChild className="text-primary">
-              <a href={seeAllLink}>See All</a>
+              <Link to={seeAllLink}>See All</Link>
             </Button>
           )}
         </div>
@@ -71,69 +74,53 @@ export function Section({ title, subtitle, children, seeAllLink }: SectionProps)
   );
 }
 
-// Mock data for featured tracks
-const featuredTracks = [
-  {
-    id: "1",
-    title: "Midnight Dreams",
-    artist: "Luna Echo",
-    artistId: "1",
-    cover: "https://picsum.photos/id/65/300/300",
-    plays: 1248000
-  },
-  {
-    id: "2",
-    title: "Cosmic Waves",
-    artist: "Stellar Beats",
-    artistId: "2",
-    cover: "https://picsum.photos/id/240/300/300",
-    plays: 876000
-  },
-  {
-    id: "3",
-    title: "Urban Flow",
-    artist: "City Sounds",
-    artistId: "3",
-    cover: "https://picsum.photos/id/334/300/300",
-    plays: 2450000
-  },
-  {
-    id: "4",
-    title: "Desert Wind",
-    artist: "Nomad Soul",
-    artistId: "4",
-    cover: "https://picsum.photos/id/96/300/300",
-    plays: 543000
-  },
-  {
-    id: "5",
-    title: "Neon Lights",
-    artist: "Cyber Pulse",
-    artistId: "5",
-    cover: "https://picsum.photos/id/1062/300/300",
-    plays: 1789000
-  },
-  {
-    id: "6",
-    title: "Ocean Breeze",
-    artist: "Wave Collective",
-    artistId: "6",
-    cover: "https://picsum.photos/id/1060/300/300",
-    plays: 930000
-  }
-];
+// Loading card skeleton
+const LoadingTrackCard = () => (
+  <div className="min-w-[220px] max-w-[220px]">
+    <div className="maudio-card overflow-hidden">
+      <Skeleton className="w-full aspect-square" />
+      <div className="p-3 space-y-2">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
+      </div>
+    </div>
+  </div>
+);
 
 // Featured tracks section component
 export function FeaturedTracks() {
+  const { tracks, loading } = useTracks({ limit: 10 });
+  
+  if (loading) {
+    return (
+      <Section 
+        title="Featured Tracks" 
+        subtitle="The hottest tracks right now"
+        seeAllLink="/browse/featured"
+      >
+        {Array(6).fill(0).map((_, i) => (
+          <LoadingTrackCard key={i} />
+        ))}
+      </Section>
+    );
+  }
+  
   return (
     <Section 
       title="Featured Tracks" 
       subtitle="The hottest tracks right now"
       seeAllLink="/browse/featured"
     >
-      {featuredTracks.map(track => (
+      {tracks.map(track => (
         <div key={track.id} className="min-w-[220px] max-w-[220px]">
-          <TrackCard {...track} />
+          <TrackCard 
+            id={track.id}
+            title={track.title}
+            artist={track.artist}
+            cover={track.cover || track.cover_art_path}
+            plays={track.play_count}
+            artistId="1" // This should be replaced with actual artist ID
+          />
         </div>
       ))}
     </Section>
