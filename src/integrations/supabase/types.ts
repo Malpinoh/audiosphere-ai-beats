@@ -9,13 +9,148 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      api_keys: {
+        Row: {
+          active: boolean | null
+          api_key: string
+          created_at: string | null
+          distributor_id: string
+          expires_at: string | null
+          id: string
+          last_used_at: string | null
+          name: string
+        }
+        Insert: {
+          active?: boolean | null
+          api_key: string
+          created_at?: string | null
+          distributor_id: string
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          name: string
+        }
+        Update: {
+          active?: boolean | null
+          api_key?: string
+          created_at?: string | null
+          distributor_id?: string
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "distributors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distributors: {
+        Row: {
+          company: string | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tracks: {
+        Row: {
+          artist: string
+          audio_file_path: string
+          cover_art_path: string
+          description: string | null
+          distributor_id: string
+          duration: number | null
+          genre: string
+          id: string
+          like_count: number | null
+          lyrics: string | null
+          mood: string
+          play_count: number | null
+          published: boolean | null
+          tags: string[] | null
+          title: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          artist: string
+          audio_file_path: string
+          cover_art_path: string
+          description?: string | null
+          distributor_id: string
+          duration?: number | null
+          genre: string
+          id?: string
+          like_count?: number | null
+          lyrics?: string | null
+          mood: string
+          play_count?: number | null
+          published?: boolean | null
+          tags?: string[] | null
+          title: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          artist?: string
+          audio_file_path?: string
+          cover_art_path?: string
+          description?: string | null
+          distributor_id?: string
+          duration?: number | null
+          genre?: string
+          id?: string
+          like_count?: number | null
+          lyrics?: string | null
+          mood?: string
+          play_count?: number | null
+          published?: boolean | null
+          tags?: string[] | null
+          title?: string
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracks_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "distributors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_api_key: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

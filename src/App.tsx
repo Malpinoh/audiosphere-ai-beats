@@ -11,6 +11,7 @@ import UploadPage from "./pages/UploadPage";
 import RecommendationsPage from "./pages/RecommendationsPage";
 import AdminPanel from "./pages/AdminPanel";
 import ArtistProfile from "./pages/ArtistProfile";
+import ApiDocumentation from "./pages/ApiDocumentation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/recommendations" element={<RecommendationsPage />} />
           <Route path="/artist/:artistId" element={<ArtistProfile />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/api/docs" element={<ApiDocumentation />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
