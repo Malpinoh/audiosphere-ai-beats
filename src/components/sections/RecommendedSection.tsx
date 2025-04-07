@@ -1,50 +1,23 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArtistCard } from "@/components/ui/artist-card";
 import { PlaylistCard } from "@/components/ui/playlist-card";
 import { Section } from "@/components/sections/FeaturedSection";
+import { useTracks, Track } from "@/hooks/use-tracks";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Mock data for trending artists
-const trendingArtists = [
-  {
-    id: "1",
-    name: "Luna Echo",
-    image: "https://picsum.photos/id/64/300/300",
-    followers: 1248000,
-    tracks: 27
-  },
-  {
-    id: "2",
-    name: "Stellar Beats",
-    image: "https://picsum.photos/id/177/300/300",
-    followers: 876000,
-    tracks: 43
-  },
-  {
-    id: "3",
-    name: "City Sounds",
-    image: "https://picsum.photos/id/338/300/300",
-    followers: 2450000,
-    tracks: 18
-  },
-  {
-    id: "4",
-    name: "Nomad Soul",
-    image: "https://picsum.photos/id/670/300/300",
-    followers: 543000,
-    tracks: 35
-  },
-  {
-    id: "5",
-    name: "Cyber Pulse",
-    image: "https://picsum.photos/id/453/300/300",
-    followers: 1789000,
-    tracks: 52
-  }
-];
+const LoadingCard = () => (
+  <div className="min-w-[220px] max-w-[220px]">
+    <div className="maudio-card overflow-hidden">
+      <Skeleton className="w-full aspect-square" />
+      <div className="p-3 space-y-2">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
+      </div>
+    </div>
+  </div>
+);
 
-// Mock data for featured playlists
 const featuredPlaylists = [
   {
     id: "1",
@@ -95,15 +68,48 @@ const featuredPlaylists = [
   }
 ];
 
-// Trending artists section component
+const convertTracksToArtists = (tracks: Track[]) => {
+  const uniqueArtists = Array.from(new Set(tracks.map(track => track.artist)));
+  
+  return uniqueArtists.slice(0, 5).map((artistName, index) => {
+    const artistTracks = tracks.filter(track => track.artist === artistName);
+    
+    return {
+      id: `artist-${index}`,
+      name: artistName,
+      image: artistTracks[0].cover || "https://picsum.photos/id/64/300/300",
+      followers: Math.floor(Math.random() * 1000000) + 10000,
+      tracks: artistTracks.length
+    };
+  });
+};
+
 export function TrendingArtists() {
+  const { tracks, loading } = useTracks({ limit: 20 });
+  
+  if (loading) {
+    return (
+      <Section 
+        title="Trending Artists" 
+        subtitle="Who's hot right now"
+        seeAllLink="/artists/trending"
+      >
+        {Array(5).fill(0).map((_, i) => (
+          <LoadingCard key={i} />
+        ))}
+      </Section>
+    );
+  }
+  
+  const artists = convertTracksToArtists(tracks);
+  
   return (
     <Section 
       title="Trending Artists" 
       subtitle="Who's hot right now"
       seeAllLink="/artists/trending"
     >
-      {trendingArtists.map(artist => (
+      {artists.map(artist => (
         <div key={artist.id} className="min-w-[220px] max-w-[220px]">
           <ArtistCard {...artist} />
         </div>
@@ -112,7 +118,6 @@ export function TrendingArtists() {
   );
 }
 
-// Featured playlists section component
 export function FeaturedPlaylists() {
   return (
     <Section 
@@ -129,16 +134,34 @@ export function FeaturedPlaylists() {
   );
 }
 
-// Personalized recommendations section component for home page
 export function PersonalizedRecommendations() {
+  const { tracks, loading } = useTracks({ limit: 5 });
+  
+  if (loading) {
+    return (
+      <Section 
+        title="Recommended for You" 
+        subtitle="Based on your listening history"
+        seeAllLink="/recommendations"
+      >
+        {Array(5).fill(0).map((_, i) => (
+          <LoadingCard key={i} />
+        ))}
+      </Section>
+    );
+  }
+  
+  const recommendedArtists = convertTracksToArtists(
+    [...tracks].sort((a, b) => b.like_count - a.like_count)
+  );
+  
   return (
     <Section 
       title="Recommended for You" 
       subtitle="Based on your listening history"
       seeAllLink="/recommendations"
     >
-      {/* Show first 5 trending artists as placeholder */}
-      {trendingArtists.slice(0, 5).map(artist => (
+      {recommendedArtists.map(artist => (
         <div key={artist.id} className="min-w-[220px] max-w-[220px]">
           <ArtistCard {...artist} />
         </div>

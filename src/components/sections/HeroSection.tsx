@@ -28,11 +28,11 @@ export function HeroSection() {
       <div className="absolute inset-0 flex items-center justify-center p-6">
         <div className="max-w-4xl mx-auto text-center">
           <span className="inline-block px-4 py-1 mb-4 text-xs font-semibold rounded-full bg-primary/20 text-primary">
-            Featured Artist
+            Featured
           </span>
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">Luna Echo</h1>
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">MAUDIO</h1>
           <p className="text-xl md:text-2xl mb-6 text-white/80">
-            Experience the hypnotic beats and ethereal vocals of this rising star
+            Listen to new trending sounds that will move with your mood
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button 
@@ -49,9 +49,9 @@ export function HeroSection() {
               className="gap-2 border-white/20 text-white hover:bg-white/10"
               asChild
             >
-              <Link to="/artist/luna-echo">
+              <Link to="/browse">
                 <Heart className="h-5 w-5" />
-                Follow Artist
+                Explore Music
               </Link>
             </Button>
           </div>

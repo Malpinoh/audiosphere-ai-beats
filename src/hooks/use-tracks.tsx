@@ -34,9 +34,13 @@ export function useTracks({ limit = 10, filter = "published = true" }: { limit?:
         let query = supabase
           .from('tracks')
           .select('*')
-          .eq('published', true)
           .order('uploaded_at', { ascending: false })
           .limit(limit);
+        
+        // Apply the filter if it's provided
+        if (filter === "published = true") {
+          query = query.eq('published', true);
+        }
         
         const { data, error } = await query;
         
