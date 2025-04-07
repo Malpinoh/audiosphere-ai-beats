@@ -175,7 +175,10 @@ export function CommentsManagement() {
               <TableCell>{comment.song}</TableCell>
               <TableCell>{new Date(comment.timestamp).toLocaleString()}</TableCell>
               <TableCell>
-                <Badge variant={comment.status === "active" ? "success" : "secondary"}>
+                <Badge 
+                  variant={comment.status === "active" ? "outline" : "secondary"}
+                  className={comment.status === "active" ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}
+                >
                   {comment.status}
                 </Badge>
               </TableCell>
@@ -202,10 +205,10 @@ export function CommentsManagement() {
                     {comment.status === "active" ? "Hide" : "Show"}
                   </Button>
                   <Button
-                    variant={comment.flagged ? "success" : "warning"}
+                    variant={comment.flagged ? "outline" : "secondary"}
                     size="sm"
                     onClick={() => handleToggleFlag(comment.id)}
-                    className={comment.flagged ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                    className={comment.flagged ? "bg-green-600 hover:bg-green-700 text-white" : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"}
                   >
                     {comment.flagged ? (
                       <CheckCircle className="h-4 w-4 mr-1" />

@@ -165,10 +165,17 @@ export function SongsManagement() {
                 <Badge 
                   variant={
                     song.status === "active" 
-                      ? "success" 
+                      ? "outline" 
                       : song.status === "flagged" 
-                        ? "warning" 
+                        ? "secondary" 
                         : "destructive"
+                  }
+                  className={
+                    song.status === "active" 
+                      ? "bg-green-100 text-green-800 hover:bg-green-200" 
+                      : song.status === "flagged" 
+                        ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200" 
+                        : ""
                   }
                 >
                   {song.status}

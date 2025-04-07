@@ -170,12 +170,19 @@ export function UploadsManagement() {
                 <Badge 
                   variant={
                     upload.status === "approved" 
-                      ? "success" 
+                      ? "outline" 
                       : upload.status === "pending" 
                         ? "outline" 
                         : "destructive"
                   }
-                  className="flex w-fit items-center gap-1"
+                  className={
+                    upload.status === "approved" 
+                      ? "bg-green-100 text-green-800 hover:bg-green-200" 
+                      : upload.status === "pending" 
+                        ? "bg-blue-100 text-blue-800 hover:bg-blue-200" 
+                        : ""
+                  }
+                  
                 >
                   {upload.status === "approved" && <CheckCircle className="h-3 w-3" />}
                   {upload.status === "pending" && <Clock className="h-3 w-3" />}
@@ -189,7 +196,7 @@ export function UploadsManagement() {
                   {upload.status === "pending" && (
                     <>
                       <Button
-                        variant="success"
+                        variant="outline"
                         size="sm"
                         onClick={() => handleApproveUpload(upload.id)}
                         className="bg-green-600 hover:bg-green-700 text-white"

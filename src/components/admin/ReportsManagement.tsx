@@ -127,12 +127,21 @@ export function ReportsManagement() {
       case "open":
         return "destructive";
       case "investigating":
-        return "warning";
+        return "secondary";
       case "resolved":
-        return "success";
+        return "outline";
       default:
         return "outline";
     }
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    if (status === "resolved") {
+      return "bg-green-100 text-green-800 hover:bg-green-200";
+    } else if (status === "investigating") {
+      return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
+    }
+    return "";
   };
 
   const selectedReportData = selectedReport 
@@ -180,7 +189,10 @@ export function ReportsManagement() {
               <TableCell>{report.reportedBy}</TableCell>
               <TableCell>{new Date(report.timestamp).toLocaleString()}</TableCell>
               <TableCell>
-                <Badge variant={getStatusBadgeVariant(report.status)}>
+                <Badge 
+                  variant={getStatusBadgeVariant(report.status)}
+                  className={getStatusBadgeClass(report.status)}
+                >
                   {report.status}
                 </Badge>
               </TableCell>
@@ -196,7 +208,7 @@ export function ReportsManagement() {
                   </Button>
                   {report.status !== "resolved" && (
                     <Button
-                      variant="success"
+                      variant="outline"
                       size="sm"
                       onClick={() => handleUpdateStatus(report.id, "resolved")}
                       className="bg-green-600 hover:bg-green-700 text-white"
@@ -232,7 +244,10 @@ export function ReportsManagement() {
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
-                  <Badge variant={getStatusBadgeVariant(selectedReportData.status)}>
+                  <Badge 
+                    variant={getStatusBadgeVariant(selectedReportData.status)}
+                    className={getStatusBadgeClass(selectedReportData.status)}
+                  >
                     {selectedReportData.status}
                   </Badge>
                 </div>
@@ -275,7 +290,7 @@ export function ReportsManagement() {
             )}
             {selectedReportData?.status !== "resolved" && (
               <Button 
-                variant="success"
+                variant="outline"
                 onClick={() => handleUpdateStatus(selectedReport!, "resolved")}
                 className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
               >
