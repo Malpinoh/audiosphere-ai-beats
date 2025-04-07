@@ -15,6 +15,10 @@ export interface Track {
   like_count: number;
   tags: string[];
   published: boolean;
+  description?: string;
+  // Add additional fields needed across the application
+  cover?: string; // For formatted cover art URL
+  audioUrl?: string; // For formatted audio URL
 }
 
 export function useTracks({ limit = 10, filter = "published = true" }: { limit?: number; filter?: string } = {}) {
