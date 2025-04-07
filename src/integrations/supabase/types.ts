@@ -50,8 +50,54 @@ export type Database = {
           },
         ]
       }
+      distributor_earnings: {
+        Row: {
+          amount: number
+          created_at: string | null
+          distributor_id: string | null
+          earnings_period: string
+          earnings_type: string
+          id: string
+          track_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string | null
+          distributor_id?: string | null
+          earnings_period: string
+          earnings_type: string
+          id?: string
+          track_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          distributor_id?: string | null
+          earnings_period?: string
+          earnings_type?: string
+          id?: string
+          track_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distributor_earnings_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "distributors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distributor_earnings_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       distributors: {
         Row: {
+          auth_id: string | null
           company: string | null
           created_at: string | null
           email: string
@@ -60,6 +106,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          auth_id?: string | null
           company?: string | null
           created_at?: string | null
           email: string
@@ -68,12 +115,156 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          auth_id?: string | null
           company?: string | null
           created_at?: string | null
           email?: string
           id?: string
           name?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      playlist_followers: {
+        Row: {
+          followed_at: string | null
+          id: string
+          playlist_id: string | null
+          profile_id: string | null
+        }
+        Insert: {
+          followed_at?: string | null
+          id?: string
+          playlist_id?: string | null
+          profile_id?: string | null
+        }
+        Update: {
+          followed_at?: string | null
+          id?: string
+          playlist_id?: string | null
+          profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_followers_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_followers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlist_tracks: {
+        Row: {
+          added_at: string | null
+          id: string
+          playlist_id: string | null
+          position: number
+          track_id: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          id?: string
+          playlist_id?: string | null
+          position: number
+          track_id?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          id?: string
+          playlist_id?: string | null
+          position?: number
+          track_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_tracks_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlists: {
+        Row: {
+          cover_image_path: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_editorial: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          cover_image_path?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_editorial?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          cover_image_path?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_editorial?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlists_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          username?: string | null
         }
         Relationships: []
       }
@@ -153,7 +344,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "distributor" | "editorial" | "user"
     }
     CompositeTypes: {
       [_ in never]: never

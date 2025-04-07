@@ -21,7 +21,21 @@ export interface Track {
   audioUrl?: string; // For formatted audio URL
 }
 
-export function useTracks({ limit = 10, filter = "published = true" }: { limit?: number; filter?: string } = {}) {
+export interface TracksFilter {
+  published?: boolean;
+  genre?: string;
+  mood?: string;
+  artist?: string;
+  searchTerm?: string;
+  tags?: string[];
+  limit?: number;
+  orderBy?: {
+    column: string;
+    ascending: boolean;
+  };
+}
+
+export function useTracks(filter: TracksFilter = { published: true, limit: 10 }) {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -33,13 +47,42 @@ export function useTracks({ limit = 10, filter = "published = true" }: { limit?:
         
         let query = supabase
           .from('tracks')
-          .select('*')
-          .order('uploaded_at', { ascending: false })
-          .limit(limit);
+          .select('*');
         
-        // Apply the filter if it's provided
-        if (filter === "published = true") {
-          query = query.eq('published', true);
+        // Apply filters
+        if (filter.published !== undefined) {
+          query = query.eq('published', filter.published);
+        }
+        
+        if (filter.genre) {
+          query = query.eq('genre', filter.genre);
+        }
+        
+        if (filter.mood) {
+          query = query.eq('mood', filter.mood);
+        }
+        
+        if (filter.artist) {
+          query = query.eq('artist', filter.artist);
+        }
+        
+        if (filter.tags && filter.tags.length > 0) {
+          // Filter by any matching tag
+          query = query.contains('tags', filter.tags);
+        }
+        
+        if (filter.searchTerm) {
+          query = query.or(`title.ilike.%${filter.searchTerm}%,artist.ilike.%${filter.searchTerm}%,description.ilike.%${filter.searchTerm}%`);
+        }
+        
+        // Apply ordering
+        const orderColumn = filter.orderBy?.column || 'uploaded_at';
+        const orderDirection = filter.orderBy?.ascending ? 'asc' : 'desc';
+        query = query.order(orderColumn, { ascending: filter.orderBy?.ascending ?? false });
+        
+        // Apply limit
+        if (filter.limit) {
+          query = query.limit(filter.limit);
         }
         
         const { data, error } = await query;
@@ -70,7 +113,17 @@ export function useTracks({ limit = 10, filter = "published = true" }: { limit?:
     }
 
     fetchTracks();
-  }, [limit, filter]);
+  }, [
+    filter.published, 
+    filter.genre, 
+    filter.mood, 
+    filter.artist, 
+    filter.searchTerm, 
+    filter.limit,
+    filter.orderBy?.column,
+    filter.orderBy?.ascending,
+    filter.tags
+  ]);
 
   return { tracks, loading, error };
 }
