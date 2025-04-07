@@ -10,6 +10,7 @@ import SignupPage from "./pages/SignupPage";
 import UploadPage from "./pages/UploadPage";
 import RecommendationsPage from "./pages/RecommendationsPage";
 import AdminPanel from "./pages/AdminPanel";
+import ArtistProfile from "./pages/ArtistProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/recommendations" element={<RecommendationsPage />} />
+          <Route path="/artist/:artistId" element={<ArtistProfile />} />
           <Route path="/admin" element={<AdminPanel />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

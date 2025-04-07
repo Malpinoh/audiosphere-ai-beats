@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import AdUnit from "@/components/ads/AdUnit";
 
 const MusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -13,6 +14,7 @@ const MusicPlayer = () => {
   const [volume, setVolume] = useState(80);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(217); // 3:37 in seconds
+  const [showAd, setShowAd] = useState(true); // In a real app, this might depend on user subscription status
   
   const togglePlay = () => setIsPlaying(!isPlaying);
   const toggleMute = () => setIsMuted(!isMuted);
@@ -26,6 +28,12 @@ const MusicPlayer = () => {
   
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-maudio-darker border-t border-border p-3 z-40">
+      {showAd && (
+        <div className="flex justify-center mb-2 max-h-[60px]">
+          <AdUnit size="banner" />
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-4">
         {/* Track Info */}
         <div className="flex items-center space-x-3 w-full md:w-1/4">
