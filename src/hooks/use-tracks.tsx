@@ -142,10 +142,10 @@ export function useTracks(filter: TracksFilter = { published: true, limit: 10 })
         
         // For regional charts, filter by region if provided
         if (filter.chartType === 'regional' && filter.region) {
-          rpcQuery.region_country = filter.region;
+          rpcQuery.region_code = filter.region;
         }
         
-        // Get chart data using a stored procedure or direct SQL query via RPC
+        // Get chart data using the updated function with renamed parameter
         const { data: chartData, error: chartError } = await supabase.rpc('get_chart_data', rpcQuery);
         
         if (chartError) {
@@ -403,8 +403,11 @@ export function useAvailableRegions() {
         const data = await res.json();
         
         // Extract unique region countries
-        const uniqueRegions = Array.from(new Set(data.map((item: any) => item.region_country)));
-        setRegions(uniqueRegions.filter(Boolean));
+        const uniqueRegions: string[] = Array.from(
+          new Set(data.map((item: any) => item.region_country))
+        ).filter(Boolean) as string[];
+        
+        setRegions(uniqueRegions);
       } catch (err) {
         console.error('Error fetching regions:', err);
         setError(err instanceof Error ? err : new Error('Unknown error fetching regions'));

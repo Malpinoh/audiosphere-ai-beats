@@ -412,6 +412,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_chart_data: {
+        Args: { view_name: string; region_code?: string }
+        Returns: {
+          track_id: string
+          play_count: number
+          last_played_at: string
+          region_country: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "distributor" | "editorial" | "user"
