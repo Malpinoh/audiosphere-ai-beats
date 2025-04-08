@@ -12,27 +12,58 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-
-// Demo credentials - in a real app, this would be handled securely
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "admin123";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AdminAuth({ onAuth }: { onAuth: (success: boolean) => void }) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      if (!data.user) {
+        throw new Error("User not found");
+      }
+      
+      // Check if user has admin role
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+        
+      if (profileError) throw profileError;
+      
+      if (profileData.role !== 'admin') {
+        throw new Error("Unauthorized: Admin access required");
+      }
+      
+      toast({
+        title: "Admin authentication successful",
+        description: "Welcome to the admin panel",
+      });
+      
       onAuth(true);
-    } else {
+    } catch (error: any) {
       toast({
         title: "Authentication failed",
-        description: "Invalid username or password",
+        description: error.message || "Invalid credentials or insufficient permissions",
         variant: "destructive",
       });
+      onAuth(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -47,12 +78,12 @@ export function AdminAuth({ onAuth }: { onAuth: (success: boolean) => void }) {
       <form onSubmit={handleLogin}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -68,7 +99,9 @@ export function AdminAuth({ onAuth }: { onAuth: (success: boolean) => void }) {
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" className="w-full">Login</Button>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Authenticating..." : "Login"}
+          </Button>
         </CardFooter>
       </form>
     </Card>
