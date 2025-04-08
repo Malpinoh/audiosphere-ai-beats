@@ -34,8 +34,12 @@ Deno.serve(async (req) => {
     }
 
     // Use ipinfo.io to get geolocation data
-    // Note: Free tier has limits, consider upgrading for production
     const response = await fetch(`https://ipinfo.io/${ip}/json`)
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch from ipinfo.io: ${response.statusText}`)
+    }
+    
     const data = await response.json()
 
     // Create a simplified response with the key location data
@@ -47,6 +51,9 @@ Deno.serve(async (req) => {
       loc: data.loc || '',
       timezone: data.timezone || '',
     }
+
+    // Log the successful request
+    console.log(`Successfully retrieved location data for IP: ${ip}. Country: ${locationData.country}`)
 
     // Return the geolocation data
     return new Response(

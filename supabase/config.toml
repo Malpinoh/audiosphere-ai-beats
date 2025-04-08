@@ -11,3 +11,4 @@ max_rows = 1000
 [functions]
 [functions.geo-location]
 verify_jwt = false
+
