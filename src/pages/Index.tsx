@@ -6,12 +6,16 @@ import { TrendingArtists, FeaturedPlaylists, PersonalizedRecommendations } from 
 import { BrowseByGenre } from "@/components/sections/GenreSection";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Flag } from "lucide-react";
 import AdUnit from "@/components/ads/AdUnit";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
+  
   return (
-    <MainLayout>
+    <MainLayout showTopAd={true} showSidebarAds={true}>
       <HeroSection />
       
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
@@ -38,12 +42,20 @@ const Index = () => {
         <BrowseByGenre />
         <FeaturedPlaylists />
         
-        {/* Admin Panel Link - Usually this would be conditionally rendered based on user role */}
-        <div className="mt-10 border-t pt-8 flex justify-center">
-          <Link to="/admin">
+        {/* Admin Panel Link - Only shown to admin users */}
+        <div className="mt-10 border-t pt-8 flex justify-center gap-4">
+          {isAdmin && (
+            <Link to="/admin">
+              <Button variant="outline" className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" />
+                Admin Panel
+              </Button>
+            </Link>
+          )}
+          <Link to="/report">
             <Button variant="outline" className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4" />
-              Admin Panel
+              <Flag className="h-4 w-4" />
+              Report Content
             </Button>
           </Link>
         </div>

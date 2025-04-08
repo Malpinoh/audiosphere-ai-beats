@@ -19,6 +19,7 @@ import TrackPage from "./pages/TrackPage";
 import BrowsePage from "./pages/BrowsePage";
 import ChartsPage from "./pages/ChartsPage";
 import PlaylistsPage from "./pages/PlaylistsPage";
+import ReportPage from "./pages/ReportPage";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const AppRoutes = () => {
       <Route path="/recommendations" element={<RecommendationsPage />} />
       <Route path="/artist/:artistId" element={<ArtistProfile />} />
       <Route path="/track/:trackId" element={<TrackPage />} />
+      <Route path="/report" element={<ReportPage />} />
       <Route 
         path="/admin" 
         element={

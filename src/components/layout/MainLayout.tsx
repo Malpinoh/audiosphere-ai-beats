@@ -9,16 +9,24 @@ interface MainLayoutProps {
   children: ReactNode;
   hidePlayer?: boolean;
   showSidebarAds?: boolean;
+  showTopAd?: boolean;
 }
 
 const MainLayout = ({ 
   children, 
   hidePlayer = false,
-  showSidebarAds = false
+  showSidebarAds = false,
+  showTopAd = false
 }: MainLayoutProps) => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
+      
+      {showTopAd && (
+        <div className="w-full py-2 flex justify-center border-b border-border">
+          <AdUnit size="leaderboard" />
+        </div>
+      )}
       
       <div className="flex flex-1">
         {/* Main content */}
