@@ -1,8 +1,13 @@
 
+# This file is used by Supabase CLI
 project_id = "qkpjlfcpncvvjyzfolag"
 
-[functions.music-upload]
-verify_jwt = false
+[api]
+port = 54321
+schemas = []
+extra_search_path = []
+max_rows = 1000
 
-[functions.api-keys]
-verify_jwt = true
+[functions]
+[functions.geo-location]
+verify_jwt = false

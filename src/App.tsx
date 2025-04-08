@@ -15,6 +15,9 @@ import ArtistProfile from "./pages/ArtistProfile";
 import ApiDocumentation from "./pages/ApiDocumentation";
 import NotFound from "./pages/NotFound";
 import TrackPage from "./pages/TrackPage";
+import BrowsePage from "./pages/BrowsePage"; // New page
+import ChartsPage from "./pages/ChartsPage"; // New page
+import PlaylistsPage from "./pages/PlaylistsPage"; // New page
 
 const queryClient = new QueryClient();
 
@@ -35,6 +38,9 @@ const App = () => (
             <Route path="/track/:trackId" element={<TrackPage />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/api/docs" element={<ApiDocumentation />} />
+            <Route path="/browse" element={<BrowsePage />} /> 
+            <Route path="/charts" element={<ChartsPage />} />
+            <Route path="/playlists" element={<PlaylistsPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
