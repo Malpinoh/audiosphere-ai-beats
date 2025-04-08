@@ -150,7 +150,7 @@ const BrowsePage = () => {
                   <SelectValue placeholder="Genre" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Genres</SelectItem>
+                  <SelectItem value="all">All Genres</SelectItem>
                   {genres.map(genre => (
                     <SelectItem key={genre.id} value={genre.id}>
                       {genre.name}
@@ -164,7 +164,7 @@ const BrowsePage = () => {
                   <SelectValue placeholder="Mood" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Moods</SelectItem>
+                  <SelectItem value="all">All Moods</SelectItem>
                   {moods.map(mood => (
                     <SelectItem key={mood.toLowerCase()} value={mood.toLowerCase()}>
                       {mood}

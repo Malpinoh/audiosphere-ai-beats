@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -70,11 +69,9 @@ export function UploadForm() {
 
   const lyrics = form.watch("lyrics");
 
-  // Handle audio file selection and trigger analysis
   const onAudioFileSelected = async (file: File) => {
     setAudioFile(file);
     
-    // Extract title from filename (optional convenience feature)
     const fileName = file.name;
     const titleFromFile = fileName.substring(0, fileName.lastIndexOf(".")).replace(/[-_]/g, " ");
     
@@ -82,13 +79,11 @@ export function UploadForm() {
       form.setValue("title", titleFromFile);
     }
     
-    // Only auto-analyze if the feature is enabled
     if (isAutoAnalysisEnabled) {
       await analyzeAudioContent();
     }
   };
 
-  // Analyze audio content when audio file changes or lyrics are updated
   const analyzeAudioContent = async () => {
     if (!audioFile) {
       return;
@@ -100,7 +95,6 @@ export function UploadForm() {
       const currentLyrics = form.getValues("lyrics") || "";
       const results = await analyzeMusicContent(audioFile, currentLyrics);
       
-      // Update form with analyzed data
       if (!form.getValues("genre")) {
         form.setValue("genre", results.genre);
       }
@@ -109,10 +103,8 @@ export function UploadForm() {
         form.setValue("mood", results.mood);
       }
       
-      // Update suggested tags
       setAnalyzedTags(results.suggestedTags);
       
-      // Automatically add suggested tags if no tags have been added yet
       if (form.getValues("tags").length === 0) {
         form.setValue("tags", results.suggestedTags);
       }
@@ -126,7 +118,6 @@ export function UploadForm() {
     }
   };
 
-  // Re-analyze when lyrics are substantially changed
   useEffect(() => {
     if (audioFile && lyrics && lyrics.length > 50 && isAutoAnalysisEnabled) {
       const debounceTimer = setTimeout(() => {
@@ -140,7 +131,6 @@ export function UploadForm() {
   const onCoverArtSelected = (file: File) => {
     setCoverArt(file);
     
-    // Create preview URL
     const reader = new FileReader();
     reader.onload = (e) => {
       if (e.target?.result) {
@@ -169,17 +159,14 @@ export function UploadForm() {
     setIsUploading(true);
 
     try {
-      // In a real app, you would upload the files and data to your backend here
       console.log("Form data:", data);
       console.log("Audio file:", audioFile);
       console.log("Cover art:", coverArt);
       
-      // Simulate upload delay
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast.success("Track uploaded successfully!");
       
-      // Reset form
       form.reset();
       setAudioFile(null);
       setCoverArt(null);

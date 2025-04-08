@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -124,7 +123,7 @@ const ChartsPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {loadingRegions ? (
-                    <SelectItem value="loading" disabled>Loading regions...</SelectItem>
+                    <SelectItem value="loading">Loading regions...</SelectItem>
                   ) : regions.length > 0 ? (
                     regions.map(region => (
                       <SelectItem key={region} value={region}>
@@ -132,7 +131,7 @@ const ChartsPage = () => {
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="none" disabled>No regions available</SelectItem>
+                    <SelectItem value="none">No regions available</SelectItem>
                   )}
                 </SelectContent>
               </Select>
