@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -136,7 +135,7 @@ export function useTracks(filter: TracksFilter = { published: true, limit: 10 })
         // Using a raw query approach to access the views
         const viewName = filter.chartType === 'global' ? 'global_charts' : 'regional_charts';
         
-        let rpcQuery: any = {
+        let rpcQuery: Record<string, any> = {
           view_name: viewName
         };
         
@@ -146,7 +145,10 @@ export function useTracks(filter: TracksFilter = { published: true, limit: 10 })
         }
         
         // Get chart data using the updated function with renamed parameter
-        const { data: chartData, error: chartError } = await supabase.rpc('get_chart_data', rpcQuery);
+        const { data: chartData, error: chartError } = await supabase.rpc(
+          'get_chart_data' as any, 
+          rpcQuery
+        );
         
         if (chartError) {
           console.error('RPC error:', chartError);
@@ -173,7 +175,9 @@ export function useTracks(filter: TracksFilter = { published: true, limit: 10 })
         }
 
         // Get the track IDs from the chart data
-        const trackIds = chartData.map((item: any) => item.track_id);
+        const trackIds = Array.isArray(chartData) 
+          ? chartData.map((item: any) => item.track_id) 
+          : [];
         
         // Fetch the actual track data
         const { data: tracksData, error: tracksError } = await supabase
@@ -187,7 +191,9 @@ export function useTracks(filter: TracksFilter = { published: true, limit: 10 })
 
         // Map the play count from chart data to the track data
         const tracksWithCounts = (tracksData || []).map(track => {
-          const chartItem = chartData.find((item: any) => item.track_id === track.id);
+          const chartItem = Array.isArray(chartData) 
+            ? chartData.find((item: any) => item.track_id === track.id)
+            : null;
           return {
             ...track,
             play_count: chartItem ? chartItem.play_count : track.play_count
@@ -237,7 +243,6 @@ export function useTracks(filter: TracksFilter = { published: true, limit: 10 })
   return { tracks, loading, error };
 }
 
-// Function to log a stream with region detection
 export async function logStreamPlay(trackId: string) {
   try {
     // First, get the user's IP
@@ -375,7 +380,6 @@ export function useTrack(id: string | undefined) {
   return { track, loading, error };
 }
 
-// Get available regions for charts
 export function useAvailableRegions() {
   const [regions, setRegions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
