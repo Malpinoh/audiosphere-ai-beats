@@ -1,31 +1,65 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { UserPlus, AtSign, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { UserPlus, AtSign, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import MainLayout from "@/components/layout/MainLayout";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const SignupPage = () => {
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, we would validate and send signup request to backend
-    toast({
-      title: "Sign Up Attempted",
-      description: "This is a demo. In a real app, sign up would be processed here.",
-      duration: 3000,
-    });
+    
+    if (!agreedToTerms) {
+      toast.error("You must agree to the Terms of Service and Privacy Policy");
+      return;
+    }
+    
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Sign up with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            username: username,
+          },
+        },
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Sign up successful! Welcome to MAUDIO");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to sign up. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -52,6 +86,21 @@ const SignupPage = () => {
                     className="pl-10"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="username"
+                    placeholder="Choose a username"
+                    className="pl-10"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
                   />
                 </div>
@@ -108,7 +157,7 @@ const SignupPage = () => {
                   id="terms" 
                   className="mt-1"
                   checked={agreedToTerms}
-                  onCheckedChange={(checked: boolean) => setAgreedToTerms(checked)}
+                  onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
                   required
                 />
                 <label
@@ -126,8 +175,16 @@ const SignupPage = () => {
                 </label>
               </div>
               
-              <Button type="submit" className="w-full gap-2 maudio-gradient-bg">
-                <UserPlus className="h-4 w-4" />
+              <Button 
+                type="submit" 
+                className="w-full gap-2 maudio-gradient-bg"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UserPlus className="h-4 w-4" />
+                )}
                 Create Account
               </Button>
               
@@ -143,6 +200,8 @@ const SignupPage = () => {
                   type="button" 
                   variant="outline" 
                   className="w-full"
+                  disabled={isLoading}
+                  onClick={() => toast.info("Social login coming soon!")}
                 >
                   Sign up with Google
                 </Button>
@@ -150,6 +209,8 @@ const SignupPage = () => {
                   type="button" 
                   variant="outline" 
                   className="w-full"
+                  disabled={isLoading}
+                  onClick={() => toast.info("Social login coming soon!")}
                 >
                   Sign up with Facebook
                 </Button>

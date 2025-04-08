@@ -1,30 +1,71 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { LogIn, AtSign, Lock, Eye, EyeOff } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { LogIn, AtSign, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import MainLayout from "@/components/layout/MainLayout";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, we would validate and send login request to backend
-    toast({
-      title: "Login Attempted",
-      description: "This is a demo. In a real app, login would be processed here.",
-      duration: 3000,
-    });
+    setIsLoading(true);
+    
+    try {
+      // Sign in with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Login successful! Welcome back.");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to sign in. Please check your credentials.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast.error("Please enter your email address first");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Password reset email sent. Please check your inbox.");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset email. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -60,12 +101,13 @@ const LoginPage = () => {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link 
-                    to="/forgot-password" 
+                  <button 
+                    type="button"
+                    onClick={handleResetPassword}
                     className="text-xs text-primary hover:underline"
                   >
                     Forgot password?
-                  </Link>
+                  </button>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -96,7 +138,7 @@ const LoginPage = () => {
                 <Checkbox 
                   id="remember" 
                   checked={rememberMe}
-                  onCheckedChange={(checked: boolean) => setRememberMe(checked)}
+                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                 />
                 <label
                   htmlFor="remember"
@@ -106,8 +148,16 @@ const LoginPage = () => {
                 </label>
               </div>
               
-              <Button type="submit" className="w-full gap-2 maudio-gradient-bg">
-                <LogIn className="h-4 w-4" />
+              <Button 
+                type="submit" 
+                className="w-full gap-2 maudio-gradient-bg"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <LogIn className="h-4 w-4" />
+                )}
                 Sign In
               </Button>
               
@@ -123,6 +173,8 @@ const LoginPage = () => {
                   type="button" 
                   variant="outline" 
                   className="w-full"
+                  disabled={isLoading}
+                  onClick={() => toast.info("Social login coming soon!")}
                 >
                   Continue with Google
                 </Button>
@@ -130,6 +182,8 @@ const LoginPage = () => {
                   type="button" 
                   variant="outline" 
                   className="w-full"
+                  disabled={isLoading}
+                  onClick={() => toast.info("Social login coming soon!")}
                 >
                   Continue with Facebook
                 </Button>

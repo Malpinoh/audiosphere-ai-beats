@@ -1,16 +1,51 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, LogIn, User, Menu, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, LogIn, User, Menu, X, LogOut, Upload, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
   
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleSearch = () => setIsSearchOpen(!isSearchOpen);
+  
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("You've been signed out successfully");
+    navigate("/");
+  };
+  
+  const getUserInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2);
+    }
+    
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    
+    return "MA";
+  };
   
   return (
     <nav className="sticky top-0 z-50 bg-maudio-darker border-b border-border py-3 px-4 md:px-6">
@@ -48,18 +83,68 @@ const Navbar = () => {
         
         {/* Auth buttons (Desktop) */}
         <div className="hidden md:flex items-center space-x-3">
-          <Button variant="outline" size="sm" asChild className="gap-1">
-            <Link to="/login">
-              <LogIn className="h-4 w-4" />
-              <span>Sign In</span>
-            </Link>
-          </Button>
-          <Button size="sm" asChild className="gap-1 maudio-gradient-bg">
-            <Link to="/signup">
-              <User className="h-4 w-4" />
-              <span>Sign Up</span>
-            </Link>
-          </Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar>
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium">{profile?.full_name || profile?.username || 'User'}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/upload" className="cursor-pointer flex w-full items-center">
+                    <Upload className="mr-2 h-4 w-4" />
+                    <span>Upload Track</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="cursor-pointer flex w-full items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="cursor-pointer flex w-full items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" asChild className="gap-1">
+                <Link to="/login">
+                  <LogIn className="h-4 w-4" />
+                  <span>Sign In</span>
+                </Link>
+              </Button>
+              <Button size="sm" asChild className="gap-1 maudio-gradient-bg">
+                <Link to="/signup">
+                  <User className="h-4 w-4" />
+                  <span>Sign Up</span>
+                </Link>
+              </Button>
+            </>
+          )}
         </div>
         
         {/* Mobile Controls */}
@@ -121,18 +206,73 @@ const Navbar = () => {
             </Link>
           </div>
           
-          <div className="flex flex-col gap-3 pt-3 border-t border-border">
-            <Button variant="outline" asChild className="justify-center">
-              <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                Sign In
+          {user ? (
+            <div className="space-y-3 pt-3 border-t border-border">
+              {profile && (
+                <div className="flex items-center space-x-3 pb-2">
+                  <Avatar>
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{profile?.full_name || profile?.username || 'User'}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
+              )}
+              
+              <Link 
+                to="/upload" 
+                className="flex items-center py-2 text-sm font-medium hover:text-primary transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Upload Track
               </Link>
-            </Button>
-            <Button asChild className="justify-center maudio-gradient-bg">
-              <Link to="/signup" onClick={() => setIsMenuOpen(false)}>
-                Sign Up
+              
+              <Link 
+                to="/profile" 
+                className="flex items-center py-2 text-sm font-medium hover:text-primary transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Profile
               </Link>
-            </Button>
-          </div>
+              
+              <Link 
+                to="/settings" 
+                className="flex items-center py-2 text-sm font-medium hover:text-primary transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Link>
+              
+              <button
+                onClick={() => {
+                  handleSignOut();
+                  setIsMenuOpen(false);
+                }}
+                className="flex items-center py-2 text-sm font-medium text-destructive hover:text-destructive/80 transition-colors w-full"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 pt-3 border-t border-border">
+              <Button variant="outline" asChild className="justify-center">
+                <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                  Sign In
+                </Link>
+              </Button>
+              <Button asChild className="justify-center maudio-gradient-bg">
+                <Link to="/signup" onClick={() => setIsMenuOpen(false)}>
+                  Sign Up
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </nav>
