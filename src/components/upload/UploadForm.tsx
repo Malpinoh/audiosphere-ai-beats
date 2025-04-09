@@ -1,9 +1,12 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Upload, Music, FileImage, Tag, X, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +56,7 @@ export function UploadForm() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzedTags, setAnalyzedTags] = useState<string[]>([]);
   const [isAutoAnalysisEnabled, setIsAutoAnalysisEnabled] = useState(true);
+  const { user, profile } = useAuth();
 
   const form = useForm<UploadFormValues>({
     resolver: zodResolver(uploadFormSchema),
@@ -156,14 +160,66 @@ export function UploadForm() {
       return;
     }
 
+    if (!user) {
+      toast.error("You must be logged in to upload tracks");
+      return;
+    }
+
     setIsUploading(true);
 
     try {
-      console.log("Form data:", data);
-      console.log("Audio file:", audioFile);
-      console.log("Cover art:", coverArt);
+      // Create form data for file upload
+      const formData = new FormData();
+      formData.append('audio_file', audioFile);
+      formData.append('cover_art', coverArt);
+      formData.append('title', data.title);
+      formData.append('artist', data.artist);
+      formData.append('genre', data.genre);
+      formData.append('mood', data.mood);
+      formData.append('tags', JSON.stringify(data.tags));
       
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (data.description) {
+        formData.append('description', data.description);
+      }
+      
+      if (data.lyrics) {
+        formData.append('lyrics', data.lyrics);
+      }
+      
+      formData.append('published', 'true');
+      
+      // Get user API key or generate one
+      const { data: apiKeyData, error: apiKeyError } = await supabase
+        .from('api_keys')
+        .select('api_key')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (apiKeyError) {
+        console.error('Error fetching API key:', apiKeyError);
+        throw new Error('Failed to get API key');
+      }
+      
+      const apiKey = apiKeyData?.api_key;
+      
+      if (!apiKey) {
+        toast.error("API key not found. Please contact support.");
+        return;
+      }
+      
+      // Upload track using the Supabase Edge Function
+      const response = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/music-upload', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Upload failed');
+      }
       
       toast.success("Track uploaded successfully!");
       
@@ -174,7 +230,7 @@ export function UploadForm() {
       setAnalyzedTags([]);
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload track. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Failed to upload track. Please try again.");
     } finally {
       setIsUploading(false);
     }

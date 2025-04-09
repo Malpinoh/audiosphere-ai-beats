@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { toast } from "sonner";
 import { Track } from "@/hooks/use-tracks";
+import { logStreamPlay } from "@/hooks/use-tracks";
 
 interface MusicPlayerContextType {
   currentTrack: Track | null;
@@ -35,6 +36,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const [volume, setVolumeState] = useState(80);
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [playbackStarted, setPlaybackStarted] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
@@ -47,6 +49,8 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
       audioRef.current.addEventListener('loadedmetadata', onMetadataLoaded);
       audioRef.current.addEventListener('ended', handleTrackEnd);
       audioRef.current.addEventListener('error', handleAudioError);
+      audioRef.current.addEventListener('playing', handlePlayStart);
+      audioRef.current.addEventListener('canplay', handleCanPlay);
     }
     
     return () => {
@@ -55,6 +59,8 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
         audioRef.current.removeEventListener('loadedmetadata', onMetadataLoaded);
         audioRef.current.removeEventListener('ended', handleTrackEnd);
         audioRef.current.removeEventListener('error', handleAudioError);
+        audioRef.current.removeEventListener('playing', handlePlayStart);
+        audioRef.current.removeEventListener('canplay', handleCanPlay);
         audioRef.current.pause();
         audioRef.current = null;
       }
@@ -66,6 +72,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     if (!audioRef.current || !currentTrack) return;
     
     setIsLoading(true);
+    setPlaybackStarted(false);
     audioRef.current.src = currentTrack.audioUrl || currentTrack.audio_file_path;
     audioRef.current.load();
     
@@ -98,6 +105,19 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     if (!audioRef.current) return;
     
     setDuration(audioRef.current.duration);
+  };
+  
+  const handlePlayStart = () => {
+    if (!playbackStarted && currentTrack) {
+      setPlaybackStarted(true);
+      // Log play count
+      logStreamPlay(currentTrack.id).catch(err => {
+        console.error('Failed to log stream play:', err);
+      });
+    }
+  };
+  
+  const handleCanPlay = () => {
     setIsLoading(false);
   };
   
@@ -108,10 +128,15 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const handleAudioError = (e: any) => {
     console.error('Audio error:', e);
     setIsLoading(false);
-    toast.error('Error playing this track');
+    toast.error('Error playing this track. Please try again later.');
   };
   
   const playTrack = (track: Track) => {
+    // If the track is not in the queue, add it
+    if (!queue.some(t => t.id === track.id)) {
+      setQueue(prevQueue => [...prevQueue, track]);
+    }
+    
     setCurrentTrack(track);
     setIsPlaying(true);
   };
@@ -127,6 +152,8 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
       if (playPromise !== undefined) {
         playPromise.catch(error => {
           console.error('Play was prevented:', error);
+          setIsPlaying(false);
+          toast.error('Unable to play track. Please try again.');
         });
       }
     }
@@ -185,6 +212,8 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     if (!queue.some(t => t.id === track.id)) {
       setQueue([...queue, track]);
       toast.success(`Added "${track.title}" to queue`);
+    } else {
+      toast.info(`"${track.title}" is already in your queue`);
     }
   };
   
