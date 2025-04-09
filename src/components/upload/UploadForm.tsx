@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -186,16 +187,20 @@ export function UploadForm() {
       
       formData.append('published', 'true');
       
-      const { data: apiKeys, error: apiKeyError } = await supabase
-        .from('api_keys')
-        .select('api_key')
-        .eq('user_id', user.id);
+      // Use explicit any typing to avoid deep type instantiation
+      const response = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/rest/v1/api_keys?select=api_key&user_id=eq.' + user.id, {
+        method: 'GET',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrcGpsZmNwbmN2dmp5emZvbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMDAxMDAsImV4cCI6MjA1OTU3NjEwMH0.Lnas8tdQ_Wycaa-oWh8lCfRGkRr8IhW5CohA7n37nMg',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrcGpsZmNwbmN2dmp5emZvbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMDAxMDAsImV4cCI6MjA1OTU3NjEwMH0.Lnas8tdQ_Wycaa-oWh8lCfRGkRr8IhW5CohA7n37nMg`
+        }
+      });
       
-      if (apiKeyError) {
-        console.error('Error fetching API key:', apiKeyError);
-        throw new Error('Failed to get API key');
+      if (!response.ok) {
+        throw new Error('Failed to fetch API key');
       }
       
+      const apiKeys: any[] = await response.json();
       const apiKey = apiKeys && apiKeys.length > 0 ? apiKeys[0].api_key : null;
       
       if (!apiKey) {
@@ -203,7 +208,7 @@ export function UploadForm() {
         return;
       }
       
-      const response = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/music-upload', {
+      const uploadResponse = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/music-upload', {
         method: 'POST',
         headers: {
           'x-api-key': apiKey
@@ -211,8 +216,8 @@ export function UploadForm() {
         body: formData
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
         throw new Error(errorData.message || 'Upload failed');
       }
       

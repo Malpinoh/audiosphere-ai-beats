@@ -20,6 +20,12 @@ import BrowsePage from "./pages/BrowsePage";
 import ChartsPage from "./pages/ChartsPage";
 import PlaylistsPage from "./pages/PlaylistsPage";
 import ReportPage from "./pages/ReportPage";
+import AccountSettings from "./pages/AccountSettings";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import ContactUs from "./pages/ContactUs";
+import ArtistDashboard from "./pages/ArtistDashboard";
+import PromotePage from "./pages/PromotePage";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +38,21 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   
   // If not logged in or not an admin, redirect to home
   if (!user || !profile || profile.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// Protected route component for artist access
+const ArtistRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, profile, loading } = useAuth();
+  
+  // Show nothing while loading auth state
+  if (loading) return null;
+  
+  // If not logged in or not an artist, redirect to home
+  if (!user || !profile || profile.role !== 'artist') {
     return <Navigate to="/" replace />;
   }
   
@@ -61,6 +82,22 @@ const AppRoutes = () => {
       <Route path="/browse" element={<BrowsePage />} /> 
       <Route path="/charts" element={<ChartsPage />} />
       <Route path="/playlists" element={<PlaylistsPage />} />
+      
+      {/* New routes */}
+      <Route path="/account-settings" element={<AccountSettings />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/contact-us" element={<ContactUs />} />
+      <Route 
+        path="/artist-dashboard" 
+        element={
+          <ArtistRoute>
+            <ArtistDashboard />
+          </ArtistRoute>
+        }
+      />
+      <Route path="/promote" element={<PromotePage />} />
+      
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
