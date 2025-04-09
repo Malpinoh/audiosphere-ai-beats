@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -133,10 +134,6 @@ const ChartsPage = () => {
           </div>
         )}
         
-        <div className="my-6 flex justify-center">
-          <AdUnit size="leaderboard" />
-        </div>
-        
         <div className="mt-6">
           <div className="mb-4 flex items-center gap-2">
             <Badge variant="outline" className="px-3 py-1 text-base">
@@ -169,10 +166,6 @@ const ChartsPage = () => {
               </p>
             </div>
           )}
-        </div>
-        
-        <div className="my-10 flex justify-center">
-          <AdUnit size="large-rectangle" />
         </div>
         
         <div className="mt-10 bg-maudio-darker p-6 rounded-lg">
