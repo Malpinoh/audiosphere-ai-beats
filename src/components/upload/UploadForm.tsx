@@ -167,7 +167,6 @@ export function UploadForm() {
     setIsUploading(true);
 
     try {
-      // Create form data for file upload
       const formData = new FormData();
       formData.append('audio_file', audioFile);
       formData.append('cover_art', coverArt);
@@ -187,7 +186,6 @@ export function UploadForm() {
       
       formData.append('published', 'true');
       
-      // Get user API key or generate one
       const { data: apiKeyData, error: apiKeyError } = await supabase
         .from('api_keys')
         .select('api_key')
@@ -206,7 +204,6 @@ export function UploadForm() {
         return;
       }
       
-      // Upload track using the Supabase Edge Function
       const response = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/music-upload', {
         method: 'POST',
         headers: {

@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import AdUnit from "@/components/ads/AdUnit";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PlaylistCard } from "@/components/ui/playlist-card";
 
 // Mock playlists for demonstration
 const mockPlaylists = [
@@ -17,7 +17,10 @@ const mockPlaylists = [
     description: 'High energy tracks to keep you motivated',
     coverImage: 'https://picsum.photos/id/1025/300/300',
     trackCount: 12,
-    createdBy: 'MAUDIO Editorial'
+    createdBy: {
+      name: 'MAUDIO Editorial',
+      id: 'editorial'
+    }
   },
   {
     id: '2',
@@ -25,7 +28,10 @@ const mockPlaylists = [
     description: 'Relaxing beats for your evening',
     coverImage: 'https://picsum.photos/id/1059/300/300',
     trackCount: 18,
-    createdBy: 'MAUDIO Editorial'
+    createdBy: {
+      name: 'MAUDIO Editorial',
+      id: 'editorial'
+    }
   },
   {
     id: '3',
@@ -33,7 +39,10 @@ const mockPlaylists = [
     description: 'Concentration-enhancing instrumentals',
     coverImage: 'https://picsum.photos/id/1060/300/300',
     trackCount: 15,
-    createdBy: 'MAUDIO Editorial'
+    createdBy: {
+      name: 'MAUDIO Editorial',
+      id: 'editorial'
+    }
   },
   {
     id: '4',
@@ -41,34 +50,12 @@ const mockPlaylists = [
     description: 'Get the party started with these hits',
     coverImage: 'https://picsum.photos/id/1062/300/300',
     trackCount: 24,
-    createdBy: 'MAUDIO Editorial'
+    createdBy: {
+      name: 'MAUDIO Editorial',
+      id: 'editorial'
+    }
   }
 ];
-
-// Playlist card component
-const PlaylistCard = ({ playlist }: { playlist: any }) => {
-  return (
-    <Card className="overflow-hidden hover:bg-maudio-darker/30 transition-colors cursor-pointer">
-      <CardContent className="p-0">
-        <div className="aspect-square">
-          <img 
-            src={playlist.coverImage} 
-            alt={playlist.title} 
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="p-4">
-          <h3 className="font-medium truncate">{playlist.title}</h3>
-          <p className="text-sm text-muted-foreground line-clamp-2">{playlist.description}</p>
-          <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-            <span>{playlist.trackCount} tracks</span>
-            <span>{playlist.createdBy}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
 
 const PlaylistsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -107,11 +94,6 @@ const PlaylistsPage = () => {
           />
         </div>
         
-        {/* Leaderboard ad */}
-        <div className="my-6 flex justify-center">
-          <AdUnit size="leaderboard" />
-        </div>
-        
         {/* Editorial playlists */}
         <div className="mb-10">
           <h2 className="text-xl font-bold mb-4">Editorial Playlists</h2>
@@ -131,7 +113,15 @@ const PlaylistsPage = () => {
               ))
             ) : filteredPlaylists.length > 0 ? (
               filteredPlaylists.map(playlist => (
-                <PlaylistCard key={playlist.id} playlist={playlist} />
+                <PlaylistCard
+                  key={playlist.id}
+                  id={playlist.id}
+                  title={playlist.title}
+                  description={playlist.description}
+                  cover={playlist.coverImage}
+                  trackCount={playlist.trackCount}
+                  createdBy={playlist.createdBy}
+                />
               ))
             ) : (
               <div className="col-span-full text-center py-10">
@@ -148,11 +138,6 @@ const PlaylistsPage = () => {
             <p className="text-muted-foreground mb-4">Sign in to create and view your playlists</p>
             <Button>Sign In</Button>
           </div>
-        </div>
-        
-        {/* Bottom banner ad */}
-        <div className="mt-10 flex justify-center">
-          <AdUnit size="banner" />
         </div>
       </div>
     </MainLayout>
