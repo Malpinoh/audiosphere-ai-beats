@@ -189,15 +189,17 @@ export function UploadForm() {
       const apiKeyResult = await supabase
         .from('api_keys')
         .select('api_key')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .eq('user_id', user.id);
       
-      if (apiKeyResult.error) {
-        console.error('Error fetching API key:', apiKeyResult.error);
+      const apiKeyData = apiKeyResult.data;
+      const apiKeyError = apiKeyResult.error;
+      
+      if (apiKeyError) {
+        console.error('Error fetching API key:', apiKeyError);
         throw new Error('Failed to get API key');
       }
       
-      const apiKey = apiKeyResult.data?.api_key;
+      const apiKey = apiKeyData && apiKeyData.length > 0 ? apiKeyData[0].api_key : null;
       
       if (!apiKey) {
         toast.error("API key not found. Please contact support.");

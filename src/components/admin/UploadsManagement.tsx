@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Table, 
@@ -73,7 +72,7 @@ export function UploadsManagement() {
           genre: track.genre,
           uploaded_at: new Date(track.uploaded_at).toISOString().split('T')[0],
           status: track.published ? 'approved' : 'pending',
-          reason: track.reject_reason || ''
+          reason: track.description || ''
         }));
         
         setUploads(formattedUploads);
@@ -112,7 +111,7 @@ export function UploadsManagement() {
               genre: newRecord.genre,
               uploaded_at: new Date(newRecord.uploaded_at).toISOString().split('T')[0],
               status: newRecord.published ? 'approved' : 'pending',
-              reason: newRecord.reject_reason || ''
+              reason: newRecord.description || ''
             }, ...prevUploads]);
           } else if (eventType === 'UPDATE') {
             setUploads(prevUploads => prevUploads.map(upload => 
@@ -123,7 +122,7 @@ export function UploadsManagement() {
                     artist: newRecord.artist,
                     genre: newRecord.genre,
                     status: newRecord.published ? 'approved' : 'pending',
-                    reason: newRecord.reject_reason || ''
+                    reason: newRecord.description || ''
                   }
                 : upload
             ));
@@ -149,7 +148,7 @@ export function UploadsManagement() {
     try {
       const { error } = await supabase
         .from('tracks')
-        .update({ published: true, reject_reason: null })
+        .update({ published: true, description: null })
         .eq('id', uploadId);
         
       if (error) {
@@ -181,7 +180,7 @@ export function UploadsManagement() {
       try {
         const { error } = await supabase
           .from('tracks')
-          .update({ published: false, reject_reason: rejectReason })
+          .update({ published: false, description: rejectReason })
           .eq('id', uploadToReject);
           
         if (error) {
