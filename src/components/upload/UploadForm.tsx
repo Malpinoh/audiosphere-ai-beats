@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -186,11 +187,15 @@ export function UploadForm() {
       
       formData.append('published', 'true');
       
-      const { data: apiKeyData, error: apiKeyError } = await supabase
+      // Using a type assertion to simplify the complex type
+      const apiKeyResponse = await supabase
         .from('api_keys')
         .select('api_key')
         .eq('user_id', user.id)
         .maybeSingle();
+      
+      const apiKeyData = apiKeyResponse.data;
+      const apiKeyError = apiKeyResponse.error;
       
       if (apiKeyError) {
         console.error('Error fetching API key:', apiKeyError);
