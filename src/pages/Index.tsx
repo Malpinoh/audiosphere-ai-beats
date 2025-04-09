@@ -7,7 +7,6 @@ import { BrowseByGenre } from "@/components/sections/GenreSection";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ShieldCheck, Flag } from "lucide-react";
-import AdUnit from "@/components/ads/AdUnit";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
@@ -15,30 +14,13 @@ const Index = () => {
   const isAdmin = profile?.role === 'admin';
   
   return (
-    <MainLayout showTopAd={true} showSidebarAds={true}>
+    <MainLayout>
       <HeroSection />
       
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        {/* Top leaderboard ad after hero section */}
-        <div className="my-6 flex justify-center">
-          <AdUnit size="leaderboard" />
-        </div>
-        
         <PersonalizedRecommendations />
-        
-        {/* Banner ad after recommendations */}
-        <div className="my-6 flex justify-center">
-          <AdUnit size="banner" />
-        </div>
-        
         <FeaturedTracks />
         <TrendingArtists />
-        
-        {/* Large rectangle ad between sections */}
-        <div className="my-6 flex justify-center">
-          <AdUnit size="large-rectangle" />
-        </div>
-        
         <BrowseByGenre />
         <FeaturedPlaylists />
         

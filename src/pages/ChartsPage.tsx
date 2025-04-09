@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,9 +8,7 @@ import { TrackCard } from "@/components/ui/track-card";
 import { useTracks, useAvailableRegions, TracksFilter } from "@/hooks/use-tracks";
 import { Badge } from "@/components/ui/badge";
 import { Globe, MapPin, Trophy, TrendingUp } from "lucide-react";
-import AdUnit from "@/components/ads/AdUnit";
 
-// Loading card skeleton
 const LoadingTrackCard = () => (
   <div className="min-w-[220px] max-w-[220px]">
     <div className="maudio-card overflow-hidden">
@@ -24,7 +21,6 @@ const LoadingTrackCard = () => (
   </div>
 );
 
-// Track ranking component
 const TrackRanking = ({ rank, track }: { rank: number, track: any }) => {
   return (
     <div className="flex items-center gap-4 p-3 bg-maudio-darker rounded-md hover:bg-maudio-darker/80 transition-colors">
@@ -63,14 +59,12 @@ const ChartsPage = () => {
   
   const { tracks, loading } = useTracks(filter);
   
-  // When regions load, set the first one as default if selectedRegion is empty
   useEffect(() => {
     if (!loadingRegions && regions.length > 0 && !selectedRegion) {
       setSelectedRegion(regions[0]);
     }
   }, [loadingRegions, regions, selectedRegion]);
   
-  // Format the region name for display
   const formatRegionName = (code: string) => {
     const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
     try {
@@ -114,7 +108,6 @@ const ChartsPage = () => {
           </div>
         </div>
         
-        {/* Region selector (only visible for regional charts) */}
         {chartType === 'regional' && (
           <div className="mb-6">
             <div className="flex gap-2 items-center">
@@ -140,12 +133,10 @@ const ChartsPage = () => {
           </div>
         )}
         
-        {/* Top leaderboard ad */}
         <div className="my-6 flex justify-center">
           <AdUnit size="leaderboard" />
         </div>
         
-        {/* Chart content */}
         <div className="mt-6">
           <div className="mb-4 flex items-center gap-2">
             <Badge variant="outline" className="px-3 py-1 text-base">
@@ -180,12 +171,10 @@ const ChartsPage = () => {
           )}
         </div>
         
-        {/* Mid-content ad */}
         <div className="my-10 flex justify-center">
           <AdUnit size="large-rectangle" />
         </div>
         
-        {/* Chart explanation */}
         <div className="mt-10 bg-maudio-darker p-6 rounded-lg">
           <h2 className="text-xl font-bold mb-4">About MAUDIO Charts</h2>
           <p className="text-muted-foreground mb-4">

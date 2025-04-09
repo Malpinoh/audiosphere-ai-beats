@@ -10,7 +10,6 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import AdUnit from "@/components/ads/AdUnit";
 import { Link } from "react-router-dom";
 
 const MusicPlayer = () => {
@@ -33,7 +32,6 @@ const MusicPlayer = () => {
     removeFromQueue
   } = useMusicPlayer();
   
-  const [showAd, setShowAd] = useState(true);
   const [repeat, setRepeat] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
@@ -61,12 +59,6 @@ const MusicPlayer = () => {
   
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-maudio-darker border-t border-border p-3 z-40">
-      {showAd && (
-        <div className="flex justify-center mb-2 max-h-[60px]">
-          <AdUnit size="banner" />
-        </div>
-      )}
-      
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-4">
         {/* Track Info */}
         <div className="flex items-center space-x-3 w-full md:w-1/4">

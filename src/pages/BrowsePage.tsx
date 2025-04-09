@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -13,9 +12,7 @@ import { TrackCard } from "@/components/ui/track-card";
 import { GenreCard } from "@/components/ui/genre-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Globe, Search } from "lucide-react";
-import AdUnit from "@/components/ads/AdUnit";
 
-// Same mock data for genres from GenreSection
 const genres = [
   {
     id: "hip-hop",
@@ -67,7 +64,6 @@ const genres = [
   }
 ];
 
-// Loading card skeleton
 const LoadingTrackCard = () => (
   <div className="min-w-[220px] max-w-[220px]">
     <div className="maudio-card overflow-hidden">
@@ -116,7 +112,6 @@ const BrowsePage = () => {
     setCurrentFilter(newFilter);
   };
   
-  // Available moods
   const moods = ["Energetic", "Relaxed", "Happy", "Sad", "Romantic", "Focused"];
   
   return (
@@ -131,7 +126,6 @@ const BrowsePage = () => {
             <TabsTrigger value="moods">Moods</TabsTrigger>
           </TabsList>
           
-          {/* Filters */}
           <div className="mb-6 flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -177,11 +171,6 @@ const BrowsePage = () => {
             </div>
           </div>
           
-          {/* Leaderboard ad */}
-          <div className="my-6 flex justify-center">
-            <AdUnit size="leaderboard" />
-          </div>
-          
           <TabsContent value="tracks" className="mt-6">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {loading ? (
@@ -197,7 +186,7 @@ const BrowsePage = () => {
                       artist={track.artist}
                       cover={track.cover || track.cover_art_path}
                       plays={track.play_count}
-                      artistId="1" // This should be replaced with actual artist ID
+                      artistId="1"
                     />
                   </div>
                 ))
@@ -264,11 +253,6 @@ const BrowsePage = () => {
             </div>
           </TabsContent>
         </Tabs>
-        
-        {/* Bottom banner ad */}
-        <div className="mt-10 flex justify-center">
-          <AdUnit size="banner" />
-        </div>
       </div>
     </MainLayout>
   );

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar } from "@/components/ui/avatar";
 import { Heart, Play, Share, Users } from "lucide-react";
-import AdUnit from "@/components/ads/AdUnit";
 
 // Mock data for an artist profile
 const mockArtist = {
@@ -26,7 +25,7 @@ const ArtistProfile = () => {
   const artist = mockArtist;
 
   return (
-    <MainLayout showSidebarAds={true}>
+    <MainLayout>
       {/* Artist Header */}
       <div className="relative h-[300px] overflow-hidden bg-maudio-darker">
         {/* Cover Image */}
@@ -40,11 +39,6 @@ const ArtistProfile = () => {
         
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-maudio-dark via-transparent to-transparent"></div>
-        
-        {/* Top banner ad */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
-          <AdUnit size="banner" />
-        </div>
         
         {/* Artist Info */}
         <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end gap-6">
@@ -91,11 +85,6 @@ const ArtistProfile = () => {
           <TabsContent value="tracks" className="space-y-4">
             <h2 className="text-xl font-bold mb-4">Popular Tracks</h2>
             
-            {/* Mid-content ad */}
-            <div className="my-6 flex justify-center">
-              <AdUnit size="large-rectangle" />
-            </div>
-            
             {/* Tracks would go here */}
             <div className="text-muted-foreground text-center p-12">
               Track listing would appear here
@@ -114,11 +103,6 @@ const ArtistProfile = () => {
           <TabsContent value="about">
             <h2 className="text-xl font-bold mb-4">About {artist.name}</h2>
             <p className="text-muted-foreground mb-6">{artist.bio}</p>
-            
-            {/* Bottom banner ad */}
-            <div className="my-6 flex justify-center">
-              <AdUnit size="leaderboard" />
-            </div>
           </TabsContent>
         </Tabs>
       </div>
