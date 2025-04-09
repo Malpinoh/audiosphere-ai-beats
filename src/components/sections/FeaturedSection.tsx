@@ -113,14 +113,7 @@ export function FeaturedTracks() {
     >
       {tracks.map(track => (
         <div key={track.id} className="min-w-[220px] max-w-[220px]">
-          <TrackCard 
-            id={track.id}
-            title={track.title}
-            artist={track.artist}
-            cover={track.cover || track.cover_art_path}
-            plays={track.play_count}
-            artistId="1" // This should be replaced with actual artist ID
-          />
+          <TrackCard track={track} />
         </div>
       ))}
     </Section>

@@ -66,6 +66,24 @@ const RecommendationsPage = () => {
     { value: "lofi", label: "Lo-Fi" },
   ];
 
+  // Convert track data to match the Track interface
+  const formatTrackForCard = (trackData: any) => {
+    return {
+      id: trackData.id,
+      title: trackData.title,
+      artist: trackData.artist,
+      cover_art_path: trackData.cover,
+      audio_file_path: "",
+      genre: "",
+      mood: "",
+      play_count: trackData.plays || 0,
+      like_count: 0,
+      tags: [],
+      published: true,
+      cover: trackData.cover,
+    };
+  };
+
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
@@ -82,16 +100,9 @@ const RecommendationsPage = () => {
           subtitle="Tracks we think you'll love based on your activity"
         >
           {personalizedTracks.length > 0 ? (
-            personalizedTracks.map(track => (
-              <div key={track.id} className="min-w-[220px] max-w-[220px]">
-                <TrackCard 
-                  id={track.id} 
-                  title={track.title} 
-                  artist={track.artist} 
-                  artistId={track.artistId} 
-                  cover={track.cover} 
-                  plays={track.plays} 
-                />
+            personalizedTracks.map(trackData => (
+              <div key={trackData.id} className="min-w-[220px] max-w-[220px]">
+                <TrackCard track={formatTrackForCard(trackData)} />
               </div>
             ))
           ) : (
@@ -115,15 +126,10 @@ const RecommendationsPage = () => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {moodTracks.length > 0 ? (
-              moodTracks.map(track => (
+              moodTracks.map(trackData => (
                 <TrackCard 
-                  key={track.id}
-                  id={track.id} 
-                  title={track.title} 
-                  artist={track.artist} 
-                  artistId={track.artistId} 
-                  cover={track.cover} 
-                  plays={track.plays} 
+                  key={trackData.id}
+                  track={formatTrackForCard(trackData)}
                 />
               ))
             ) : (
@@ -159,15 +165,10 @@ const RecommendationsPage = () => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {genreTracks.length > 0 ? (
-              genreTracks.map(track => (
+              genreTracks.map(trackData => (
                 <TrackCard 
-                  key={track.id}
-                  id={track.id} 
-                  title={track.title} 
-                  artist={track.artist} 
-                  artistId={track.artistId} 
-                  cover={track.cover} 
-                  plays={track.plays} 
+                  key={trackData.id}
+                  track={formatTrackForCard(trackData)}
                 />
               ))
             ) : (

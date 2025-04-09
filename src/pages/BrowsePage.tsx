@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -180,14 +181,7 @@ const BrowsePage = () => {
               ) : tracks.length > 0 ? (
                 tracks.map(track => (
                   <div key={track.id} className="min-w-[220px] max-w-[220px]">
-                    <TrackCard 
-                      id={track.id}
-                      title={track.title}
-                      artist={track.artist}
-                      cover={track.cover || track.cover_art_path}
-                      plays={track.play_count}
-                      artistId="1"
-                    />
+                    <TrackCard track={track} />
                   </div>
                 ))
               ) : (
