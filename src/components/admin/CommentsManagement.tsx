@@ -9,102 +9,88 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertOctagon,
-  AlertTriangle,
-  CheckCircle,
-  MessageSquareOff,
-  Search,
-  ShieldAlert,
-  Trash,
-  Loader2
+import { 
+  MoreVertical, 
+  Search, 
+  Loader2, 
+  Flag, 
+  CheckCircle, 
+  EyeOff, 
+  Trash2 
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { mockComments, checkTableExists } from "./helpers/mockData";
+import { getMockFormattedComments, checkTableExists } from "./helpers/mockData";
 
 interface Comment {
   id: string;
   content: string;
-  user: string;
-  song: string;
-  timestamp: string;
-  status: string;
+  profiles: { username: string };
+  tracks: { title: string; artist: string };
+  created_at: string;
+  status: "active" | "hidden" | "deleted";
   flagged: boolean;
-  user_id?: string;
-  track_id?: string;
+  user_id: string;
+  track_id: string;
 }
 
 export function CommentsManagement() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [tableExists, setTableExists] = useState(false);
 
   useEffect(() => {
     const fetchComments = async () => {
       try {
         setLoading(true);
         
-        // Check if comments table exists
-        const tableExists = await checkTableExists('comments', supabase);
+        // Check if the comments table exists
+        const exists = await checkTableExists('comments', supabase);
+        setTableExists(exists);
         
-        if (!tableExists) {
-          console.log("Comments table doesn't exist yet. Using mock data.");
-          setComments(mockComments);
-        } else {
+        if (exists) {
+          // Fetch from real database
           const { data, error } = await supabase
             .from('comments')
             .select(`
-              id,
-              content,
+              id, 
+              content, 
+              profiles:user_id (username),
+              tracks:track_id (title, artist),
               created_at,
               status,
               flagged,
               user_id,
-              track_id,
-              profiles(username),
-              tracks(title, artist)
+              track_id
             `)
             .order('created_at', { ascending: false });
             
-          if (error) {
-            throw error;
-          }
-          
-          if (data) {
-            const formattedComments = data.map(comment => ({
-              id: comment.id,
-              content: comment.content,
-              user: comment.profiles?.username || 'Unknown',
-              song: comment.tracks ? `${comment.tracks.title} - ${comment.tracks.artist}` : 'Unknown',
-              timestamp: comment.created_at,
-              status: comment.status || 'active',
-              flagged: comment.flagged || false,
-              user_id: comment.user_id,
-              track_id: comment.track_id
-            }));
-            
-            setComments(formattedComments);
-          }
+          if (error) throw error;
+          setComments(data as Comment[]);
+        } else {
+          // Use mock data
+          setComments(getMockFormattedComments());
         }
       } catch (error) {
-        console.error('Error in comment fetching:', error);
-        setComments(mockComments);
+        console.error('Error fetching comments:', error);
+        toast({
+          title: "Error loading comments",
+          description: "Could not load comments data. Using mock data instead.",
+          variant: "destructive",
+        });
+        // Fallback to mock data on error
+        setComments(getMockFormattedComments());
       } finally {
         setLoading(false);
       }
@@ -112,196 +98,173 @@ export function CommentsManagement() {
     
     fetchComments();
     
-    // Set up realtime subscription only if the comments table exists
-    const setupRealtime = async () => {
-      const tableExists = await checkTableExists('comments', supabase);
-      
-      if (tableExists) {
-        const channel = supabase
-          .channel('admin-comments-changes')
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'comments'
-            },
-            async (payload: any) => {
-              try {
-                const { eventType, new: newRecord, old: oldRecord } = payload;
-                
-                if (eventType === 'INSERT' || eventType === 'UPDATE') {
-                  const { data, error } = await supabase
-                    .from('comments')
-                    .select(`
-                      id,
-                      content,
-                      created_at,
-                      status,
-                      flagged,
-                      user_id,
-                      track_id,
-                      profiles(username),
-                      tracks(title, artist)
-                    `)
-                    .eq('id', newRecord.id)
-                    .single();
-                  
-                  if (error) throw error;
-                  
-                  const formattedComment = {
-                    id: data.id,
-                    content: data.content,
-                    user: data.profiles?.username || 'Unknown',
-                    song: data.tracks ? `${data.tracks.title} - ${data.tracks.artist}` : 'Unknown',
-                    timestamp: data.created_at,
-                    status: data.status || 'active',
-                    flagged: data.flagged || false,
-                    user_id: data.user_id,
-                    track_id: data.track_id
-                  };
-                  
-                  if (eventType === 'INSERT') {
-                    setComments(prevComments => [formattedComment, ...prevComments]);
-                  } else if (eventType === 'UPDATE') {
-                    setComments(prevComments => prevComments.map(comment => 
-                      comment.id === formattedComment.id ? formattedComment : comment
-                    ));
-                  }
-                } else if (eventType === 'DELETE') {
-                  setComments(prevComments => prevComments.filter(comment => 
-                    comment.id !== oldRecord.id
+    // Set up real-time listener only if the table exists
+    if (tableExists) {
+      const channel = supabase
+        .channel('admin-comments-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'comments'
+          },
+          (payload) => {
+            const { eventType, new: newRecord, old: oldRecord } = payload;
+            
+            if (eventType === 'INSERT') {
+              // Fetch the full comment with joins
+              fetchComment(newRecord.id).then(comment => {
+                if (comment) {
+                  setComments(prevComments => [comment, ...prevComments]);
+                }
+              });
+            } else if (eventType === 'UPDATE') {
+              // Fetch the updated comment with joins
+              fetchComment(newRecord.id).then(comment => {
+                if (comment) {
+                  setComments(prevComments => prevComments.map(c => 
+                    c.id === comment.id ? comment : c
                   ));
                 }
-              } catch (error) {
-                console.error('Error processing comment update:', error);
-              }
+              });
+            } else if (eventType === 'DELETE') {
+              setComments(prevComments => prevComments.filter(c => c.id !== oldRecord.id));
             }
-          )
-          .subscribe();
+          }
+        )
+        .subscribe();
         
-        return () => {
-          supabase.removeChannel(channel);
-        };
-      }
-    };
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [toast, tableExists]);
+  
+  // Helper function to fetch a single comment with its relationships
+  const fetchComment = async (commentId: string) => {
+    if (!tableExists) return null;
     
-    setupRealtime();
-  }, []);
-
-  const filteredComments = comments.filter(comment => 
-    comment.content.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    comment.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    comment.song.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleDeleteComment = async () => {
-    if (commentToDelete) {
-      try {
-        const tableExists = await checkTableExists('comments', supabase);
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select(`
+          id, 
+          content, 
+          profiles:user_id (username),
+          tracks:track_id (title, artist),
+          created_at,
+          status,
+          flagged,
+          user_id,
+          track_id
+        `)
+        .eq('id', commentId)
+        .single();
         
-        if (tableExists) {
-          const { error } = await supabase
-            .from('comments')
-            .delete()
-            .eq('id', commentToDelete);
-            
-          if (error) throw error;
-        } else {
-          setComments(comments.filter(comment => comment.id !== commentToDelete));
-        }
-        
-        setCommentToDelete(null);
-        setDialogOpen(false);
-        
-        toast({
-          title: "Comment deleted",
-          description: "The comment has been permanently removed from the system.",
-        });
-      } catch (error) {
-        console.error('Error deleting comment:', error);
-        toast({
-          title: "Error deleting comment",
-          description: "Failed to delete the comment. Please try again.",
-          variant: "destructive",
-        });
-      }
+      if (error) throw error;
+      return data as Comment;
+    } catch (error) {
+      console.error('Error fetching comment:', error);
+      return null;
     }
   };
 
-  const handleToggleStatus = async (commentId: string) => {
+  const filteredComments = comments.filter(comment => 
+    comment.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    comment.profiles.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    comment.tracks.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    comment.tracks.artist.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleUpdateStatus = async (commentId: string, status: "active" | "hidden" | "deleted") => {
     try {
-      const comment = comments.find(c => c.id === commentId);
-      if (!comment) return;
-      
-      const newStatus = comment.status === "active" ? "hidden" : "active";
-      const tableExists = await checkTableExists('comments', supabase);
-      
       if (tableExists) {
+        // Update in database
         const { error } = await supabase
           .from('comments')
-          .update({ status: newStatus })
+          .update({ status })
           .eq('id', commentId);
           
         if (error) throw error;
       }
       
-      // Update local state regardless of whether the table exists
+      // Always update local state
       setComments(comments.map(comment => 
-        comment.id === commentId 
-          ? { ...comment, status: newStatus } 
-          : comment
+        comment.id === commentId ? { ...comment, status } : comment
       ));
       
       toast({
-        title: `Comment ${newStatus === "active" ? "shown" : "hidden"}`,
-        description: `The comment is now ${newStatus === "active" ? "visible to users" : "hidden from users"}.`,
+        title: "Comment status updated",
+        description: `Comment has been marked as ${status}.`,
       });
     } catch (error) {
       console.error('Error updating comment status:', error);
       toast({
         title: "Error updating comment",
-        description: "Failed to update the comment status. Please try again.",
+        description: "Could not update the comment status.",
         variant: "destructive",
       });
     }
   };
 
-  const handleToggleFlag = async (commentId: string) => {
+  const handleFlagComment = async (commentId: string, flagged: boolean) => {
     try {
-      const comment = comments.find(c => c.id === commentId);
-      if (!comment) return;
-      
-      const isFlagged = !comment.flagged;
-      const tableExists = await checkTableExists('comments', supabase);
-      
       if (tableExists) {
+        // Update in database
         const { error } = await supabase
           .from('comments')
-          .update({ flagged: isFlagged })
+          .update({ flagged })
           .eq('id', commentId);
           
         if (error) throw error;
       }
       
-      // Update local state regardless of whether the table exists
+      // Always update local state
       setComments(comments.map(comment => 
-        comment.id === commentId 
-          ? { ...comment, flagged: isFlagged } 
-          : comment
+        comment.id === commentId ? { ...comment, flagged } : comment
       ));
       
       toast({
-        title: isFlagged ? "Comment flagged" : "Flag removed",
-        description: isFlagged 
-          ? "The comment has been flagged for review." 
-          : "The flag has been removed from this comment.",
+        title: flagged ? "Comment flagged" : "Comment unflagged",
+        description: flagged 
+          ? "Comment has been flagged for review." 
+          : "Flag has been removed from the comment.",
       });
     } catch (error) {
-      console.error('Error updating comment flag:', error);
+      console.error('Error flagging comment:', error);
       toast({
         title: "Error updating comment",
-        description: "Failed to update the comment flag. Please try again.",
+        description: "Could not update the comment flag status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      if (tableExists) {
+        // Delete from database
+        const { error } = await supabase
+          .from('comments')
+          .delete()
+          .eq('id', commentId);
+          
+        if (error) throw error;
+      }
+      
+      // Always update local state
+      setComments(comments.filter(comment => comment.id !== commentId));
+      
+      toast({
+        title: "Comment deleted",
+        description: "The comment has been permanently deleted.",
+      });
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast({
+        title: "Error deleting comment",
+        description: "Could not delete the comment.",
         variant: "destructive",
       });
     }
@@ -335,9 +298,9 @@ export function CommentsManagement() {
         <TableCaption>Manage user comments across the platform.</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-1/3">Comment</TableHead>
+            <TableHead>Comment</TableHead>
             <TableHead>User</TableHead>
-            <TableHead>Song</TableHead>
+            <TableHead>Track</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Flagged</TableHead>
@@ -345,93 +308,101 @@ export function CommentsManagement() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredComments.map((comment) => (
-            <TableRow key={comment.id}>
-              <TableCell className="font-medium">{comment.content}</TableCell>
-              <TableCell>{comment.user}</TableCell>
-              <TableCell>{comment.song}</TableCell>
-              <TableCell>{new Date(comment.timestamp).toLocaleString()}</TableCell>
-              <TableCell>
-                <Badge 
-                  variant={comment.status === "active" ? "outline" : "secondary"}
-                  className={comment.status === "active" ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}
-                >
-                  {comment.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {comment.flagged && (
-                  <Badge variant="destructive" className="flex w-fit items-center">
-                    <AlertOctagon className="h-3 w-3 mr-1" />
-                    Flagged
-                  </Badge>
-                )}
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleToggleStatus(comment.id)}
-                  >
-                    {comment.status === "active" ? (
-                      <MessageSquareOff className="h-4 w-4 mr-1" />
-                    ) : (
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                    )}
-                    {comment.status === "active" ? "Hide" : "Show"}
-                  </Button>
-                  <Button
-                    variant={comment.flagged ? "outline" : "secondary"}
-                    size="sm"
-                    onClick={() => handleToggleFlag(comment.id)}
-                    className={comment.flagged ? "bg-green-600 hover:bg-green-700 text-white" : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"}
-                  >
-                    {comment.flagged ? (
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                    ) : (
-                      <ShieldAlert className="h-4 w-4 mr-1" />
-                    )}
-                    {comment.flagged ? "Resolve" : "Flag"}
-                  </Button>
-                  <Dialog open={dialogOpen && commentToDelete === comment.id} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setCommentToDelete(comment.id)}
-                      >
-                        <Trash className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                          <AlertTriangle className="h-5 w-5 text-destructive" />
-                          Confirm Comment Deletion
-                        </DialogTitle>
-                        <DialogDescription>
-                          Are you sure you want to delete this comment? 
-                          This action cannot be undone.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button variant="destructive" onClick={handleDeleteComment}>
-                          Delete Comment
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+          {filteredComments.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-6">
+                No comments found
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            filteredComments.map((comment) => (
+              <TableRow key={comment.id}>
+                <TableCell className="max-w-md">
+                  <div className="truncate">{comment.content}</div>
+                </TableCell>
+                <TableCell>{comment.profiles.username}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{comment.tracks.title}</span>
+                    <span className="text-sm text-muted-foreground">{comment.tracks.artist}</span>
+                  </div>
+                </TableCell>
+                <TableCell>{new Date(comment.created_at).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={
+                      comment.status === "active" 
+                        ? "outline" 
+                        : comment.status === "hidden" 
+                          ? "secondary" 
+                          : "destructive"
+                    }
+                    className={
+                      comment.status === "active" 
+                        ? "bg-green-100 text-green-800 hover:bg-green-200" 
+                        : ""
+                    }
+                  >
+                    {comment.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {comment.flagged ? (
+                    <Badge variant="destructive">Flagged</Badge>
+                  ) : (
+                    <span className="text-muted-foreground">No</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        onClick={() => handleUpdateStatus(comment.id, "active")}
+                        disabled={comment.status === "active"}
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Mark as Active
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleUpdateStatus(comment.id, "hidden")}
+                        disabled={comment.status === "hidden"}
+                      >
+                        <EyeOff className="mr-2 h-4 w-4" />
+                        Hide Comment
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleFlagComment(comment.id, !comment.flagged)}
+                      >
+                        <Flag className="mr-2 h-4 w-4" />
+                        {comment.flagged ? "Remove Flag" : "Flag Comment"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => handleDeleteComment(comment.id)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Comment
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
+
+      {!tableExists && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
+          <p className="font-medium">Using mock comment data</p>
+          <p className="mt-1">The comments table doesn't exist in your database yet. The data shown is mock data for demonstration purposes.</p>
+        </div>
+      )}
     </div>
   );
 }

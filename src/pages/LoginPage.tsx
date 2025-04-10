@@ -48,7 +48,7 @@ const LoginPage = () => {
         return;
       }
       
-      // Redirect based on user role
+      // Redirect based on user role - now includes 'artist' role
       if (profileData.role === 'artist') {
         toast.success("Welcome back to your artist dashboard!");
         navigate("/artist-dashboard");

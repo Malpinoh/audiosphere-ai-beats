@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Table, 
@@ -88,10 +87,12 @@ export function TracksTab() {
           const { eventType, new: newRecord, old: oldRecord } = payload;
           
           if (eventType === 'INSERT') {
-            setTracks(prevTracks => [newRecord as Track, ...prevTracks]);
+            const typedNewRecord = newRecord as Track;
+            setTracks(prevTracks => [typedNewRecord, ...prevTracks]);
           } else if (eventType === 'UPDATE') {
+            const typedNewRecord = newRecord as Track;
             setTracks(prevTracks => prevTracks.map(track => 
-              track.id === newRecord.id ? (newRecord as Track) : track
+              track.id === typedNewRecord.id ? typedNewRecord : track
             ));
           } else if (eventType === 'DELETE') {
             setTracks(prevTracks => prevTracks.filter(track => 

@@ -9,105 +9,90 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { 
-  AlertCircle, 
-  CheckCircle, 
-  ExternalLink, 
+  CheckCircle,
+  Loader2, 
+  MoreVertical, 
   Search, 
-  ShieldCheck,
-  Loader2
+  XCircle,
+  ClipboardList,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { mockReports, checkTableExists } from "./helpers/mockData";
+import { getMockFormattedReports, checkTableExists } from "./helpers/mockData";
 
 interface Report {
   id: string;
   type: string;
-  entityType: string;
-  entity: string;
+  entity_type: string;
+  entity_details: string;
   reason: string;
-  reportedBy: string;
-  timestamp: string;
-  status: string;
-  entity_id?: string;
-  user_id?: string;
+  profiles: { username: string };
+  created_at: string;
+  status: "open" | "investigating" | "resolved";
+  entity_id: string;
+  user_id: string;
 }
 
 export function ReportsManagement() {
   const [reports, setReports] = useState<Report[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedReport, setSelectedReport] = useState<string | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [actionNotes, setActionNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [tableExists, setTableExists] = useState(false);
 
   useEffect(() => {
     const fetchReports = async () => {
       try {
         setLoading(true);
         
-        // Check if reports table exists
-        const tableExists = await checkTableExists('reports', supabase);
+        // Check if the reports table exists
+        const exists = await checkTableExists('reports', supabase);
+        setTableExists(exists);
         
-        if (!tableExists) {
-          console.log("Reports table doesn't exist yet. Using mock data.");
-          setReports(mockReports);
-        } else {
+        if (exists) {
+          // Fetch from real database
           const { data, error } = await supabase
             .from('reports')
             .select(`
               id,
               type,
               entity_type,
-              entity_id,
+              entity_details,
               reason,
-              user_id,
+              profiles:user_id (username),
               created_at,
               status,
-              profiles(username),
-              entity_details
+              entity_id,
+              user_id
             `)
             .order('created_at', { ascending: false });
             
-          if (error) {
-            console.error("Error fetching reports:", error);
-            setReports(mockReports);
-            return;
-          }
-          
-          if (data) {
-            const formattedReports = data.map(report => ({
-              id: report.id,
-              type: report.type,
-              entityType: report.entity_type,
-              entity: report.entity_details || 'Unknown entity',
-              reason: report.reason,
-              reportedBy: report.profiles?.username || 'Unknown',
-              timestamp: report.created_at,
-              status: report.status || 'open',
-              entity_id: report.entity_id,
-              user_id: report.user_id
-            }));
-            
-            setReports(formattedReports);
-          }
+          if (error) throw error;
+          setReports(data as Report[]);
+        } else {
+          // Use mock data
+          setReports(getMockFormattedReports());
         }
       } catch (error) {
-        console.error('Error in report fetching:', error);
-        setReports(mockReports);
+        console.error('Error fetching reports:', error);
+        toast({
+          title: "Error loading reports",
+          description: "Could not load reports data. Using mock data instead.",
+          variant: "destructive",
+        });
+        // Fallback to mock data on error
+        setReports(getMockFormattedReports());
       } finally {
         setLoading(false);
       }
@@ -115,165 +100,147 @@ export function ReportsManagement() {
     
     fetchReports();
     
-    // Set up realtime subscription only if the reports table exists
-    const setupRealtime = async () => {
-      const tableExists = await checkTableExists('reports', supabase);
-      
-      if (tableExists) {
-        const channel = supabase
-          .channel('admin-reports-changes')
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'reports'
-            },
-            async (payload: any) => {
-              try {
-                const { eventType, new: newRecord, old: oldRecord } = payload;
-                
-                if (eventType === 'INSERT' || eventType === 'UPDATE') {
-                  const { data, error } = await supabase
-                    .from('reports')
-                    .select(`
-                      id,
-                      type,
-                      entity_type,
-                      entity_id,
-                      reason,
-                      user_id,
-                      created_at,
-                      status,
-                      profiles(username),
-                      entity_details
-                    `)
-                    .eq('id', newRecord.id)
-                    .single();
-                  
-                  if (error) throw error;
-                  
-                  const formattedReport = {
-                    id: data.id,
-                    type: data.type,
-                    entityType: data.entity_type,
-                    entity: data.entity_details || 'Unknown entity',
-                    reason: data.reason,
-                    reportedBy: data.profiles?.username || 'Unknown',
-                    timestamp: data.created_at,
-                    status: data.status || 'open',
-                    entity_id: data.entity_id,
-                    user_id: data.user_id
-                  };
-                  
-                  if (eventType === 'INSERT') {
-                    setReports(prevReports => [formattedReport, ...prevReports]);
-                  } else if (eventType === 'UPDATE') {
-                    setReports(prevReports => prevReports.map(report => 
-                      report.id === formattedReport.id ? formattedReport : report
-                    ));
-                  }
-                } else if (eventType === 'DELETE') {
-                  setReports(prevReports => prevReports.filter(report => 
-                    report.id !== oldRecord.id
+    // Set up real-time listener only if the table exists
+    if (tableExists) {
+      const channel = supabase
+        .channel('admin-reports-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'reports'
+          },
+          (payload) => {
+            const { eventType, new: newRecord, old: oldRecord } = payload;
+            
+            if (eventType === 'INSERT') {
+              // Fetch the full report with joins
+              fetchReport(newRecord.id).then(report => {
+                if (report) {
+                  setReports(prevReports => [report, ...prevReports]);
+                }
+              });
+            } else if (eventType === 'UPDATE') {
+              // Fetch the updated report with joins
+              fetchReport(newRecord.id).then(report => {
+                if (report) {
+                  setReports(prevReports => prevReports.map(r => 
+                    r.id === report.id ? report : r
                   ));
                 }
-              } catch (error) {
-                console.error('Error processing report update:', error);
-              }
+              });
+            } else if (eventType === 'DELETE') {
+              setReports(prevReports => prevReports.filter(r => r.id !== oldRecord.id));
             }
-          )
-          .subscribe();
+          }
+        )
+        .subscribe();
         
-        return () => {
-          supabase.removeChannel(channel);
-        };
-      }
-    };
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [toast, tableExists]);
+  
+  // Helper function to fetch a single report with its relationships
+  const fetchReport = async (reportId: string) => {
+    if (!tableExists) return null;
     
-    setupRealtime();
-  }, []);
-
-  const filteredReports = reports.filter(report => 
-    report.entity.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    report.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.reportedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleOpenDetailsDialog = (reportId: string) => {
-    setSelectedReport(reportId);
-    setActionNotes("");
-    setDialogOpen(true);
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select(`
+          id,
+          type,
+          entity_type,
+          entity_details,
+          reason,
+          profiles:user_id (username),
+          created_at,
+          status,
+          entity_id,
+          user_id
+        `)
+        .eq('id', reportId)
+        .single();
+        
+      if (error) throw error;
+      return data as Report;
+    } catch (error) {
+      console.error('Error fetching report:', error);
+      return null;
+    }
   };
 
-  const handleUpdateStatus = async (reportId: string, newStatus: string) => {
+  const filteredReports = reports.filter(report => 
+    report.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.entity_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.entity_details.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.profiles.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.status.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleUpdateStatus = async (reportId: string, status: "open" | "investigating" | "resolved") => {
     try {
-      const tableExists = await checkTableExists('reports', supabase);
-      
       if (tableExists) {
+        // Update in database
         const { error } = await supabase
           .from('reports')
-          .update({ 
-            status: newStatus,
-            action_notes: actionNotes || undefined
-          })
+          .update({ status })
           .eq('id', reportId);
           
         if (error) throw error;
       }
       
-      // Update local state regardless of whether the table exists
+      // Always update local state
       setReports(reports.map(report => 
-        report.id === reportId 
-          ? { ...report, status: newStatus } 
-          : report
+        report.id === reportId ? { ...report, status } : report
       ));
       
       toast({
         title: "Report status updated",
-        description: `The report status has been changed to ${newStatus}.`,
+        description: `Report has been marked as ${status}.`,
       });
-      
-      if (dialogOpen) {
-        setDialogOpen(false);
-        setSelectedReport(null);
-      }
     } catch (error) {
       console.error('Error updating report status:', error);
       toast({
         title: "Error updating report",
-        description: "Failed to update the report status. Please try again.",
+        description: "Could not update the report status.",
         variant: "destructive",
       });
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "open":
-        return "destructive";
-      case "investigating":
-        return "secondary";
-      case "resolved":
-        return "outline";
-      default:
-        return "outline";
+  const handleDeleteReport = async (reportId: string) => {
+    try {
+      if (tableExists) {
+        // Delete from database
+        const { error } = await supabase
+          .from('reports')
+          .delete()
+          .eq('id', reportId);
+          
+        if (error) throw error;
+      }
+      
+      // Always update local state
+      setReports(reports.filter(report => report.id !== reportId));
+      
+      toast({
+        title: "Report deleted",
+        description: "The report has been permanently deleted.",
+      });
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      toast({
+        title: "Error deleting report",
+        description: "Could not delete the report.",
+        variant: "destructive",
+      });
     }
   };
-
-  const getStatusBadgeClass = (status: string) => {
-    if (status === "resolved") {
-      return "bg-green-100 text-green-800 hover:bg-green-200";
-    } else if (status === "investigating") {
-      return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
-    }
-    return "";
-  };
-
-  const selectedReportData = selectedReport 
-    ? reports.find(report => report.id === selectedReport) 
-    : null;
 
   if (loading) {
     return (
@@ -300,11 +267,11 @@ export function ReportsManagement() {
       </div>
 
       <Table>
-        <TableCaption>Manage user reports and complaints.</TableCaption>
+        <TableCaption>Manage user-submitted reports.</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>Type</TableHead>
-            <TableHead>Entity</TableHead>
+            <TableHead>Content</TableHead>
             <TableHead>Reason</TableHead>
             <TableHead>Reported By</TableHead>
             <TableHead>Date</TableHead>
@@ -313,130 +280,98 @@ export function ReportsManagement() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredReports.map((report) => (
-            <TableRow key={report.id}>
-              <TableCell>
-                <Badge variant="outline">
-                  {report.type}
-                </Badge>
-              </TableCell>
-              <TableCell className="font-medium">{report.entity}</TableCell>
-              <TableCell>{report.reason}</TableCell>
-              <TableCell>{report.reportedBy}</TableCell>
-              <TableCell>{new Date(report.timestamp).toLocaleString()}</TableCell>
-              <TableCell>
-                <Badge 
-                  variant={getStatusBadgeVariant(report.status)}
-                  className={getStatusBadgeClass(report.status)}
-                >
-                  {report.status}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleOpenDetailsDialog(report.id)}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    Details
-                  </Button>
-                  {report.status !== "resolved" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleUpdateStatus(report.id, "resolved")}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Resolve
-                    </Button>
-                  )}
-                </div>
+          {filteredReports.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-6">
+                No reports found
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            filteredReports.map((report) => (
+              <TableRow key={report.id}>
+                <TableCell>
+                  <Badge variant="outline">{report.type}</Badge>
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <span className="font-medium">{report.entity_type}</span>
+                    <p className="text-sm text-muted-foreground truncate max-w-xs">{report.entity_details}</p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="truncate max-w-xs">{report.reason}</div>
+                </TableCell>
+                <TableCell>{report.profiles.username}</TableCell>
+                <TableCell>{new Date(report.created_at).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={
+                      report.status === "open" 
+                        ? "destructive" 
+                        : report.status === "investigating" 
+                          ? "secondary" 
+                          : "outline"
+                    }
+                    className={
+                      report.status === "resolved" 
+                        ? "bg-green-100 text-green-800 hover:bg-green-200" 
+                        : ""
+                    }
+                  >
+                    {report.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        onClick={() => handleUpdateStatus(report.id, "open")}
+                        disabled={report.status === "open"}
+                      >
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Mark as Open
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleUpdateStatus(report.id, "investigating")}
+                        disabled={report.status === "investigating"}
+                      >
+                        <ClipboardList className="mr-2 h-4 w-4" />
+                        Mark as Investigating
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleUpdateStatus(report.id, "resolved")}
+                        disabled={report.status === "resolved"}
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Mark as Resolved
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => handleDeleteReport(report.id)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Report
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
-      
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-primary" />
-              Report Details
-            </DialogTitle>
-            <DialogDescription>
-              Review and take action on this reported content.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedReportData && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Report Type</h4>
-                  <p>{selectedReportData.type}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
-                  <Badge 
-                    variant={getStatusBadgeVariant(selectedReportData.status)}
-                    className={getStatusBadgeClass(selectedReportData.status)}
-                  >
-                    {selectedReportData.status}
-                  </Badge>
-                </div>
-                <div className="col-span-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">Entity</h4>
-                  <p>{selectedReportData.entity}</p>
-                </div>
-                <div className="col-span-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">Reason</h4>
-                  <p>{selectedReportData.reason}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Reported By</h4>
-                  <p>{selectedReportData.reportedBy}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Date</h4>
-                  <p>{new Date(selectedReportData.timestamp).toLocaleString()}</p>
-                </div>
-                <div className="col-span-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">Action Notes</h4>
-                  <Input
-                    placeholder="Add notes about actions taken..."
-                    value={actionNotes}
-                    onChange={(e) => setActionNotes(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            {selectedReportData?.status !== "investigating" && (
-              <Button 
-                variant="outline" 
-                onClick={() => handleUpdateStatus(selectedReport!, "investigating")}
-                className="w-full sm:w-auto"
-              >
-                Mark as Investigating
-              </Button>
-            )}
-            {selectedReportData?.status !== "resolved" && (
-              <Button 
-                variant="outline"
-                onClick={() => handleUpdateStatus(selectedReport!, "resolved")}
-                className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
-              >
-                <ShieldCheck className="h-4 w-4 mr-1" />
-                Resolve Report
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+      {!tableExists && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
+          <p className="font-medium">Using mock report data</p>
+          <p className="mt-1">The reports table doesn't exist in your database yet. The data shown is mock data for demonstration purposes.</p>
+        </div>
+      )}
     </div>
   );
 }

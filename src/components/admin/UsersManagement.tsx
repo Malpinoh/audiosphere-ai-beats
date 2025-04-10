@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Table, 
@@ -194,6 +193,14 @@ export function UsersManagement() {
                   >
                     <Shield className="h-4 w-4 mr-1" />
                     Make Admin
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleUpdateUserRole(user.id, "artist")}
+                  >
+                    <User className="h-4 w-4 mr-1" />
+                    Make Artist
                   </Button>
                   <Button
                     variant="outline"

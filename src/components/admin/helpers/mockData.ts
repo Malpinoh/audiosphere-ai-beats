@@ -113,3 +113,37 @@ export const checkTableExists = async (tableName: string, supabase: any) => {
     return false;
   }
 };
+
+// Mock formatted data for comments that contains the necessary fields
+export const getMockFormattedComments = () => {
+  return mockComments.map(comment => ({
+    id: comment.id,
+    content: comment.content,
+    profiles: { username: comment.user },
+    tracks: { 
+      title: comment.song.split(' - ')[0],
+      artist: comment.song.split(' - ')[1] || 'Unknown Artist'
+    },
+    created_at: comment.timestamp,
+    status: comment.status,
+    flagged: comment.flagged,
+    user_id: `user-${comment.id}`,
+    track_id: `track-${comment.id}`
+  }));
+};
+
+// Mock formatted data for reports that contains the necessary fields
+export const getMockFormattedReports = () => {
+  return mockReports.map(report => ({
+    id: report.id,
+    type: report.type,
+    entity_type: report.entityType,
+    entity_details: report.entity,
+    reason: report.reason,
+    profiles: { username: report.reportedBy },
+    created_at: report.timestamp,
+    status: report.status,
+    entity_id: `entity-${report.id}`,
+    user_id: `user-${report.id}`
+  }));
+};
