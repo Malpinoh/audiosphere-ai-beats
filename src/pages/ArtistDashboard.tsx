@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { BarChart, LineChart, PieChart, Trendline } from "@/components/ui/chart";
+import { BarChart, LineChart, PieChart, Trendline } from "@/components/charts";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { 
