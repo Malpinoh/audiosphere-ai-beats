@@ -2,8 +2,12 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Upload, Megaphone } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const DashboardHeader = () => {
+  const { profile } = useAuth();
+  const canUpload = profile && ['artist', 'distributor', 'admin'].includes(profile.role);
+  
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
       <div>
@@ -13,20 +17,22 @@ export const DashboardHeader = () => {
         </p>
       </div>
       
-      <div className="flex flex-wrap gap-3">
-        <Button asChild className="maudio-gradient-bg">
-          <Link to="/upload">
-            <Upload className="mr-2 h-4 w-4" />
-            Upload Track
-          </Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link to="/promote">
-            <Megaphone className="mr-2 h-4 w-4" />
-            Promote Music
-          </Link>
-        </Button>
-      </div>
+      {canUpload && (
+        <div className="flex flex-wrap gap-3">
+          <Button asChild className="maudio-gradient-bg">
+            <Link to="/upload">
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Track
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/promote">
+              <Megaphone className="mr-2 h-4 w-4" />
+              Promote Music
+            </Link>
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

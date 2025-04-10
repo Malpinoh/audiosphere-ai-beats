@@ -1,10 +1,32 @@
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { UploadForm } from "@/components/upload/UploadForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 
 export default function UploadPage() {
+  const { user, profile } = useAuth();
+  
+  useEffect(() => {
+    // Notify user if they don't have upload permissions
+    if (user && profile && profile.role === 'user') {
+      toast.error("Only artists, distributors, and admins can upload music");
+    }
+  }, [user, profile]);
+  
+  // Redirect if user is not logged in or doesn't have appropriate role
+  if (!user || !profile) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Check if user has appropriate role
+  if (!['artist', 'distributor', 'admin'].includes(profile.role)) {
+    return <Navigate to="/" replace />;
+  }
+  
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">

@@ -59,13 +59,35 @@ const ArtistRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Protected route component for content creators (artists, distributors, admins)
+const ContentCreatorRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, profile, loading } = useAuth();
+  
+  // Show nothing while loading auth state
+  if (loading) return null;
+  
+  // If not logged in or doesn't have appropriate role, redirect to home
+  if (!user || !profile || !['artist', 'distributor', 'admin'].includes(profile.role)) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
-      <Route path="/upload" element={<UploadPage />} />
+      <Route 
+        path="/upload" 
+        element={
+          <ContentCreatorRoute>
+            <UploadPage />
+          </ContentCreatorRoute>
+        } 
+      />
       <Route path="/recommendations" element={<RecommendationsPage />} />
       <Route path="/artist/:artistId" element={<ArtistProfile />} />
       <Route path="/track/:trackId" element={<TrackPage />} />
@@ -96,7 +118,14 @@ const AppRoutes = () => {
           </ArtistRoute>
         }
       />
-      <Route path="/promote" element={<PromotePage />} />
+      <Route 
+        path="/promote" 
+        element={
+          <ContentCreatorRoute>
+            <PromotePage />
+          </ContentCreatorRoute>
+        }
+      />
       
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />

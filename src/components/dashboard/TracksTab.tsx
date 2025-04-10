@@ -1,15 +1,21 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const TracksTab = () => {
+  const { profile } = useAuth();
+  const canUpload = profile && ['artist', 'distributor', 'admin'].includes(profile.role);
+  
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-semibold">Your Music</h3>
-        <Button asChild>
-          <Link to="/upload">Upload New Track</Link>
-        </Button>
+        {canUpload && (
+          <Button asChild>
+            <Link to="/upload">Upload New Track</Link>
+          </Button>
+        )}
       </div>
       
       <div className="bg-card border border-border rounded-lg">
