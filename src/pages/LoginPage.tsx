@@ -34,8 +34,31 @@ const LoginPage = () => {
         throw error;
       }
       
-      toast.success("Login successful! Welcome back.");
-      navigate("/");
+      // Get user profile to check role
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+        
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        toast.success("Login successful! Welcome back.");
+        navigate("/");
+        return;
+      }
+      
+      // Redirect based on user role
+      if (profileData.role === 'artist') {
+        toast.success("Welcome back to your artist dashboard!");
+        navigate("/artist-dashboard");
+      } else if (profileData.role === 'admin') {
+        toast.success("Welcome to the admin panel!");
+        navigate("/admin");
+      } else {
+        toast.success("Login successful! Welcome back.");
+        navigate("/");
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in. Please check your credentials.");
     } finally {

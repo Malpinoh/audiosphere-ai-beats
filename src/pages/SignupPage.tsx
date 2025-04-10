@@ -37,7 +37,7 @@ const SignupPage = () => {
     setIsLoading(true);
     
     try {
-      // Sign up with Supabase
+      // Sign up with Supabase, default role is 'user'
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -45,6 +45,7 @@ const SignupPage = () => {
           data: {
             full_name: fullName,
             username: username,
+            role: 'user', // Set default role to 'user'
           },
         },
       });
@@ -54,7 +55,7 @@ const SignupPage = () => {
       }
       
       toast.success("Sign up successful! Welcome to MAUDIO");
-      navigate("/");
+      navigate("/"); // Always redirect users to home page after signup
     } catch (error: any) {
       toast.error(error.message || "Failed to sign up. Please try again.");
     } finally {

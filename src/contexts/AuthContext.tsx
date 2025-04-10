@@ -9,6 +9,7 @@ type AuthContextType = {
   profile: any | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  redirectBasedOnRole: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -79,12 +80,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Helper function to redirect based on user role
+  const redirectBasedOnRole = () => {
+    if (!profile) return;
+    
+    const role = profile.role;
+    const currentPath = window.location.pathname;
+    
+    // Don't redirect if user is already on the correct page
+    if (
+      (role === 'artist' && currentPath === '/artist-dashboard') ||
+      (role === 'admin' && currentPath === '/admin') ||
+      (role === 'user' && currentPath === '/')
+    ) {
+      return;
+    }
+    
+    // Redirect based on role
+    if (role === 'artist') {
+      window.location.href = '/artist-dashboard';
+    } else if (role === 'admin') {
+      window.location.href = '/admin';
+    } else {
+      window.location.href = '/';
+    }
+  };
+
   const value = {
     session,
     user,
     profile,
     loading,
-    signOut
+    signOut,
+    redirectBasedOnRole
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

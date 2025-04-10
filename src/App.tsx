@@ -74,10 +74,29 @@ const ContentCreatorRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Home route that redirects based on role
+const HomeRoute = () => {
+  const { user, profile, loading } = useAuth();
+  
+  // Show loading or home page while auth is loading
+  if (loading || !user || !profile) {
+    return <Index />;
+  }
+  
+  // Redirect based on role
+  if (profile.role === 'artist') {
+    return <Navigate to="/artist-dashboard" replace />;
+  } else if (profile.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  } else {
+    return <Index />;
+  }
+};
+
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={<HomeRoute />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route 
