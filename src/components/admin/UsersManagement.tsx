@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Table, 
   TableBody, 
@@ -18,98 +17,135 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Search, UserX } from "lucide-react";
+import { AlertTriangle, Check, Search, Shield, User, UserX, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock data for users
-const mockUsers = [
-  { 
-    id: "1", 
-    username: "johndoe", 
-    email: "john.doe@example.com", 
-    role: "user",
-    status: "active",
-    joined: "2023-10-15",
-    lastActive: "2023-04-05"
-  },
-  { 
-    id: "2", 
-    username: "janesmith", 
-    email: "jane.smith@example.com", 
-    role: "artist",
-    status: "active",
-    joined: "2023-11-20",
-    lastActive: "2023-04-04"
-  },
-  { 
-    id: "3", 
-    username: "mikebrown", 
-    email: "mike.brown@example.com", 
-    role: "user",
-    status: "suspended",
-    joined: "2024-01-05",
-    lastActive: "2023-03-28"
-  },
-  { 
-    id: "4", 
-    username: "sarahjones", 
-    email: "sarah.jones@example.com", 
-    role: "artist",
-    status: "active",
-    joined: "2023-09-10",
-    lastActive: "2023-04-06"
-  },
-  { 
-    id: "5", 
-    username: "robertwilson", 
-    email: "robert.wilson@example.com", 
-    role: "user",
-    status: "active",
-    joined: "2024-02-15",
-    lastActive: "2023-04-01"
-  }
-];
+type UserProfile = {
+  id: string;
+  username: string;
+  full_name: string;
+  avatar_url: string | null;
+  role: string;
+  created_at: string;
+};
 
 export function UsersManagement() {
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          throw error;
+        }
+        
+        setUsers(data);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast({
+          title: "Error fetching users",
+          description: "Could not load users from the database.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUsers();
+    
+    // Set up realtime subscription
+    const channel = supabase
+      .channel('admin-users-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          const { eventType, new: newRecord, old: oldRecord } = payload;
+          
+          if (eventType === 'INSERT') {
+            setUsers(prevUsers => [newRecord, ...prevUsers]);
+          } else if (eventType === 'UPDATE') {
+            setUsers(prevUsers => prevUsers.map(user => 
+              user.id === newRecord.id ? newRecord : user
+            ));
+          } else if (eventType === 'DELETE') {
+            setUsers(prevUsers => prevUsers.filter(user => 
+              user.id !== oldRecord.id
+            ));
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
+
   const filteredUsers = users.filter(user => 
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (user.username?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+    (user.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (user.role?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
-  const handleDeleteUser = () => {
-    if (userToDelete) {
-      setUsers(users.filter(user => user.id !== userToDelete));
-      setUserToDelete(null);
-      setDialogOpen(false);
+  const handleUpdateUserRole = async (userId: string, newRole: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+        
+      if (error) {
+        throw error;
+      }
       
       toast({
-        title: "User deleted",
-        description: "The user has been successfully removed from the system.",
+        title: "User role updated",
+        description: `User role has been updated to ${newRole}.`,
+      });
+      
+      // Update users list
+      setUsers(users.map(user => 
+        user.id === userId 
+          ? { ...user, role: newRole } 
+          : user
+      ));
+    } catch (error: any) {
+      toast({
+        title: "Error updating user role",
+        description: error.message || "Failed to update user role.",
+        variant: "destructive",
       });
     }
   };
 
-  const handleSuspendUser = (userId: string) => {
-    setUsers(users.map(user => 
-      user.id === userId 
-        ? { ...user, status: user.status === "suspended" ? "active" : "suspended" } 
-        : user
-    ));
-    
-    toast({
-      title: "User status updated",
-      description: "The user status has been updated successfully.",
-    });
-  };
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading users...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -127,15 +163,13 @@ export function UsersManagement() {
       </div>
 
       <Table>
-        <TableCaption>List of all registered users in the system.</TableCaption>
+        <TableCaption>List of all users in the system.</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>Username</TableHead>
-            <TableHead>Email</TableHead>
+            <TableHead>Full Name</TableHead>
             <TableHead>Role</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Joined</TableHead>
-            <TableHead>Last Active</TableHead>
+            <TableHead>Created At</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -143,42 +177,30 @@ export function UsersManagement() {
           {filteredUsers.map((user) => (
             <TableRow key={user.id}>
               <TableCell className="font-medium">{user.username}</TableCell>
-              <TableCell>{user.email}</TableCell>
+              <TableCell>{user.full_name}</TableCell>
               <TableCell>
-                <Badge variant={user.role === "artist" ? "secondary" : "outline"}>
-                  {user.role}
-                </Badge>
+                <Badge variant="secondary">{user.role}</Badge>
               </TableCell>
-              <TableCell>
-                <Badge 
-                  variant={user.status === "active" ? "outline" : "destructive"}
-                  className={user.status === "active" ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}
-                >
-                  {user.status}
-                </Badge>
-              </TableCell>
-              <TableCell>{user.joined}</TableCell>
-              <TableCell>{user.lastActive}</TableCell>
+              <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleSuspendUser(user.id)}
+                    onClick={() => handleUpdateUserRole(user.id, "admin")}
                   >
-                    {user.status === "suspended" ? "Activate" : "Suspend"}
+                    <Shield className="h-4 w-4 mr-1" />
+                    Make Admin
                   </Button>
-                  <Dialog open={dialogOpen && userToDelete === user.id} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setUserToDelete(user.id)}
-                      >
-                        <UserX className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
-                    </DialogTrigger>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleUpdateUserRole(user.id, "user")}
+                  >
+                    <User className="h-4 w-4 mr-1" />
+                    Make User
+                  </Button>
+                  <Dialog>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
@@ -186,15 +208,15 @@ export function UsersManagement() {
                           Confirm User Deletion
                         </DialogTitle>
                         <DialogDescription>
-                          Are you sure you want to delete this user? This action cannot be undone
-                          and will permanently remove all user data from the system.
+                          Are you sure you want to delete this user? This action
+                          cannot be undone.
                         </DialogDescription>
                       </DialogHeader>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                        <Button type="button" variant="outline">
                           Cancel
                         </Button>
-                        <Button variant="destructive" onClick={handleDeleteUser}>
+                        <Button type="submit" variant="destructive">
                           Delete User
                         </Button>
                       </DialogFooter>
