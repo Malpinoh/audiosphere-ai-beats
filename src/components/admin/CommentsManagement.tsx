@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Table, 
@@ -32,6 +33,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { mockComments, checkTableExists } from "./helpers/mockData";
 
 interface Comment {
   id: string;
@@ -58,87 +60,51 @@ export function CommentsManagement() {
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
-          .from('comments')
-          .select(`
-            id,
-            content,
-            created_at,
-            status,
-            flagged,
-            user_id,
-            track_id,
-            profiles(username),
-            tracks(title, artist)
-          `)
-          .order('created_at', { ascending: false });
+        // Check if comments table exists
+        const tableExists = await checkTableExists('comments', supabase);
+        
+        if (!tableExists) {
+          console.log("Comments table doesn't exist yet. Using mock data.");
+          setComments(mockComments);
+        } else {
+          const { data, error } = await supabase
+            .from('comments')
+            .select(`
+              id,
+              content,
+              created_at,
+              status,
+              flagged,
+              user_id,
+              track_id,
+              profiles(username),
+              tracks(title, artist)
+            `)
+            .order('created_at', { ascending: false });
+            
+          if (error) {
+            throw error;
+          }
           
-        if (error) {
-          console.error("Error fetching comments:", error);
-          setComments([
-            { 
-              id: "1", 
-              content: "This song is amazing! I've been listening to it on repeat.", 
-              user: "johndoe", 
-              song: "Autumn Rain - Mountain Echo",
-              timestamp: "2023-04-05T10:30:00",
-              status: "active",
-              flagged: false
-            },
-            { 
-              id: "2", 
-              content: "Not really my style, but I can appreciate the production quality.", 
-              user: "sarahjones", 
-              song: "Neon City - Digital Dreams",
-              timestamp: "2023-04-04T15:45:00",
-              status: "active",
-              flagged: false
-            },
-            { 
-              id: "3", 
-              content: "This artist always delivers! Can't wait for more music.", 
-              user: "mikebrown", 
-              song: "Ocean Waves - Coastal Sounds",
-              timestamp: "2023-04-03T09:15:00",
-              status: "hidden",
-              flagged: true
-            },
-            { 
-              id: "4", 
-              content: "The lyrics are so meaningful, really speaks to me.", 
-              user: "robertwilson", 
-              song: "Street Beats - Urban Flow",
-              timestamp: "2023-04-02T20:10:00",
-              status: "active",
-              flagged: false
-            },
-            { 
-              id: "5", 
-              content: "The beat is sick! Perfect for workouts.", 
-              user: "janesmith", 
-              song: "Midnight Drive - Night Cruiser",
-              timestamp: "2023-04-01T13:20:00",
-              status: "active",
-              flagged: true
-            }
-          ]);
-        } else if (data) {
-          const formattedComments = data.map(comment => ({
-            id: comment.id,
-            content: comment.content,
-            user: comment.profiles?.username || 'Unknown',
-            song: comment.tracks ? `${comment.tracks.title} - ${comment.tracks.artist}` : 'Unknown',
-            timestamp: comment.created_at,
-            status: comment.status || 'active',
-            flagged: comment.flagged || false,
-            user_id: comment.user_id,
-            track_id: comment.track_id
-          }));
-          
-          setComments(formattedComments);
+          if (data) {
+            const formattedComments = data.map(comment => ({
+              id: comment.id,
+              content: comment.content,
+              user: comment.profiles?.username || 'Unknown',
+              song: comment.tracks ? `${comment.tracks.title} - ${comment.tracks.artist}` : 'Unknown',
+              timestamp: comment.created_at,
+              status: comment.status || 'active',
+              flagged: comment.flagged || false,
+              user_id: comment.user_id,
+              track_id: comment.track_id
+            }));
+            
+            setComments(formattedComments);
+          }
         }
       } catch (error) {
         console.error('Error in comment fetching:', error);
+        setComments(mockComments);
       } finally {
         setLoading(false);
       }
@@ -146,72 +112,81 @@ export function CommentsManagement() {
     
     fetchComments();
     
-    const channel = supabase
-      .channel('admin-comments-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'comments'
-        },
-        async (payload) => {
-          try {
-            const { eventType, new: newRecord, old: oldRecord } = payload;
-            
-            if (eventType === 'INSERT' || eventType === 'UPDATE') {
-              const { data, error } = await supabase
-                .from('comments')
-                .select(`
-                  id,
-                  content,
-                  created_at,
-                  status,
-                  flagged,
-                  user_id,
-                  track_id,
-                  profiles(username),
-                  tracks(title, artist)
-                `)
-                .eq('id', newRecord.id)
-                .single();
-              
-              if (error) throw error;
-              
-              const formattedComment = {
-                id: data.id,
-                content: data.content,
-                user: data.profiles?.username || 'Unknown',
-                song: data.tracks ? `${data.tracks.title} - ${data.tracks.artist}` : 'Unknown',
-                timestamp: data.created_at,
-                status: data.status || 'active',
-                flagged: data.flagged || false,
-                user_id: data.user_id,
-                track_id: data.track_id
-              };
-              
-              if (eventType === 'INSERT') {
-                setComments(prevComments => [formattedComment, ...prevComments]);
-              } else if (eventType === 'UPDATE') {
-                setComments(prevComments => prevComments.map(comment => 
-                  comment.id === formattedComment.id ? formattedComment : comment
-                ));
+    // Set up realtime subscription only if the comments table exists
+    const setupRealtime = async () => {
+      const tableExists = await checkTableExists('comments', supabase);
+      
+      if (tableExists) {
+        const channel = supabase
+          .channel('admin-comments-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'comments'
+            },
+            async (payload: any) => {
+              try {
+                const { eventType, new: newRecord, old: oldRecord } = payload;
+                
+                if (eventType === 'INSERT' || eventType === 'UPDATE') {
+                  const { data, error } = await supabase
+                    .from('comments')
+                    .select(`
+                      id,
+                      content,
+                      created_at,
+                      status,
+                      flagged,
+                      user_id,
+                      track_id,
+                      profiles(username),
+                      tracks(title, artist)
+                    `)
+                    .eq('id', newRecord.id)
+                    .single();
+                  
+                  if (error) throw error;
+                  
+                  const formattedComment = {
+                    id: data.id,
+                    content: data.content,
+                    user: data.profiles?.username || 'Unknown',
+                    song: data.tracks ? `${data.tracks.title} - ${data.tracks.artist}` : 'Unknown',
+                    timestamp: data.created_at,
+                    status: data.status || 'active',
+                    flagged: data.flagged || false,
+                    user_id: data.user_id,
+                    track_id: data.track_id
+                  };
+                  
+                  if (eventType === 'INSERT') {
+                    setComments(prevComments => [formattedComment, ...prevComments]);
+                  } else if (eventType === 'UPDATE') {
+                    setComments(prevComments => prevComments.map(comment => 
+                      comment.id === formattedComment.id ? formattedComment : comment
+                    ));
+                  }
+                } else if (eventType === 'DELETE') {
+                  setComments(prevComments => prevComments.filter(comment => 
+                    comment.id !== oldRecord.id
+                  ));
+                }
+              } catch (error) {
+                console.error('Error processing comment update:', error);
               }
-            } else if (eventType === 'DELETE') {
-              setComments(prevComments => prevComments.filter(comment => 
-                comment.id !== oldRecord.id
-              ));
             }
-          } catch (error) {
-            console.error('Error processing comment update:', error);
-          }
-        }
-      )
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(channel);
+          )
+          .subscribe();
+        
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      }
     };
+    
+    setupRealtime();
   }, []);
 
   const filteredComments = comments.filter(comment => 
@@ -223,7 +198,9 @@ export function CommentsManagement() {
   const handleDeleteComment = async () => {
     if (commentToDelete) {
       try {
-        if (await checkCommentsTableExists()) {
+        const tableExists = await checkTableExists('comments', supabase);
+        
+        if (tableExists) {
           const { error } = await supabase
             .from('comments')
             .delete()
@@ -258,21 +235,23 @@ export function CommentsManagement() {
       if (!comment) return;
       
       const newStatus = comment.status === "active" ? "hidden" : "active";
+      const tableExists = await checkTableExists('comments', supabase);
       
-      if (await checkCommentsTableExists()) {
+      if (tableExists) {
         const { error } = await supabase
           .from('comments')
           .update({ status: newStatus })
           .eq('id', commentId);
           
         if (error) throw error;
-      } else {
-        setComments(comments.map(comment => 
-          comment.id === commentId 
-            ? { ...comment, status: newStatus } 
-            : comment
-        ));
       }
+      
+      // Update local state regardless of whether the table exists
+      setComments(comments.map(comment => 
+        comment.id === commentId 
+          ? { ...comment, status: newStatus } 
+          : comment
+      ));
       
       toast({
         title: `Comment ${newStatus === "active" ? "shown" : "hidden"}`,
@@ -294,21 +273,23 @@ export function CommentsManagement() {
       if (!comment) return;
       
       const isFlagged = !comment.flagged;
+      const tableExists = await checkTableExists('comments', supabase);
       
-      if (await checkCommentsTableExists()) {
+      if (tableExists) {
         const { error } = await supabase
           .from('comments')
           .update({ flagged: isFlagged })
           .eq('id', commentId);
           
         if (error) throw error;
-      } else {
-        setComments(comments.map(comment => 
-          comment.id === commentId 
-            ? { ...comment, flagged: isFlagged } 
-            : comment
-        ));
       }
+      
+      // Update local state regardless of whether the table exists
+      setComments(comments.map(comment => 
+        comment.id === commentId 
+          ? { ...comment, flagged: isFlagged } 
+          : comment
+      ));
       
       toast({
         title: isFlagged ? "Comment flagged" : "Flag removed",
@@ -323,18 +304,6 @@ export function CommentsManagement() {
         description: "Failed to update the comment flag. Please try again.",
         variant: "destructive",
       });
-    }
-  };
-
-  const checkCommentsTableExists = async () => {
-    try {
-      const { count, error } = await supabase
-        .from('comments')
-        .select('*', { count: 'exact', head: true });
-        
-      return !error;
-    } catch (error) {
-      return false;
     }
   };
 

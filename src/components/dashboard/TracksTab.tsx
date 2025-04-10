@@ -64,7 +64,7 @@ export function TracksTab() {
           return;
         }
         
-        setTracks(data);
+        setTracks(data as Track[]);
       } catch (error) {
         console.error("Error in fetchArtistTracks:", error);
       } finally {
@@ -88,10 +88,10 @@ export function TracksTab() {
           const { eventType, new: newRecord, old: oldRecord } = payload;
           
           if (eventType === 'INSERT') {
-            setTracks(prevTracks => [newRecord, ...prevTracks]);
+            setTracks(prevTracks => [newRecord as Track, ...prevTracks]);
           } else if (eventType === 'UPDATE') {
             setTracks(prevTracks => prevTracks.map(track => 
-              track.id === newRecord.id ? newRecord : track
+              track.id === newRecord.id ? (newRecord as Track) : track
             ));
           } else if (eventType === 'DELETE') {
             setTracks(prevTracks => prevTracks.filter(track => 

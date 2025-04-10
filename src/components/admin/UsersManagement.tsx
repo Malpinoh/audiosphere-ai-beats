@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Table, 
@@ -23,12 +24,14 @@ import { AlertTriangle, Check, Search, Shield, User, UserX, Loader2 } from "luci
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+type UserRole = 'user' | 'admin' | 'distributor' | 'artist' | 'editorial';
+
 type UserProfile = {
   id: string;
   username: string;
   full_name: string;
   avatar_url: string | null;
-  role: string;
+  role: UserRole;
   created_at: string;
 };
 
@@ -53,7 +56,7 @@ export function UsersManagement() {
           throw error;
         }
         
-        setUsers(data);
+        setUsers(data as UserProfile[]);
       } catch (error) {
         console.error('Error fetching users:', error);
         toast({
@@ -82,10 +85,10 @@ export function UsersManagement() {
           const { eventType, new: newRecord, old: oldRecord } = payload;
           
           if (eventType === 'INSERT') {
-            setUsers(prevUsers => [newRecord, ...prevUsers]);
+            setUsers(prevUsers => [newRecord as UserProfile, ...prevUsers]);
           } else if (eventType === 'UPDATE') {
             setUsers(prevUsers => prevUsers.map(user => 
-              user.id === newRecord.id ? newRecord : user
+              user.id === newRecord.id ? newRecord as UserProfile : user
             ));
           } else if (eventType === 'DELETE') {
             setUsers(prevUsers => prevUsers.filter(user => 
@@ -107,7 +110,7 @@ export function UsersManagement() {
     (user.role?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
-  const handleUpdateUserRole = async (userId: string, newRole: string) => {
+  const handleUpdateUserRole = async (userId: string, newRole: UserRole) => {
     try {
       const { error } = await supabase
         .from('profiles')
