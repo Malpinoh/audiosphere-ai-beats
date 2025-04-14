@@ -162,6 +162,56 @@ export function UploadForm() {
     return result;
   }
 
+  // Improved function to get or create an API key
+  const getOrCreateApiKey = async (userId: string): Promise<string> => {
+    try {
+      // First try to get existing API key
+      const { data: apiKeys, error: apiKeyError } = await supabase
+        .from('api_keys')
+        .select('api_key')
+        .eq('distributor_id', userId)
+        .eq('active', true)
+        .limit(1);
+      
+      if (apiKeyError) {
+        console.error("Error fetching API key:", apiKeyError);
+        throw new Error('Failed to fetch API key');
+      }
+      
+      // If API key exists, return it
+      if (apiKeys && apiKeys.length > 0) {
+        return apiKeys[0].api_key;
+      }
+      
+      // If no API key found, create one
+      const newKey = generateApiKey();
+      const { data: newApiKey, error: createKeyError } = await supabase
+        .from('api_keys')
+        .insert({
+          distributor_id: userId,
+          name: 'Artist Upload Key',
+          api_key: newKey,
+          active: true
+        })
+        .select('api_key')
+        .single();
+      
+      if (createKeyError) {
+        console.error("Error creating API key:", createKeyError);
+        throw new Error('Failed to create API key: ' + createKeyError.message);
+      }
+      
+      if (!newApiKey) {
+        throw new Error('Failed to create API key: No data returned');
+      }
+      
+      return newApiKey.api_key;
+    } catch (error) {
+      console.error("API key error:", error);
+      throw error;
+    }
+  };
+
   const onSubmit = async (data: UploadFormValues) => {
     if (!audioFile) {
       toast.error("Please upload an audio file");
@@ -200,57 +250,18 @@ export function UploadForm() {
       
       formData.append('published', 'true');
       
-      // Improved API key handling
-      let apiKey: string | null = null;
-      
-      // First try to get existing API key with better error handling
-      const { data: apiKeys, error: apiKeyError } = await supabase
-        .from('api_keys')
-        .select('api_key')
-        .eq('distributor_id', user.id)
-        .eq('active', true)
-        .limit(1);
-      
-      if (apiKeyError) {
-        console.error("Error fetching API key:", apiKeyError);
-        throw new Error('Failed to fetch API key: ' + apiKeyError.message);
+      // Get or create API key with error handling
+      let apiKey: string;
+      try {
+        apiKey = await getOrCreateApiKey(user.id);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to get API key';
+        toast.error(errorMessage);
+        setIsUploading(false);
+        return;
       }
       
-      if (!apiKeys || apiKeys.length === 0) {
-        // If no API key found, create one with better error handling
-        console.log("No API key found, creating new one for user:", user.id);
-        
-        const newKey = generateApiKey();
-        const { data: newApiKey, error: createKeyError } = await supabase
-          .from('api_keys')
-          .insert({
-            distributor_id: user.id,
-            name: 'Artist Upload Key',
-            api_key: newKey,
-            active: true
-          })
-          .select('api_key')
-          .single();
-        
-        if (createKeyError) {
-          console.error("Error creating API key:", createKeyError);
-          throw new Error('Failed to create API key: ' + createKeyError.message);
-        }
-        
-        if (!newApiKey) {
-          throw new Error('Failed to create API key: No data returned');
-        }
-        
-        apiKey = newApiKey.api_key;
-      } else {
-        apiKey = apiKeys[0].api_key;
-      }
-      
-      if (!apiKey) {
-        throw new Error('API key not found. Please contact support.');
-      }
-      
-      // Rest of upload logic with better error handling
+      // Upload track with the API key
       const uploadResponse = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/music-upload', {
         method: 'POST',
         headers: {

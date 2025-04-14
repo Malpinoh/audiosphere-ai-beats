@@ -5,7 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // Configure CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
 };
 
@@ -58,15 +58,23 @@ serve(async (req) => {
   
   const userId = user.id;
   
-  // Check if user is a distributor
-  const { data: distributor, error: distributorError } = await supabase
-    .from('distributors')
-    .select('id')
+  // Check if user is an artist or distributor - this is critical for RLS
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
     .eq('id', userId)
     .single();
   
-  if (distributorError || !distributor) {
-    return new Response(JSON.stringify({ error: 'User is not a registered distributor' }), {
+  if (profileError || !profile) {
+    return new Response(JSON.stringify({ error: 'User profile not found' }), {
+      status: 403,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  
+  // Verify the user has appropriate role for API keys
+  if (!['artist', 'distributor', 'admin'].includes(profile.role)) {
+    return new Response(JSON.stringify({ error: 'User does not have permission to manage API keys' }), {
       status: 403,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { analyzeMusicContent } from './audio-analysis.ts';
@@ -21,30 +20,35 @@ async function authenticateApiKey(apiKey: string): Promise<{ authenticated: bool
     return { authenticated: false };
   }
 
-  const { data, error } = await supabase
-    .from('api_keys')
-    .select('distributor_id, active, expires_at')
-    .eq('api_key', apiKey)
-    .eq('active', true)
-    .single();
-
-  if (error || !data) {
+  try {
+    const { data, error } = await supabase
+      .from('api_keys')
+      .select('distributor_id, active, expires_at')
+      .eq('api_key', apiKey)
+      .eq('active', true)
+      .single();
+  
+    if (error || !data) {
+      console.error('API key authentication error:', error);
+      return { authenticated: false };
+    }
+  
+    // Check if API key is expired
+    if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      return { authenticated: false };
+    }
+  
+    // Update last used timestamp
+    await supabase
+      .from('api_keys')
+      .update({ last_used_at: new Date().toISOString() })
+      .eq('api_key', apiKey);
+  
+    return { authenticated: true, distributor_id: data.distributor_id };
+  } catch (error) {
     console.error('API key authentication error:', error);
     return { authenticated: false };
   }
-
-  // Check if API key is expired
-  if (data.expires_at && new Date(data.expires_at) < new Date()) {
-    return { authenticated: false };
-  }
-
-  // Update last used timestamp
-  await supabase
-    .from('api_keys')
-    .update({ last_used_at: new Date().toISOString() })
-    .eq('api_key', apiKey);
-
-  return { authenticated: true, distributor_id: data.distributor_id };
 }
 
 // Handle form data parsing and file upload
