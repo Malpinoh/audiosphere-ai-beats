@@ -60,19 +60,20 @@ export function ProfilePictureUploader({ size = 'md' }: ProfilePictureUploaderPr
         throw uploadError;
       }
 
-      // Get public URL
-      const { data: { publicUrl }, error: urlError } = supabase.storage
+      // Get public URL - this is the part that needs fixing
+      const { data } = supabase.storage
         .from('profile_pictures')
         .getPublicUrl(fileName);
 
-      if (urlError) {
-        throw urlError;
+      // Make sure data.publicUrl exists before proceeding
+      if (!data.publicUrl) {
+        throw new Error("Failed to get public URL");
       }
 
       // Update profile with new avatar URL
       const { error: profileUpdateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: data.publicUrl })
         .eq('id', user.id);
 
       if (profileUpdateError) {
