@@ -126,7 +126,11 @@ export default function PromotePage() {
                   <CardContent className="space-y-6">
                     <div className="space-y-4">
                       <Label>Select Track to Promote</Label>
-                      <div className="grid gap-3">
+                      <RadioGroup 
+                        value={selectedTrack}
+                        onValueChange={setSelectedTrack}
+                        className="grid gap-3"
+                      >
                         {[1, 2, 3].map(track => (
                           <div 
                             key={track}
@@ -146,20 +150,18 @@ export default function PromotePage() {
                               value={`track-${track}`} 
                               id={`track-${track}`}
                               className="ml-auto"
-                              checked={selectedTrack === `track-${track}`}
                             />
                           </div>
                         ))}
-                      </div>
+                      </RadioGroup>
                     </div>
                     
                     <div className="space-y-4">
                       <Label>Choose Promotion Package</Label>
                       <RadioGroup 
-                        defaultValue="standard"
-                        className="grid gap-3"
                         value={selectedPromotion}
                         onValueChange={setSelectedPromotion}
+                        className="grid gap-3"
                       >
                         <div className={`p-3 border rounded-md flex items-start cursor-pointer ${
                           selectedPromotion === "basic" 

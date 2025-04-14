@@ -1,149 +1,177 @@
 
-// Mock data for tables that don't exist yet in the database
-export const mockComments = [
-  { 
-    id: "1", 
-    content: "This song is amazing! I've been listening to it on repeat.", 
-    user: "johndoe", 
-    song: "Autumn Rain - Mountain Echo",
-    timestamp: "2023-04-05T10:30:00",
-    status: "active" as "active" | "hidden" | "deleted",
-    flagged: false
-  },
-  { 
-    id: "2", 
-    content: "Not really my style, but I can appreciate the production quality.", 
-    user: "sarahjones", 
-    song: "Neon City - Digital Dreams",
-    timestamp: "2023-04-04T15:45:00",
-    status: "active" as "active" | "hidden" | "deleted",
-    flagged: false
-  },
-  { 
-    id: "3", 
-    content: "This artist always delivers! Can't wait for more music.", 
-    user: "mikebrown", 
-    song: "Ocean Waves - Coastal Sounds",
-    timestamp: "2023-04-03T09:15:00",
-    status: "hidden" as "active" | "hidden" | "deleted",
-    flagged: true
-  },
-  { 
-    id: "4", 
-    content: "The lyrics are so meaningful, really speaks to me.", 
-    user: "robertwilson", 
-    song: "Street Beats - Urban Flow",
-    timestamp: "2023-04-02T20:10:00",
-    status: "active" as "active" | "hidden" | "deleted",
-    flagged: false
-  },
-  { 
-    id: "5", 
-    content: "The beat is sick! Perfect for workouts.", 
-    user: "janesmith", 
-    song: "Midnight Drive - Night Cruiser",
-    timestamp: "2023-04-01T13:20:00",
-    status: "active" as "active" | "hidden" | "deleted",
-    flagged: true
-  }
-];
+import { v4 as uuidv4 } from 'uuid';
+import { Comment } from '../comments/types';
+import { Report } from '../reports/types';
 
-export const mockReports = [
-  { 
-    id: "1", 
-    type: "Content",
-    entityType: "Song",
-    entity: "Digital Revolution - Cyber Pulse",
-    reason: "Copyright infringement",
-    reportedBy: "johndoe",
-    timestamp: "2023-04-05T14:25:00",
-    status: "open" as "open" | "investigating" | "resolved"
-  },
-  { 
-    id: "2", 
-    type: "User",
-    entityType: "User",
-    entity: "MusicSpammer123",
-    reason: "Spam accounts and comments",
-    reportedBy: "sarahjones",
-    timestamp: "2023-04-04T11:10:00",
-    status: "open" as "open" | "investigating" | "resolved"
-  },
-  { 
-    id: "3", 
-    type: "Comment",
-    entityType: "Comment",
-    entity: "Comment on 'Summer Vibes'",
-    reason: "Offensive language",
-    reportedBy: "robertwilson",
-    timestamp: "2023-04-03T16:45:00",
-    status: "resolved" as "open" | "investigating" | "resolved"
-  },
-  { 
-    id: "4", 
-    type: "Playlist",
-    entityType: "Playlist",
-    entity: "Controversial Mix",
-    reason: "Inappropriate content",
-    reportedBy: "mikebrown",
-    timestamp: "2023-04-02T09:30:00",
-    status: "investigating" as "open" | "investigating" | "resolved"
-  },
-  { 
-    id: "5", 
-    type: "Content",
-    entityType: "Song",
-    entity: "Urban Stories - City Sounds",
-    reason: "Explicit content not labeled",
-    reportedBy: "janesmith",
-    timestamp: "2023-04-01T19:15:00",
-    status: "resolved" as "open" | "investigating" | "resolved"
-  }
-];
-
-// Helper functions to check if tables exist
-export const checkTableExists = async (tableName: string, supabase: any) => {
-  try {
-    const { count, error } = await supabase
-      .from(tableName)
-      .select('*', { count: 'exact', head: true });
-      
-    return !error;
-  } catch (error) {
-    return false;
-  }
-};
-
-// Mock formatted data for comments that contains the necessary fields
-export const getMockFormattedComments = () => {
-  return mockComments.map(comment => ({
-    id: comment.id,
-    content: comment.content,
-    profiles: { username: comment.user },
-    tracks: { 
-      title: comment.song.split(' - ')[0],
-      artist: comment.song.split(' - ')[1] || 'Unknown Artist'
+// Mock data for when the comments table doesn't exist
+export const getMockComments = (): Comment[] => {
+  return [
+    {
+      id: uuidv4(),
+      content: "This track is amazing! Love the bass line.",
+      profiles: { username: "music_lover_42" },
+      tracks: { title: "Summer Groove", artist: "DJ Horizon" },
+      created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      status: "active",
+      flagged: false,
+      user_id: uuidv4(),
+      track_id: uuidv4()
     },
-    created_at: comment.timestamp,
-    status: comment.status,
-    flagged: comment.flagged,
-    user_id: `user-${comment.id}`,
-    track_id: `track-${comment.id}`
-  }));
+    {
+      id: uuidv4(),
+      content: "First!!! This song is fire 🔥🔥🔥",
+      profiles: { username: "beat_master" },
+      tracks: { title: "Midnight Drive", artist: "Luna Wave" },
+      created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+      status: "active",
+      flagged: false,
+      user_id: uuidv4(),
+      track_id: uuidv4()
+    },
+    {
+      id: uuidv4(),
+      content: "The lyrics are really deep. Makes me think about life.",
+      profiles: { username: "deep_thoughts" },
+      tracks: { title: "Reflections", artist: "Echo Mind" },
+      created_at: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
+      status: "active",
+      flagged: false,
+      user_id: uuidv4(),
+      track_id: uuidv4()
+    },
+    {
+      id: uuidv4(),
+      content: "Check out my mixtape at [spam link removed]",
+      profiles: { username: "promo_spammer" },
+      tracks: { title: "Urban Whispers", artist: "Street Poet" },
+      created_at: new Date(Date.now() - 96 * 60 * 60 * 1000).toISOString(),
+      status: "hidden",
+      flagged: true,
+      user_id: uuidv4(),
+      track_id: uuidv4()
+    },
+    {
+      id: uuidv4(),
+      content: "This is terrible. The mixing is awful and the vocals are off-key.",
+      profiles: { username: "harsh_critic" },
+      tracks: { title: "First Try", artist: "Newbie Artist" },
+      created_at: new Date(Date.now() - 120 * 60 * 60 * 1000).toISOString(),
+      status: "active",
+      flagged: true,
+      user_id: uuidv4(),
+      track_id: uuidv4()
+    },
+    {
+      id: uuidv4(),
+      content: "I've listened to this track 100 times already! Can't get enough.",
+      profiles: { username: "superfan2023" },
+      tracks: { title: "Hypnotic", artist: "Trance Master" },
+      created_at: new Date(Date.now() - 144 * 60 * 60 * 1000).toISOString(),
+      status: "active",
+      flagged: false,
+      user_id: uuidv4(),
+      track_id: uuidv4()
+    },
+    {
+      id: uuidv4(),
+      content: "[Comment removed for violation of community guidelines]",
+      profiles: { username: "banned_user" },
+      tracks: { title: "Controversial", artist: "Rebel Artist" },
+      created_at: new Date(Date.now() - 168 * 60 * 60 * 1000).toISOString(),
+      status: "deleted",
+      flagged: true,
+      user_id: uuidv4(),
+      track_id: uuidv4()
+    }
+  ];
 };
 
-// Mock formatted data for reports that contains the necessary fields
-export const getMockFormattedReports = () => {
-  return mockReports.map(report => ({
-    id: report.id,
-    type: report.type,
-    entity_type: report.entityType,
-    entity_details: report.entity,
-    reason: report.reason,
-    profiles: { username: report.reportedBy },
-    created_at: report.timestamp,
-    status: report.status,
-    entity_id: `entity-${report.id}`,
-    user_id: `user-${report.id}`
-  }));
+// Mock data for when the reports table doesn't exist
+export const getMockReports = (): Report[] => {
+  return [
+    {
+      id: uuidv4(),
+      type: "spam",
+      entity_type: "comment",
+      entity_details: "Check out my mixtape at [spam link removed]",
+      reason: "Contains promotional spam",
+      profiles: { username: "music_lover_42" },
+      created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      status: "open",
+      entity_id: uuidv4(),
+      user_id: uuidv4()
+    },
+    {
+      id: uuidv4(),
+      type: "copyright",
+      entity_type: "track",
+      entity_details: "Electronic Dreams by Unknown Artist",
+      reason: "This track uses my copyrighted material without permission",
+      profiles: { username: "original_producer" },
+      created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+      status: "investigating",
+      entity_id: uuidv4(),
+      user_id: uuidv4()
+    },
+    {
+      id: uuidv4(),
+      type: "abuse",
+      entity_type: "comment",
+      entity_details: "[Content hidden for moderation]",
+      reason: "Comment contains offensive language and personal attacks",
+      profiles: { username: "community_guardian" },
+      created_at: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
+      status: "resolved",
+      entity_id: uuidv4(),
+      user_id: uuidv4()
+    },
+    {
+      id: uuidv4(),
+      type: "inappropriate",
+      entity_type: "profile",
+      entity_details: "User: inappropriate_username",
+      reason: "Username contains vulgar language",
+      profiles: { username: "concerned_parent" },
+      created_at: new Date(Date.now() - 96 * 60 * 60 * 1000).toISOString(),
+      status: "open",
+      entity_id: uuidv4(),
+      user_id: uuidv4()
+    },
+    {
+      id: uuidv4(),
+      type: "copyright",
+      entity_type: "track",
+      entity_details: "Summer Vibes by Beach DJ",
+      reason: "Unauthorized use of samples from my track",
+      profiles: { username: "sample_creator" },
+      created_at: new Date(Date.now() - 120 * 60 * 60 * 1000).toISOString(),
+      status: "investigating",
+      entity_id: uuidv4(),
+      user_id: uuidv4()
+    },
+    {
+      id: uuidv4(),
+      type: "other",
+      entity_type: "playlist",
+      entity_details: "Party Hits 2023",
+      reason: "Playlist contains misleading title and description",
+      profiles: { username: "truth_seeker" },
+      created_at: new Date(Date.now() - 144 * 60 * 60 * 1000).toISOString(),
+      status: "open",
+      entity_id: uuidv4(),
+      user_id: uuidv4()
+    },
+    {
+      id: uuidv4(),
+      type: "technical",
+      entity_type: "track",
+      entity_details: "Broken Audio - New Release",
+      reason: "Track audio cuts out after 1 minute",
+      profiles: { username: "quality_controller" },
+      created_at: new Date(Date.now() - 168 * 60 * 60 * 1000).toISOString(),
+      status: "resolved",
+      entity_id: uuidv4(),
+      user_id: uuidv4()
+    }
+  ];
 };

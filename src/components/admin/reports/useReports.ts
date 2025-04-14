@@ -1,136 +1,155 @@
 
-import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getMockFormattedReports, checkTableExists } from "../helpers/mockData";
+import { toast } from "sonner";
 import { Report } from "./types";
+import { getMockReports } from "../helpers/mockData";
 
 export function useReports() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
   const [tableExists, setTableExists] = useState(false);
 
-  useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        setLoading(true);
-        
-        // Check if the reports table exists
-        const exists = await checkTableExists('reports', supabase);
-        setTableExists(exists);
-        
-        if (exists) {
-          // This code would work once the table is created in Supabase
-          console.log("Reports table exists, fetching data");
-          
-          // Placeholder database fetching code that would work when table exists
-          const { data, error } = await supabase
-            .from('reports')
-            .select(`
-              id, 
-              type,
-              entity_type,
-              entity_details,
-              reason,
-              created_at, 
-              status,
-              entity_id,
-              user_id,
-              profiles (username)
-            `);
-            
-          if (error) throw error;
-          
-          if (data) {
-            setReports(data as Report[]);
-          }
-        } else {
+  const fetchReports = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Check if the reports table exists in the database
+      const { error: checkError } = await supabase
+        .from('reports')
+        .select('id')
+        .limit(1)
+        .single();
+
+      // If there's an error (table doesn't exist), use mock data
+      if (checkError) {
+        if (checkError.code === "42P01") { // PostgreSQL code for "relation does not exist"
+          setTableExists(false);
           // Use mock data
-          const mockReports = getMockFormattedReports();
+          const mockReports = getMockReports();
           setReports(mockReports as Report[]);
+        } else {
+          console.error("Error checking reports table:", checkError);
+          toast.error("Failed to load reports");
         }
-      } catch (error) {
-        console.error('Error fetching reports:', error);
-        toast({
-          title: "Error loading reports",
-          description: "Could not load reports data. Using mock data instead.",
-          variant: "destructive",
-        });
-        // Fallback to mock data on error
-        const mockReports = getMockFormattedReports();
-        setReports(mockReports as Report[]);
-      } finally {
-        setLoading(false);
+      } else {
+        setTableExists(true);
+        // Table exists, fetch real data
+        const { data, error } = await supabase
+          .from('reports')
+          .select(`
+            id, type, entity_type, entity_details, reason, created_at, status, entity_id, user_id,
+            profiles:user_id (username)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        // Ensure the fetched data matches our Report type
+        const typedReports = data.map(report => ({
+          ...report,
+          status: report.status as "open" | "investigating" | "resolved",
+          profiles: report.profiles || { username: "Unknown" }
+        }));
+
+        setReports(typedReports);
+      }
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      toast.error("Failed to load reports");
+      
+      // Fallback to mock data on error
+      const mockReports = getMockReports();
+      setReports(mockReports as Report[]);
+      setTableExists(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleUpdateStatus = useCallback(async (id: string, status: "open" | "investigating" | "resolved") => {
+    try {
+      if (!tableExists) {
+        // Update local state only for mock data
+        setReports(prev => 
+          prev.map(report => 
+            report.id === id ? { ...report, status } : report
+          )
+        );
+        toast.success(`Report status updated to ${status}`);
+        return;
+      }
+
+      // Update in database for real data
+      const { error } = await supabase
+        .from('reports')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setReports(prev => 
+        prev.map(report => 
+          report.id === id ? { ...report, status } : report
+        )
+      );
+      
+      toast.success(`Report status updated to ${status}`);
+    } catch (error) {
+      console.error("Error updating report status:", error);
+      toast.error("Failed to update report status");
+    }
+  }, [tableExists]);
+
+  const handleDeleteReport = useCallback(async (id: string) => {
+    try {
+      if (!tableExists) {
+        // Update local state only for mock data
+        setReports(prev => prev.filter(report => report.id !== id));
+        toast.success("Report deleted");
+        return;
+      }
+
+      // Delete from database for real data
+      const { error } = await supabase
+        .from('reports')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setReports(prev => prev.filter(report => report.id !== id));
+      toast.success("Report deleted");
+    } catch (error) {
+      console.error("Error deleting report:", error);
+      toast.error("Failed to delete report");
+    }
+  }, [tableExists]);
+
+  useEffect(() => {
+    fetchReports();
+
+    // Set up a subscription for real-time updates if the table exists
+    let subscription: any;
+    
+    if (tableExists) {
+      subscription = supabase
+        .channel('reports-changes')
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'reports' 
+        }, fetchReports)
+        .subscribe();
+    }
+
+    return () => {
+      if (subscription) {
+        supabase.removeChannel(subscription);
       }
     };
-    
-    fetchReports();
-  }, [toast]);
-
-  const handleUpdateStatus = async (reportId: string, status: "open" | "investigating" | "resolved") => {
-    try {
-      if (tableExists) {
-        // This would be the real implementation once the table exists
-        console.log("Updating report status:", reportId, status);
-        
-        const { error } = await supabase
-          .from('reports')
-          .update({ status })
-          .eq('id', reportId);
-          
-        if (error) throw error;
-      }
-      
-      // Always update local state for the UI
-      setReports(reports.map(report => 
-        report.id === reportId ? { ...report, status } : report
-      ));
-      
-      toast({
-        title: "Report status updated",
-        description: `Report has been marked as ${status}.`,
-      });
-    } catch (error) {
-      console.error('Error updating report status:', error);
-      toast({
-        title: "Error updating report",
-        description: "Could not update the report status.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteReport = async (reportId: string) => {
-    try {
-      if (tableExists) {
-        // This would be the real implementation once the table exists
-        console.log("Deleting report:", reportId);
-        
-        const { error } = await supabase
-          .from('reports')
-          .delete()
-          .eq('id', reportId);
-          
-        if (error) throw error;
-      }
-      
-      // Always update local state for the UI
-      setReports(reports.filter(report => report.id !== reportId));
-      
-      toast({
-        title: "Report deleted",
-        description: "The report has been permanently deleted.",
-      });
-    } catch (error) {
-      console.error('Error deleting report:', error);
-      toast({
-        title: "Error deleting report",
-        description: "Could not delete the report.",
-        variant: "destructive",
-      });
-    }
-  };
+  }, [fetchReports, tableExists]);
 
   return {
     reports,
