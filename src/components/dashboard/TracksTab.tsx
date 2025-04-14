@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Table, 
@@ -14,6 +15,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Download, Edit, Loader2, Play, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Track {
   id: string;
@@ -29,6 +31,7 @@ export function TracksTab() {
   const { user } = useAuth();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchArtistTracks = async () => {
@@ -127,7 +130,7 @@ export function TracksTab() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <CardTitle>Your Tracks</CardTitle>
           <CardDescription>
@@ -151,52 +154,64 @@ export function TracksTab() {
             </Button>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Track</TableHead>
-                <TableHead>Genre</TableHead>
-                <TableHead className="text-right">Plays</TableHead>
-                <TableHead className="text-right">Likes</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tracks.map((track) => (
-                <TableRow key={track.id}>
-                  <TableCell className="font-medium">{track.title}</TableCell>
-                  <TableCell>{track.genre}</TableCell>
-                  <TableCell className="text-right">{track.play_count?.toLocaleString() || 0}</TableCell>
-                  <TableCell className="text-right">{track.like_count?.toLocaleString() || 0}</TableCell>
-                  <TableCell>
-                    <Badge variant={track.published ? "outline" : "secondary"} className={track.published ? "bg-green-100 text-green-800" : ""}>
-                      {track.published ? "Published" : "Draft"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {new Date(track.uploaded_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="icon" asChild>
-                        <Link to={`/track/${track.id}`}>
-                          <Play className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button variant="outline" size="icon">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="icon">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Track</TableHead>
+                  {!isMobile && <TableHead>Genre</TableHead>}
+                  <TableHead className="text-right">Plays</TableHead>
+                  {!isMobile && <TableHead className="text-right">Likes</TableHead>}
+                  <TableHead>Status</TableHead>
+                  {!isMobile && <TableHead className="text-right">Date</TableHead>}
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {tracks.map((track) => (
+                  <TableRow key={track.id}>
+                    <TableCell className="font-medium">
+                      {isMobile && track.title.length > 15 
+                        ? `${track.title.substring(0, 15)}...` 
+                        : track.title}
+                    </TableCell>
+                    {!isMobile && <TableCell>{track.genre}</TableCell>}
+                    <TableCell className="text-right">{track.play_count?.toLocaleString() || 0}</TableCell>
+                    {!isMobile && <TableCell className="text-right">{track.like_count?.toLocaleString() || 0}</TableCell>}
+                    <TableCell>
+                      <Badge variant={track.published ? "outline" : "secondary"} className={track.published ? "bg-green-100 text-green-800" : ""}>
+                        {track.published ? "Published" : "Draft"}
+                      </Badge>
+                    </TableCell>
+                    {!isMobile && (
+                      <TableCell className="text-right">
+                        {new Date(track.uploaded_at).toLocaleDateString()}
+                      </TableCell>
+                    )}
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="icon" asChild>
+                          <Link to={`/track/${track.id}`}>
+                            <Play className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        {!isMobile && (
+                          <>
+                            <Button variant="outline" size="icon">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="icon">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
         
         {tracks.length > 0 && (

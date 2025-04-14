@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const AdminPanel = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -21,6 +22,7 @@ const AdminPanel = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Check if the logged-in user is an admin
   useEffect(() => {
@@ -110,9 +112,9 @@ const AdminPanel = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Admin Panel</h1>
+      <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-8 gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold">Admin Panel</h1>
           <Button 
             variant="outline" 
             onClick={() => setIsAuthenticated(false)}
@@ -122,30 +124,32 @@ const AdminPanel = () => {
         </div>
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid grid-cols-6 mb-8">
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="songs">Songs</TabsTrigger>
-            <TabsTrigger value="uploads">Uploads</TabsTrigger>
-            <TabsTrigger value="comments">Comments</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
-          <TabsContent value="users" className="mt-6">
+          <div className="overflow-x-auto pb-2">
+            <TabsList className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-6'} w-full mb-4 md:mb-8`}>
+              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="songs">Songs</TabsTrigger>
+              <TabsTrigger value="uploads">Uploads</TabsTrigger>
+              <TabsTrigger value="comments">Comments</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="users" className="mt-4 md:mt-6">
             <UsersManagement />
           </TabsContent>
-          <TabsContent value="songs" className="mt-6">
+          <TabsContent value="songs" className="mt-4 md:mt-6">
             <SongsManagement />
           </TabsContent>
-          <TabsContent value="uploads" className="mt-6">
+          <TabsContent value="uploads" className="mt-4 md:mt-6">
             <UploadsManagement />
           </TabsContent>
-          <TabsContent value="comments" className="mt-6">
+          <TabsContent value="comments" className="mt-4 md:mt-6">
             <CommentsManagement />
           </TabsContent>
-          <TabsContent value="reports" className="mt-6">
+          <TabsContent value="reports" className="mt-4 md:mt-6">
             <ReportsManagement />
           </TabsContent>
-          <TabsContent value="analytics" className="mt-6">
+          <TabsContent value="analytics" className="mt-4 md:mt-6">
             <Analytics />
           </TabsContent>
         </Tabs>

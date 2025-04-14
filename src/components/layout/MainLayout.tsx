@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import MusicPlayer from "./MusicPlayer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -13,6 +14,8 @@ const MainLayout = ({
   children, 
   hidePlayer = false
 }: MainLayoutProps) => {
+  const isMobile = useIsMobile();
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />

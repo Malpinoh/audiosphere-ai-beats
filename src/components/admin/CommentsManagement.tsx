@@ -1,207 +1,17 @@
-import { useState, useEffect } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { 
-  MoreVertical, 
-  Search, 
-  Loader2, 
-  Flag, 
-  CheckCircle, 
-  EyeOff, 
-  Trash2 
-} from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { getMockFormattedComments, checkTableExists } from "./helpers/mockData";
 
-interface Comment {
-  id: string;
-  content: string;
-  profiles: { username: string };
-  tracks: { title: string; artist: string };
-  created_at: string;
-  status: "active" | "hidden" | "deleted";
-  flagged: boolean;
-  user_id: string;
-  track_id: string;
-}
+import { Loader2 } from "lucide-react";
+import { CommentsList } from "./comments/CommentsList";
+import { useComments } from "./comments/useComments";
 
 export function CommentsManagement() {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-  const [tableExists, setTableExists] = useState(false);
-
-  useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        setLoading(true);
-        
-        // Check if the comments table exists
-        const exists = await checkTableExists('comments', supabase);
-        setTableExists(exists);
-        
-        if (exists) {
-          // In a real scenario, we would fetch from the database
-          // But since the table doesn't exist in the schema provided
-          // This code will not be reached
-          console.log("Comments table exists, fetching data");
-          
-          // This code would work once the table is created in Supabase
-          // For now, it will never be executed since tableExists will be false
-        } else {
-          // Use mock data when the table doesn't exist
-          const mockComments = getMockFormattedComments();
-          setComments(mockComments as Comment[]);
-        }
-      } catch (error) {
-        console.error('Error fetching comments:', error);
-        toast({
-          title: "Error loading comments",
-          description: "Could not load comments data. Using mock data instead.",
-          variant: "destructive",
-        });
-        // Fallback to mock data on error
-        const mockComments = getMockFormattedComments();
-        setComments(mockComments as Comment[]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchComments();
-    
-    // The real-time listener setup is kept but will never be active
-    // since tableExists will be false
-    if (tableExists) {
-      // This channel setup would work once the table is created
-      console.log("Setting up real-time listener for comments");
-      
-      // Placeholder for the real-time listener
-      // This will not be set up until the table exists
-    }
-  }, [toast, tableExists]);
-  
-  // Helper function to fetch a single comment
-  // This is a placeholder that would be used once the table exists
-  const fetchComment = async (commentId: string): Promise<Comment | null> => {
-    if (!tableExists) return null;
-    
-    // This would be the real implementation once the table exists
-    console.log("Fetching single comment:", commentId);
-    
-    // For now, return a mock comment from the existing comments
-    const mockComment = comments.find(c => c.id === commentId) || null;
-    return mockComment;
-  };
-
-  const filteredComments = comments.filter(comment => 
-    comment.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    comment.profiles.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    comment.tracks.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    comment.tracks.artist.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleUpdateStatus = async (commentId: string, status: "active" | "hidden" | "deleted") => {
-    try {
-      if (tableExists) {
-        // This would be the real implementation once the table exists
-        console.log("Updating comment status:", commentId, status);
-        
-        // Placeholder for the real update operation
-      }
-      
-      // Always update local state for the UI
-      setComments(comments.map(comment => 
-        comment.id === commentId ? { ...comment, status } : comment
-      ));
-      
-      toast({
-        title: "Comment status updated",
-        description: `Comment has been marked as ${status}.`,
-      });
-    } catch (error) {
-      console.error('Error updating comment status:', error);
-      toast({
-        title: "Error updating comment",
-        description: "Could not update the comment status.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleFlagComment = async (commentId: string, flagged: boolean) => {
-    try {
-      if (tableExists) {
-        // This would be the real implementation once the table exists
-        console.log("Updating comment flag:", commentId, flagged);
-        
-        // Placeholder for the real update operation
-      }
-      
-      // Always update local state for the UI
-      setComments(comments.map(comment => 
-        comment.id === commentId ? { ...comment, flagged } : comment
-      ));
-      
-      toast({
-        title: flagged ? "Comment flagged" : "Comment unflagged",
-        description: flagged 
-          ? "Comment has been flagged for review." 
-          : "Flag has been removed from the comment.",
-      });
-    } catch (error) {
-      console.error('Error flagging comment:', error);
-      toast({
-        title: "Error updating comment",
-        description: "Could not update the comment flag status.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteComment = async (commentId: string) => {
-    try {
-      if (tableExists) {
-        // This would be the real implementation once the table exists
-        console.log("Deleting comment:", commentId);
-        
-        // Placeholder for the real delete operation
-      }
-      
-      // Always update local state for the UI
-      setComments(comments.filter(comment => comment.id !== commentId));
-      
-      toast({
-        title: "Comment deleted",
-        description: "The comment has been permanently deleted.",
-      });
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-      toast({
-        title: "Error deleting comment",
-        description: "Could not delete the comment.",
-        variant: "destructive",
-      });
-    }
-  };
+  const { 
+    comments, 
+    loading, 
+    tableExists,
+    handleUpdateStatus, 
+    handleFlagComment, 
+    handleDeleteComment 
+  } = useComments();
 
   if (loading) {
     return (
@@ -214,121 +24,17 @@ export function CommentsManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div>
         <h2 className="text-2xl font-bold">Manage Comments</h2>
-        <div className="relative w-72">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search comments..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        <p className="text-muted-foreground">Review and moderate user comments</p>
       </div>
 
-      <Table>
-        <TableCaption>Manage user comments across the platform.</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Comment</TableHead>
-            <TableHead>User</TableHead>
-            <TableHead>Track</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Flagged</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredComments.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={7} className="text-center py-6">
-                No comments found
-              </TableCell>
-            </TableRow>
-          ) : (
-            filteredComments.map((comment) => (
-              <TableRow key={comment.id}>
-                <TableCell className="max-w-md">
-                  <div className="truncate">{comment.content}</div>
-                </TableCell>
-                <TableCell>{comment.profiles.username}</TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{comment.tracks.title}</span>
-                    <span className="text-sm text-muted-foreground">{comment.tracks.artist}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{new Date(comment.created_at).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <Badge 
-                    variant={
-                      comment.status === "active" 
-                        ? "outline" 
-                        : comment.status === "hidden" 
-                          ? "secondary" 
-                          : "destructive"
-                    }
-                    className={
-                      comment.status === "active" 
-                        ? "bg-green-100 text-green-800 hover:bg-green-200" 
-                        : ""
-                    }
-                  >
-                    {comment.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {comment.flagged ? (
-                    <Badge variant="destructive">Flagged</Badge>
-                  ) : (
-                    <span className="text-muted-foreground">No</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem 
-                        onClick={() => handleUpdateStatus(comment.id, "active")}
-                        disabled={comment.status === "active"}
-                      >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Mark as Active
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleUpdateStatus(comment.id, "hidden")}
-                        disabled={comment.status === "hidden"}
-                      >
-                        <EyeOff className="mr-2 h-4 w-4" />
-                        Hide Comment
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleFlagComment(comment.id, !comment.flagged)}
-                      >
-                        <Flag className="mr-2 h-4 w-4" />
-                        {comment.flagged ? "Remove Flag" : "Flag Comment"}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => handleDeleteComment(comment.id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Comment
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <CommentsList
+        comments={comments}
+        onUpdateStatus={handleUpdateStatus}
+        onFlagComment={handleFlagComment}
+        onDeleteComment={handleDeleteComment}
+      />
 
       {!tableExists && (
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
