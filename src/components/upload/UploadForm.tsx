@@ -200,10 +200,10 @@ export function UploadForm() {
       
       formData.append('published', 'true');
       
-      // Fixed: Use Supabase client to get the API key directly
+      // Improved API key handling
       let apiKey: string | null = null;
       
-      // First try to get existing API key
+      // First try to get existing API key with better error handling
       const { data: apiKeys, error: apiKeyError } = await supabase
         .from('api_keys')
         .select('api_key')
@@ -213,27 +213,32 @@ export function UploadForm() {
       
       if (apiKeyError) {
         console.error("Error fetching API key:", apiKeyError);
-        throw new Error('Failed to fetch API key');
+        throw new Error('Failed to fetch API key: ' + apiKeyError.message);
       }
       
       if (!apiKeys || apiKeys.length === 0) {
-        // If no API key found, create one
+        // If no API key found, create one with better error handling
         console.log("No API key found, creating new one for user:", user.id);
         
+        const newKey = generateApiKey();
         const { data: newApiKey, error: createKeyError } = await supabase
           .from('api_keys')
           .insert({
             distributor_id: user.id,
             name: 'Artist Upload Key',
-            api_key: generateApiKey(),
+            api_key: newKey,
             active: true
           })
           .select('api_key')
           .single();
         
-        if (createKeyError || !newApiKey) {
+        if (createKeyError) {
           console.error("Error creating API key:", createKeyError);
-          throw new Error('Failed to create API key. Please contact support.');
+          throw new Error('Failed to create API key: ' + createKeyError.message);
+        }
+        
+        if (!newApiKey) {
+          throw new Error('Failed to create API key: No data returned');
         }
         
         apiKey = newApiKey.api_key;
@@ -245,6 +250,7 @@ export function UploadForm() {
         throw new Error('API key not found. Please contact support.');
       }
       
+      // Rest of upload logic with better error handling
       const uploadResponse = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/music-upload', {
         method: 'POST',
         headers: {
@@ -255,7 +261,7 @@ export function UploadForm() {
       
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json();
-        throw new Error(errorData.message || 'Upload failed');
+        throw new Error(errorData.message || 'Upload failed: HTTP ' + uploadResponse.status);
       }
       
       toast.success("Track uploaded successfully!");

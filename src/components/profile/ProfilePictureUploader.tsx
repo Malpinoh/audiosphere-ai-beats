@@ -81,6 +81,9 @@ export function ProfilePictureUploader({ size = 'md' }: ProfilePictureUploaderPr
       }
 
       toast.success("Profile picture updated successfully!");
+      
+      // Force a reload of the page to show updated profile picture
+      setTimeout(() => window.location.reload(), 1000);
     } catch (error) {
       console.error("Profile picture upload error:", error);
       toast.error("Failed to upload profile picture");

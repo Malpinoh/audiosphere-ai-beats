@@ -125,8 +125,10 @@ const AppRoutes = () => {
       <Route path="/charts" element={<ChartsPage />} />
       <Route path="/playlists" element={<PlaylistsPage />} />
       
-      {/* Settings and info pages */}
+      {/* Settings and info pages - fixed route */}
       <Route path="/account-settings" element={<AccountSettings />} />
+      <Route path="/account" element={<AccountSettings />} /> {/* Alternative path */}
+      <Route path="/profile" element={<AccountSettings />} /> {/* Alternative path */}
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/contact-us" element={<ContactUs />} />
