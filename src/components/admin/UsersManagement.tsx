@@ -87,7 +87,7 @@ export function UsersManagement() {
             setUsers(prevUsers => [newRecord as UserProfile, ...prevUsers]);
           } else if (eventType === 'UPDATE') {
             setUsers(prevUsers => prevUsers.map(user => 
-              user.id === newRecord.id ? newRecord as UserProfile : user
+              user.id === (newRecord as UserProfile).id ? (newRecord as UserProfile) : user
             ));
           } else if (eventType === 'DELETE') {
             setUsers(prevUsers => prevUsers.filter(user => 

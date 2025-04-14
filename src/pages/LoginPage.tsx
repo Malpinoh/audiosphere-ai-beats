@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LogIn, AtSign, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -48,7 +47,7 @@ const LoginPage = () => {
         return;
       }
       
-      // Redirect based on user role - now includes 'artist' role
+      // Redirect based on user role - including 'artist' role
       if (profileData.role === 'artist') {
         toast.success("Welcome back to your artist dashboard!");
         navigate("/artist-dashboard");

@@ -87,12 +87,10 @@ export function TracksTab() {
           const { eventType, new: newRecord, old: oldRecord } = payload;
           
           if (eventType === 'INSERT') {
-            const typedNewRecord = newRecord as Track;
-            setTracks(prevTracks => [typedNewRecord, ...prevTracks]);
+            setTracks(prevTracks => [(newRecord as Track), ...prevTracks]);
           } else if (eventType === 'UPDATE') {
-            const typedNewRecord = newRecord as Track;
             setTracks(prevTracks => prevTracks.map(track => 
-              track.id === typedNewRecord.id ? typedNewRecord : track
+              track.id === (newRecord as Track).id ? (newRecord as Track) : track
             ));
           } else if (eventType === 'DELETE') {
             setTracks(prevTracks => prevTracks.filter(track => 

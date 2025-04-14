@@ -7,7 +7,7 @@ export const mockComments = [
     user: "johndoe", 
     song: "Autumn Rain - Mountain Echo",
     timestamp: "2023-04-05T10:30:00",
-    status: "active",
+    status: "active" as "active" | "hidden" | "deleted",
     flagged: false
   },
   { 
@@ -16,7 +16,7 @@ export const mockComments = [
     user: "sarahjones", 
     song: "Neon City - Digital Dreams",
     timestamp: "2023-04-04T15:45:00",
-    status: "active",
+    status: "active" as "active" | "hidden" | "deleted",
     flagged: false
   },
   { 
@@ -25,7 +25,7 @@ export const mockComments = [
     user: "mikebrown", 
     song: "Ocean Waves - Coastal Sounds",
     timestamp: "2023-04-03T09:15:00",
-    status: "hidden",
+    status: "hidden" as "active" | "hidden" | "deleted",
     flagged: true
   },
   { 
@@ -34,7 +34,7 @@ export const mockComments = [
     user: "robertwilson", 
     song: "Street Beats - Urban Flow",
     timestamp: "2023-04-02T20:10:00",
-    status: "active",
+    status: "active" as "active" | "hidden" | "deleted",
     flagged: false
   },
   { 
@@ -43,7 +43,7 @@ export const mockComments = [
     user: "janesmith", 
     song: "Midnight Drive - Night Cruiser",
     timestamp: "2023-04-01T13:20:00",
-    status: "active",
+    status: "active" as "active" | "hidden" | "deleted",
     flagged: true
   }
 ];
@@ -57,7 +57,7 @@ export const mockReports = [
     reason: "Copyright infringement",
     reportedBy: "johndoe",
     timestamp: "2023-04-05T14:25:00",
-    status: "open"
+    status: "open" as "open" | "investigating" | "resolved"
   },
   { 
     id: "2", 
@@ -67,7 +67,7 @@ export const mockReports = [
     reason: "Spam accounts and comments",
     reportedBy: "sarahjones",
     timestamp: "2023-04-04T11:10:00",
-    status: "open"
+    status: "open" as "open" | "investigating" | "resolved"
   },
   { 
     id: "3", 
@@ -77,7 +77,7 @@ export const mockReports = [
     reason: "Offensive language",
     reportedBy: "robertwilson",
     timestamp: "2023-04-03T16:45:00",
-    status: "resolved"
+    status: "resolved" as "open" | "investigating" | "resolved"
   },
   { 
     id: "4", 
@@ -87,7 +87,7 @@ export const mockReports = [
     reason: "Inappropriate content",
     reportedBy: "mikebrown",
     timestamp: "2023-04-02T09:30:00",
-    status: "investigating"
+    status: "investigating" as "open" | "investigating" | "resolved"
   },
   { 
     id: "5", 
@@ -97,7 +97,7 @@ export const mockReports = [
     reason: "Explicit content not labeled",
     reportedBy: "janesmith",
     timestamp: "2023-04-01T19:15:00",
-    status: "resolved"
+    status: "resolved" as "open" | "investigating" | "resolved"
   }
 ];
 
