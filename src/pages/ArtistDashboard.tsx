@@ -9,6 +9,7 @@ import { InsightsSection } from "@/components/dashboard/InsightsSection";
 import { PromotionSection } from "@/components/dashboard/PromotionSection";
 import { ProfilePictureUploader } from "@/components/profile/ProfilePictureUploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button"; // Added this import
 
 export default function ArtistDashboard() {
   const { user, profile } = useAuth();
