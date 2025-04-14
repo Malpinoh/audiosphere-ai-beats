@@ -245,24 +245,30 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          follower_count: number | null
           full_name: string | null
           id: string
+          is_verified: boolean | null
           role: Database["public"]["Enums"]["app_role"]
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          follower_count?: number | null
           full_name?: string | null
           id: string
+          is_verified?: boolean | null
           role?: Database["public"]["Enums"]["app_role"]
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          follower_count?: number | null
           full_name?: string | null
           id?: string
+          is_verified?: boolean | null
           role?: Database["public"]["Enums"]["app_role"]
           username?: string | null
         }
@@ -370,6 +376,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      verification_requests: {
+        Row: {
+          id: string
+          processed_at: string | null
+          processed_by: string | null
+          reason: string | null
+          status: string
+          submitted_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason?: string | null
+          status?: string
+          submitted_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason?: string | null
+          status?: string
+          submitted_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
