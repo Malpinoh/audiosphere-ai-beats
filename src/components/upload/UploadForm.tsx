@@ -149,6 +149,19 @@ export function UploadForm() {
     setCoverArtPreview(null);
   };
 
+  // Function to generate a random API key if needed
+  function generateApiKey() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    const length = 32;
+    
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    return result;
+  }
+
   const onSubmit = async (data: UploadFormValues) => {
     if (!audioFile) {
       toast.error("Please upload an audio file");
@@ -187,25 +200,49 @@ export function UploadForm() {
       
       formData.append('published', 'true');
       
-      // Use explicit any typing to avoid deep type instantiation
-      const response = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/rest/v1/api_keys?select=api_key&user_id=eq.' + user.id, {
-        method: 'GET',
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrcGpsZmNwbmN2dmp5emZvbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMDAxMDAsImV4cCI6MjA1OTU3NjEwMH0.Lnas8tdQ_Wycaa-oWh8lCfRGkRr8IhW5CohA7n37nMg',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrcGpsZmNwbmN2dmp5emZvbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMDAxMDAsImV4cCI6MjA1OTU3NjEwMH0.Lnas8tdQ_Wycaa-oWh8lCfRGkRr8IhW5CohA7n37nMg`
-        }
-      });
+      // Fixed: Use Supabase client to get the API key directly
+      let apiKey: string | null = null;
       
-      if (!response.ok) {
+      // First try to get existing API key
+      const { data: apiKeys, error: apiKeyError } = await supabase
+        .from('api_keys')
+        .select('api_key')
+        .eq('distributor_id', user.id)
+        .eq('active', true)
+        .limit(1);
+      
+      if (apiKeyError) {
+        console.error("Error fetching API key:", apiKeyError);
         throw new Error('Failed to fetch API key');
       }
       
-      const apiKeys: any[] = await response.json();
-      const apiKey = apiKeys && apiKeys.length > 0 ? apiKeys[0].api_key : null;
+      if (!apiKeys || apiKeys.length === 0) {
+        // If no API key found, create one
+        console.log("No API key found, creating new one for user:", user.id);
+        
+        const { data: newApiKey, error: createKeyError } = await supabase
+          .from('api_keys')
+          .insert({
+            distributor_id: user.id,
+            name: 'Artist Upload Key',
+            api_key: generateApiKey(),
+            active: true
+          })
+          .select('api_key')
+          .single();
+        
+        if (createKeyError || !newApiKey) {
+          console.error("Error creating API key:", createKeyError);
+          throw new Error('Failed to create API key. Please contact support.');
+        }
+        
+        apiKey = newApiKey.api_key;
+      } else {
+        apiKey = apiKeys[0].api_key;
+      }
       
       if (!apiKey) {
-        toast.error("API key not found. Please contact support.");
-        return;
+        throw new Error('API key not found. Please contact support.');
       }
       
       const uploadResponse = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/music-upload', {
