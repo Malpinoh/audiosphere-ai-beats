@@ -236,18 +236,18 @@ serve(async (req) => {
     
     // Authenticate API key
     const { authenticated, user_id } = await authenticateApiKey(apiKey);
-    if (!authenticated) {
+    if (!authenticated || !user_id) {
       return new Response(JSON.stringify({ error: 'Invalid or expired API key' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    
+
     // Parse form data
     const formData = await req.formData();
     
     // Process upload
-    const result = await handleFormData(formData, user_id as string);
+    const result = await handleFormData(formData, user_id);
     
     // Return success response
     return new Response(JSON.stringify({

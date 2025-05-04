@@ -162,7 +162,7 @@ export function UploadForm() {
     return result;
   }
 
-  // Improved function to get or create an API key - updated to use user_id instead of distributor_id
+  // Function to get or create an API key
   const getOrCreateApiKey = async (userId: string): Promise<string> => {
     try {
       // First try to get existing API key
@@ -231,6 +231,16 @@ export function UploadForm() {
     setIsUploading(true);
 
     try {
+      // Get the current user's authorization token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authToken = sessionData.session?.access_token;
+      
+      if (!authToken) {
+        toast.error("Authentication error: Please log in again");
+        setIsUploading(false);
+        return;
+      }
+      
       // Get or create API key with error handling
       let apiKey: string;
       try {
@@ -262,11 +272,12 @@ export function UploadForm() {
       
       formData.append('published', 'true');
       
-      // Upload track with the API key
+      // Upload track with both API key and authorization token
       const uploadResponse = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/music-upload', {
         method: 'POST',
         headers: {
-          'x-api-key': apiKey // This is now properly being sent
+          'Authorization': `Bearer ${authToken}`,
+          'x-api-key': apiKey
         },
         body: formData
       });
