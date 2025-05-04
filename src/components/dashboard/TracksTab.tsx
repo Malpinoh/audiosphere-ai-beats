@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Table, 
@@ -40,25 +39,14 @@ export function TracksTab() {
       try {
         setLoading(true);
         
-        // Get distributor ID for the current artist
-        const { data: distributorData, error: distributorError } = await supabase
-          .from('distributors')
-          .select('id')
-          .eq('auth_id', user.id)
-          .single();
-          
-        if (distributorError) {
-          console.error("Error fetching distributor data:", distributorError);
-          return;
-        }
+        // We can now directly use user.id without looking up a distributor record
+        const userId = user.id;
         
-        const distributorId = distributorData.id;
-        
-        // Get tracks for this distributor
+        // Get tracks for this user
         const { data, error } = await supabase
           .from('tracks')
           .select('id, title, genre, play_count, like_count, uploaded_at, published')
-          .eq('distributor_id', distributorId)
+          .eq('user_id', userId)
           .order('uploaded_at', { ascending: false });
           
         if (error) {

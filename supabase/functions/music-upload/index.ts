@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { analyzeMusicContent } from './audio-analysis.ts';
@@ -14,8 +15,8 @@ const supabaseUrl = 'https://qkpjlfcpncvvjyzfolag.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Authenticate API key
-async function authenticateApiKey(apiKey: string): Promise<{ authenticated: boolean; distributor_id?: string }> {
+// Authenticate API key - Updated to use user_id
+async function authenticateApiKey(apiKey: string): Promise<{ authenticated: boolean; user_id?: string }> {
   if (!apiKey) {
     return { authenticated: false };
   }
@@ -23,7 +24,7 @@ async function authenticateApiKey(apiKey: string): Promise<{ authenticated: bool
   try {
     const { data, error } = await supabase
       .from('api_keys')
-      .select('distributor_id, active, expires_at')
+      .select('user_id, active, expires_at')
       .eq('api_key', apiKey)
       .eq('active', true)
       .single();
@@ -44,15 +45,15 @@ async function authenticateApiKey(apiKey: string): Promise<{ authenticated: bool
       .update({ last_used_at: new Date().toISOString() })
       .eq('api_key', apiKey);
   
-    return { authenticated: true, distributor_id: data.distributor_id };
+    return { authenticated: true, user_id: data.user_id };
   } catch (error) {
     console.error('API key authentication error:', error);
     return { authenticated: false };
   }
 }
 
-// Handle form data parsing and file upload
-async function handleFormData(formData: FormData, distributorId: string) {
+// Handle form data parsing and file upload - Updated to use userId
+async function handleFormData(formData: FormData, userId: string) {
   // Extract and validate required fields
   const title = formData.get('title') as string;
   const artist = formData.get('artist') as string;
@@ -106,8 +107,8 @@ async function handleFormData(formData: FormData, distributorId: string) {
   }
   
   // Create unique filenames
-  const audioFileName = `${distributorId}/${Date.now()}-${audioFile.name.replace(/\s+/g, '-')}`;
-  const coverArtFileName = `${distributorId}/${Date.now()}-${coverArt.name.replace(/\s+/g, '-')}`;
+  const audioFileName = `${userId}/${Date.now()}-${audioFile.name.replace(/\s+/g, '-')}`;
+  const coverArtFileName = `${userId}/${Date.now()}-${coverArt.name.replace(/\s+/g, '-')}`;
   
   // Upload audio file
   const audioBuffer = await audioFile.arrayBuffer();
@@ -179,7 +180,7 @@ async function handleFormData(formData: FormData, distributorId: string) {
     .insert({
       title,
       artist,
-      distributor_id: distributorId,
+      user_id: userId,
       genre,
       mood,
       tags,
@@ -234,7 +235,7 @@ serve(async (req) => {
     }
     
     // Authenticate API key
-    const { authenticated, distributor_id } = await authenticateApiKey(apiKey);
+    const { authenticated, user_id } = await authenticateApiKey(apiKey);
     if (!authenticated) {
       return new Response(JSON.stringify({ error: 'Invalid or expired API key' }), {
         status: 401,
@@ -246,7 +247,7 @@ serve(async (req) => {
     const formData = await req.formData();
     
     // Process upload
-    const result = await handleFormData(formData, distributor_id as string);
+    const result = await handleFormData(formData, user_id as string);
     
     // Return success response
     return new Response(JSON.stringify({

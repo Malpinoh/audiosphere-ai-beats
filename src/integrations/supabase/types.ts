@@ -14,38 +14,38 @@ export type Database = {
           active: boolean | null
           api_key: string
           created_at: string | null
-          distributor_id: string
           expires_at: string | null
           id: string
           last_used_at: string | null
           name: string
+          user_id: string
         }
         Insert: {
           active?: boolean | null
           api_key: string
           created_at?: string | null
-          distributor_id: string
           expires_at?: string | null
           id?: string
           last_used_at?: string | null
           name: string
+          user_id: string
         }
         Update: {
           active?: boolean | null
           api_key?: string
           created_at?: string | null
-          distributor_id?: string
           expires_at?: string | null
           id?: string
           last_used_at?: string | null
           name?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "api_keys_distributor_id_fkey"
-            columns: ["distributor_id"]
+            foreignKeyName: "api_keys_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "distributors"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -318,7 +318,6 @@ export type Database = {
           audio_file_path: string
           cover_art_path: string
           description: string | null
-          distributor_id: string
           duration: number | null
           genre: string
           id: string
@@ -330,13 +329,13 @@ export type Database = {
           tags: string[] | null
           title: string
           uploaded_at: string | null
+          user_id: string
         }
         Insert: {
           artist: string
           audio_file_path: string
           cover_art_path: string
           description?: string | null
-          distributor_id: string
           duration?: number | null
           genre: string
           id?: string
@@ -348,13 +347,13 @@ export type Database = {
           tags?: string[] | null
           title: string
           uploaded_at?: string | null
+          user_id: string
         }
         Update: {
           artist?: string
           audio_file_path?: string
           cover_art_path?: string
           description?: string | null
-          distributor_id?: string
           duration?: number | null
           genre?: string
           id?: string
@@ -366,13 +365,14 @@ export type Database = {
           tags?: string[] | null
           title?: string
           uploaded_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "tracks_distributor_id_fkey"
-            columns: ["distributor_id"]
+            foreignKeyName: "tracks_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "distributors"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

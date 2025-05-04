@@ -162,14 +162,14 @@ export function UploadForm() {
     return result;
   }
 
-  // Improved function to get or create an API key
+  // Improved function to get or create an API key - updated to use user_id instead of distributor_id
   const getOrCreateApiKey = async (userId: string): Promise<string> => {
     try {
       // First try to get existing API key
       const { data: apiKeys, error: apiKeyError } = await supabase
         .from('api_keys')
         .select('api_key')
-        .eq('distributor_id', userId)
+        .eq('user_id', userId)
         .eq('active', true)
         .limit(1);
       
@@ -188,8 +188,8 @@ export function UploadForm() {
       const { data: newApiKey, error: createKeyError } = await supabase
         .from('api_keys')
         .insert({
-          distributor_id: userId,
-          name: 'Artist Upload Key',
+          user_id: userId,
+          name: 'Upload Key',
           api_key: newKey,
           active: true
         })

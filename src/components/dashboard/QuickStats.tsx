@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { 
   BarChart3, 
@@ -36,37 +35,26 @@ export function QuickStats() {
       try {
         setLoading(true);
         
-        // Get distributor ID for the current artist
-        const { data: distributorData, error: distributorError } = await supabase
-          .from('distributors')
-          .select('id')
-          .eq('auth_id', user.id)
-          .single();
-          
-        if (distributorError) {
-          console.error("Error fetching distributor data:", distributorError);
-          return;
-        }
-        
-        const distributorId = distributorData.id;
+        // We can now directly use user.id instead of looking for a distributor record
+        const userId = user.id;
         
         // Get track count
         const { count: trackCount, error: trackError } = await supabase
           .from('tracks')
           .select('*', { count: 'exact', head: true })
-          .eq('distributor_id', distributorId);
+          .eq('user_id', userId);
           
         // Get total plays
         const { data: tracksData, error: tracksDataError } = await supabase
           .from('tracks')
           .select('id, play_count')
-          .eq('distributor_id', distributorId);
+          .eq('user_id', userId);
           
         // Get total likes
         const { data: likesData, error: likesDataError } = await supabase
           .from('tracks')
           .select('like_count')
-          .eq('distributor_id', distributorId);
+          .eq('user_id', userId);
           
         // Calculate stats
         let totalPlays = 0;

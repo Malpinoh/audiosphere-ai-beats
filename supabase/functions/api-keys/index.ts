@@ -58,7 +58,7 @@ serve(async (req) => {
   
   const userId = user.id;
   
-  // Check if user is an artist or distributor - this is critical for RLS
+  // Check if user is an artist or admin - this is critical for RLS
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role')
@@ -89,7 +89,7 @@ serve(async (req) => {
     const { data: apiKeys, error: listError } = await supabase
       .from('api_keys')
       .select('id, api_key, name, active, created_at, expires_at, last_used_at')
-      .eq('distributor_id', userId);
+      .eq('user_id', userId);
     
     if (listError) {
       return new Response(JSON.stringify({ error: 'Failed to retrieve API keys' }), {
@@ -125,7 +125,7 @@ serve(async (req) => {
       const { data: newKey, error: createError } = await supabase
         .from('api_keys')
         .insert({
-          distributor_id: userId,
+          user_id: userId,
           api_key: apiKey,
           name: keyName,
           active: true,
@@ -160,12 +160,12 @@ serve(async (req) => {
   if (req.method === 'DELETE' && path) {
     const keyId = path;
     
-    // Verify the key belongs to this distributor
+    // Verify the key belongs to this user
     const { data: keyData, error: keyCheckError } = await supabase
       .from('api_keys')
       .select('id')
       .eq('id', keyId)
-      .eq('distributor_id', userId)
+      .eq('user_id', userId)
       .single();
     
     if (keyCheckError || !keyData) {
