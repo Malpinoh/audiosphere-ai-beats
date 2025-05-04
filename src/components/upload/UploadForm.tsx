@@ -231,6 +231,18 @@ export function UploadForm() {
     setIsUploading(true);
 
     try {
+      // Get or create API key with error handling
+      let apiKey: string;
+      try {
+        apiKey = await getOrCreateApiKey(user.id);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to get API key';
+        toast.error(errorMessage);
+        setIsUploading(false);
+        return;
+      }
+
+      // Now prepare the form data
       const formData = new FormData();
       formData.append('audio_file', audioFile);
       formData.append('cover_art', coverArt);
@@ -250,22 +262,11 @@ export function UploadForm() {
       
       formData.append('published', 'true');
       
-      // Get or create API key with error handling
-      let apiKey: string;
-      try {
-        apiKey = await getOrCreateApiKey(user.id);
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to get API key';
-        toast.error(errorMessage);
-        setIsUploading(false);
-        return;
-      }
-      
       // Upload track with the API key
       const uploadResponse = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/music-upload', {
         method: 'POST',
         headers: {
-          'x-api-key': apiKey
+          'x-api-key': apiKey // This is now properly being sent
         },
         body: formData
       });
