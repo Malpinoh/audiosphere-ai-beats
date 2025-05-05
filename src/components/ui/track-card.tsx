@@ -4,7 +4,7 @@ import { Play, Pause, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
 import { Link } from "react-router-dom";
-import { Track } from "@/hooks/use-tracks";
+import { Track } from "@/types/track-types";
 
 interface TrackCardProps {
   track: Track;

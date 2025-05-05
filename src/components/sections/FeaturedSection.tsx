@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrackCard } from "@/components/ui/track-card";
 import { Link } from "react-router-dom";
-import { useTracks, Track } from "@/hooks/use-tracks";
+import { useTracks } from "@/hooks/use-tracks";
+import { Track } from "@/types/track-types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface SectionProps {

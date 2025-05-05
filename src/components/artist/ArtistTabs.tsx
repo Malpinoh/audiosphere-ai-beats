@@ -2,7 +2,7 @@
 import { Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrackCard } from "@/components/ui/track-card";
-import type { Track } from "@/hooks/use-tracks";
+import type { Track } from "@/types/track-types";
 import type { Artist } from "@/hooks/use-artist";
 
 interface ArtistTabsProps {

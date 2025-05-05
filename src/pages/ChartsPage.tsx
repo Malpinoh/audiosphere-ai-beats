@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrackCard } from "@/components/ui/track-card";
-import { useTracks, useAvailableRegions, TracksFilter } from "@/hooks/use-tracks";
+import { useTracks, TracksFilter } from "@/hooks/use-tracks";
+import { useAvailableRegions } from "@/hooks/use-regions";
 import { Badge } from "@/components/ui/badge";
 import { Globe, MapPin, Trophy, TrendingUp } from "lucide-react";
 

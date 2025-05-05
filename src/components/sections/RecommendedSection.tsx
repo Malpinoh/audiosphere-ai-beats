@@ -1,9 +1,11 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArtistCard } from "@/components/ui/artist-card";
 import { PlaylistCard } from "@/components/ui/playlist-card";
 import { Section } from "@/components/sections/FeaturedSection";
-import { useTracks, Track } from "@/hooks/use-tracks";
+import { useTracks } from "@/hooks/use-tracks";
+import { Track } from "@/types/track-types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const LoadingCard = () => (
