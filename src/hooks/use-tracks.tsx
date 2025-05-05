@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { Track, TracksFilter } from '@/types/track-types';
 import { fetchTracks } from '@/services/track-service';
 
-export { Track, TracksFilter } from '@/types/track-types';
+// Fix: Use 'export type' for re-exporting types with isolatedModules enabled
+export type { Track, TracksFilter } from '@/types/track-types';
 export { logStreamPlay } from '@/services/track-service';
 
 export function useTracks(filter: TracksFilter = { published: true, limit: 10 }) {
