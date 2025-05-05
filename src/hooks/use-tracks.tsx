@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from "sonner";
-import { Track, TracksFilter } from '@/types/track-types';
+import type { Track, TracksFilter } from '@/types/track-types';
 import { fetchTracks } from '@/services/track-service';
 
 // Fix: Use 'export type' for re-exporting types with isolatedModules enabled

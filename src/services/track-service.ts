@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Track, TracksFilter } from "@/types/track-types";
+import type { Track, TracksFilter } from "@/types/track-types";
 
 // Helper function to format tracks with proper URLs
 export function formatTracks(data: any[]): Track[] {

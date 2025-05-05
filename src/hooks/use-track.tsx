@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from "sonner";
-import { Track } from '@/types/track-types';
+import type { Track } from '@/types/track-types';
 import { fetchTrack } from '@/services/track-service';
 
 export function useTrack(id: string | undefined) {
