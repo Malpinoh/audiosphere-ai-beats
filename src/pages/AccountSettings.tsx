@@ -1,6 +1,6 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { UserCircle, Bell, Lock, LogOut, Camera } from "lucide-react";
+import { UserCircle, Bell, Lock, LogOut, Camera, Music, Globe, Line, Users } from "lucide-react";
+import { VerificationBadgeRequest } from "@/components/profile/VerificationBadgeRequest";
 
 export default function AccountSettings() {
   const { user, profile, signOut } = useAuth();
@@ -22,11 +23,14 @@ export default function AccountSettings() {
     fullName: profile?.full_name || "",
     username: profile?.username || "",
     bio: profile?.bio || "",
+    website: profile?.website || "",
     email: user?.email || "",
     emailNotifications: true,
     pushNotifications: true,
     marketingEmails: false
   });
+
+  const isArtist = profile?.role === 'artist';
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -55,7 +59,8 @@ export default function AccountSettings() {
         .update({
           full_name: formData.fullName,
           username: formData.username,
-          bio: formData.bio
+          bio: formData.bio,
+          website: formData.website
         })
         .eq('id', user.id);
       
@@ -119,7 +124,24 @@ export default function AccountSettings() {
   return (
     <MainLayout>
       <div className="container py-8">
-        <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <h1 className="text-3xl font-bold">Account Settings</h1>
+          {isArtist && (
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                asChild
+              >
+                <Link to={`/artist/${user.id}`}>
+                  <Users className="mr-2 h-4 w-4" />
+                  View Public Profile
+                </Link>
+              </Button>
+              <VerificationBadgeRequest />
+            </div>
+          )}
+        </div>
         
         <Tabs defaultValue="profile" className="space-y-4">
           <TabsList>
@@ -127,6 +149,12 @@ export default function AccountSettings() {
               <UserCircle className="h-4 w-4" />
               Profile
             </TabsTrigger>
+            {isArtist && (
+              <TabsTrigger value="artist" className="flex items-center gap-2">
+                <Music className="h-4 w-4" />
+                Artist Info
+              </TabsTrigger>
+            )}
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
               Notifications
@@ -137,6 +165,7 @@ export default function AccountSettings() {
             </TabsTrigger>
           </TabsList>
           
+          {/* Basic Profile Tab - For All Users */}
           <TabsContent value="profile" className="space-y-4">
             <Card>
               <CardHeader>
@@ -244,6 +273,70 @@ export default function AccountSettings() {
             </Card>
           </TabsContent>
           
+          {/* Artist-specific Tab */}
+          {isArtist && (
+            <TabsContent value="artist" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Artist Information</CardTitle>
+                  <CardDescription>
+                    Additional details for your public artist profile.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="website" className="text-sm font-medium">Website/Social Link</label>
+                    <Input 
+                      id="website"
+                      name="website"
+                      value={formData.website || ''}
+                      onChange={handleInputChange}
+                      placeholder="https://yourdomain.com or social media link"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Add your official website or main social media profile link.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Verification Status</label>
+                    <div className="bg-muted p-3 rounded-md flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">
+                          {profile?.is_verified ? "Verified Artist" : "Not Verified"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {profile?.is_verified 
+                            ? "Your account has been verified. A blue checkmark appears next to your name."
+                            : "Request verification to get a blue checkmark next to your name."}
+                        </p>
+                      </div>
+                      <VerificationBadgeRequest />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Follower Count</label>
+                    <div className="bg-muted p-3 rounded-md">
+                      <p className="font-medium">{profile?.follower_count.toLocaleString() || 0} followers</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      onClick={handleUpdateProfile} 
+                      disabled={isUpdating}
+                      className="maudio-gradient-bg"
+                    >
+                      {isUpdating ? "Updating..." : "Save Artist Info"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+          
+          {/* Notifications Tab */}
           <TabsContent value="notifications" className="space-y-4">
             <Card>
               <CardHeader>
@@ -299,6 +392,7 @@ export default function AccountSettings() {
             </Card>
           </TabsContent>
           
+          {/* Security Tab */}
           <TabsContent value="security" className="space-y-4">
             <Card>
               <CardHeader>
@@ -334,6 +428,7 @@ export default function AccountSettings() {
           </TabsContent>
         </Tabs>
         
+        {/* Resources section */}
         <div className="mt-8 pt-8 border-t border-border">
           <h2 className="text-xl font-semibold mb-4">Resources</h2>
           <div className="grid gap-4 md:grid-cols-3">

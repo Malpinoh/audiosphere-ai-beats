@@ -11,6 +11,8 @@ export interface Artist {
   avatar_url: string | null;
   follower_count: number;
   is_verified: boolean;
+  bio?: string;
+  website?: string;
 }
 
 export function useArtist(artistId: string | undefined) {
