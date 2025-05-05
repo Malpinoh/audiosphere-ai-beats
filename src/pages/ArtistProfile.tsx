@@ -26,6 +26,7 @@ const ArtistProfile = () => {
   const [artist, setArtist] = useState<Artist | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [followLoading, setFollowLoading] = useState(false);
   const { user } = useAuth();
   
   // Fetch tracks by this artist
@@ -35,7 +36,7 @@ const ArtistProfile = () => {
     orderBy: { column: "play_count", ascending: false }
   });
   
-  // Fetch artist data
+  // Fetch artist data and check follow status
   useEffect(() => {
     const fetchArtistData = async () => {
       if (!artistId) return;
@@ -57,9 +58,18 @@ const ArtistProfile = () => {
         
         // Check if current user is following this artist
         if (user) {
-          // This would require a followers table implementation
-          // For now we'll use a placeholder
-          setIsFollowing(false);
+          const { data: followData, error: followError } = await supabase
+            .from('followers')
+            .select('*')
+            .eq('follower_id', user.id)
+            .eq('artist_id', artistId)
+            .maybeSingle();
+            
+          if (followError) {
+            console.error('Error checking follow status:', followError);
+          } else {
+            setIsFollowing(!!followData);
+          }
         }
       } catch (error) {
         console.error('Error fetching artist data:', error);
@@ -97,29 +107,47 @@ const ArtistProfile = () => {
     };
   }, [artistId, user]);
   
+  // Handle follow/unfollow
   const handleToggleFollow = async () => {
     if (!user) {
       toast.error('Please log in to follow artists');
       return;
     }
     
-    // Toggle the UI state immediately for better UX
-    setIsFollowing(prev => !prev);
+    if (!artist) return;
     
     try {
+      setFollowLoading(true);
+      
       if (isFollowing) {
-        // Unfollow logic would go here
-        // This would require a followers table implementation
-        toast.info('Unfollowed artist');
+        // Unfollow the artist
+        const { error } = await supabase
+          .from('followers')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('artist_id', artist.id);
+          
+        if (error) throw error;
+        setIsFollowing(false);
+        toast.success(`Unfollowed ${artist.full_name}`);
       } else {
-        // Follow logic would go here
-        // This would require a followers table implementation
-        toast.success('Following artist');
+        // Follow the artist
+        const { error } = await supabase
+          .from('followers')
+          .insert({
+            follower_id: user.id,
+            artist_id: artist.id
+          });
+          
+        if (error) throw error;
+        setIsFollowing(true);
+        toast.success(`Following ${artist.full_name}`);
       }
-    } catch (error) {
-      // Revert UI state on error
-      setIsFollowing(prev => !prev);
-      toast.error('Failed to update follow status');
+    } catch (error: any) {
+      console.error('Error updating follow status:', error);
+      toast.error('Failed to update follow status: ' + (error.message || 'Unknown error'));
+    } finally {
+      setFollowLoading(false);
     }
   };
   
@@ -204,8 +232,13 @@ const ArtistProfile = () => {
               variant={isFollowing ? "outline" : "default"}
               className={`gap-2 ${isFollowing ? "border-primary text-primary" : "maudio-gradient-bg"}`}
               onClick={handleToggleFollow}
+              disabled={followLoading}
             >
-              <Heart className="h-4 w-4" fill={isFollowing ? "currentColor" : "none"} />
+              {followLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : (
+                <Heart className="h-4 w-4" fill={isFollowing ? "currentColor" : "none"} />
+              )}
               {isFollowing ? "Following" : "Follow"}
             </Button>
             <Button variant="outline" size="icon">
@@ -217,6 +250,31 @@ const ArtistProfile = () => {
       
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        <div className="flex md:hidden items-center gap-2 mb-6">
+          {tracks.length > 0 && (
+            <Button className="gap-2 maudio-gradient-bg flex-1">
+              <Play className="h-4 w-4" />
+              Play All
+            </Button>
+          )}
+          <Button 
+            variant={isFollowing ? "outline" : "default"}
+            className={`gap-2 flex-1 ${isFollowing ? "border-primary text-primary" : "maudio-gradient-bg"}`}
+            onClick={handleToggleFollow}
+            disabled={followLoading}
+          >
+            {followLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            ) : (
+              <Heart className="h-4 w-4" fill={isFollowing ? "currentColor" : "none"} />
+            )}
+            {isFollowing ? "Following" : "Follow"}
+          </Button>
+          <Button variant="outline" size="icon">
+            <Share className="h-4 w-4" />
+          </Button>
+        </div>
+        
         <Tabs defaultValue="tracks">
           <TabsList className="mb-6">
             <TabsTrigger value="tracks">Tracks</TabsTrigger>

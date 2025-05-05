@@ -125,6 +125,42 @@ export type Database = {
         }
         Relationships: []
       }
+      followers: {
+        Row: {
+          artist_id: string
+          followed_at: string
+          follower_id: string
+          id: string
+        }
+        Insert: {
+          artist_id: string
+          followed_at?: string
+          follower_id: string
+          id?: string
+        }
+        Update: {
+          artist_id?: string
+          followed_at?: string
+          follower_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "followers_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "followers_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playlist_followers: {
         Row: {
           followed_at: string | null
