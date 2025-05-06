@@ -1,7 +1,8 @@
+
 import { useParams } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { useTrack } from "@/hooks/use-track";
-import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
+import { useMusicPlayer } from "@/contexts/music-player";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Play, Pause, Heart, Share, Music, Bookmark, AlertCircle } from "lucide-react";

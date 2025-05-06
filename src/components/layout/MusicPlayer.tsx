@@ -1,5 +1,5 @@
 
-import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
+import { useMusicPlayer } from "@/contexts/music-player";
 import { 
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, 
   Repeat, Shuffle, Heart, MoreHorizontal, Maximize2, ListMusic

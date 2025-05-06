@@ -2,7 +2,7 @@
 import React from "react";
 import { Play, Pause, Heart, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
+import { useMusicPlayer } from "@/contexts/music-player";
 import { Link } from "react-router-dom";
 import { Track } from "@/types/track-types";
 
