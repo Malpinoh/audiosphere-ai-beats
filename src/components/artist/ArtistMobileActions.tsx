@@ -1,6 +1,7 @@
 
 import { Play, Heart, Share, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
 
 interface ArtistMobileActionsProps {
   isFollowing: boolean;
@@ -15,10 +16,18 @@ export const ArtistMobileActions = ({
   handleToggleFollow,
   tracksCount
 }: ArtistMobileActionsProps) => {
+  const { setQueue, playTrack } = useMusicPlayer();
+  
+  // This would need actual implementation with the tracks data
+  const handlePlayAll = () => {
+    // Implementation would depend on the available tracks
+    console.log("Play all tracks from this artist");
+  };
+
   return (
     <div className="flex md:hidden items-center gap-2 mb-6">
       {tracksCount > 0 && (
-        <Button className="gap-2 maudio-gradient-bg flex-1">
+        <Button className="gap-2 maudio-gradient-bg flex-1" onClick={handlePlayAll}>
           <Play className="h-4 w-4" />
           Play All
         </Button>

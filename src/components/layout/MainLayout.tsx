@@ -22,11 +22,13 @@ const MainLayout = ({
       
       <div className="flex flex-1">
         {/* Main content */}
-        <main className="flex-1 pb-24 w-full">
+        <main className="flex-1 w-full">
           {children}
         </main>
       </div>
       
+      {/* Add extra padding at the bottom on mobile to account for the music player */}
+      {!hidePlayer && <div className={isMobile ? "h-16" : "h-24"} />}
       {!hidePlayer && <MusicPlayer />}
       <Footer />
     </div>

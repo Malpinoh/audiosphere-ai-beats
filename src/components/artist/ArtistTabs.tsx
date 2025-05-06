@@ -10,12 +10,13 @@ interface ArtistTabsProps {
   artist: Artist;
   tracks: Track[];
   tracksLoading: boolean;
+  isMobile?: boolean;
 }
 
-export const ArtistTabs = ({ artist, tracks, tracksLoading }: ArtistTabsProps) => {
+export const ArtistTabs = ({ artist, tracks, tracksLoading, isMobile = false }: ArtistTabsProps) => {
   return (
     <Tabs defaultValue="tracks">
-      <TabsList className="mb-6">
+      <TabsList className="mb-6 w-full justify-start overflow-x-auto">
         <TabsTrigger value="tracks">Tracks</TabsTrigger>
         <TabsTrigger value="albums">Albums</TabsTrigger>
         <TabsTrigger value="about">About</TabsTrigger>
@@ -30,7 +31,7 @@ export const ArtistTabs = ({ artist, tracks, tracksLoading }: ArtistTabsProps) =
             <span className="ml-2">Loading tracks...</span>
           </div>
         ) : tracks.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
             {tracks.map((track) => (
               <TrackCard key={track.id} track={track} showArtist={false} />
             ))}

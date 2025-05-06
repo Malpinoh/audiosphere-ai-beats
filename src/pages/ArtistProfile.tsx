@@ -8,9 +8,11 @@ import { ArtistMobileActions } from "@/components/artist/ArtistMobileActions";
 import { ArtistTabs } from "@/components/artist/ArtistTabs";
 import { ArtistLoadingState } from "@/components/artist/ArtistLoadingState";
 import { ArtistNotFound } from "@/components/artist/ArtistNotFound";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ArtistProfile = () => {
   const { artistId } = useParams<{ artistId: string }>();
+  const isMobile = useIsMobile();
   
   // Use our custom hooks
   const { 
@@ -70,6 +72,7 @@ const ArtistProfile = () => {
           artist={artist}
           tracks={tracks}
           tracksLoading={tracksLoading}
+          isMobile={isMobile}
         />
       </div>
     </MainLayout>
