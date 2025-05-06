@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { toast } from "sonner";
-import { Track } from "@/hooks/use-tracks";
-import { logStreamPlay } from "@/hooks/use-tracks";
+import { Track } from "@/types/track-types";
+import { logStreamPlay } from "@/services/track-service";
 
 interface MusicPlayerContextType {
   currentTrack: Track | null;
@@ -73,18 +72,32 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     
     setIsLoading(true);
     setPlaybackStarted(false);
-    audioRef.current.src = currentTrack.audioUrl || currentTrack.audio_file_path;
-    audioRef.current.load();
     
-    if (isPlaying) {
-      const playPromise = audioRef.current.play();
+    // Use the formatted audioUrl if available, otherwise fallback to audio_file_path
+    const audioSrc = currentTrack.audioUrl || currentTrack.audio_file_path;
+    
+    // Debug information
+    console.log("Setting audio source:", audioSrc);
+    
+    // Only set src if we have a valid audio source
+    if (audioSrc) {
+      audioRef.current.src = audioSrc;
+      audioRef.current.load();
       
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error('Auto-play was prevented:', error);
-          setIsPlaying(false);
-        });
+      if (isPlaying) {
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.error('Auto-play was prevented:', error);
+            setIsPlaying(false);
+          });
+        }
       }
+    } else {
+      console.error('No audio source available for:', currentTrack.title);
+      toast.error('Audio source not available for this track');
+      setIsLoading(false);
     }
   }, [currentTrack]);
   
@@ -128,7 +141,18 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const handleAudioError = (e: any) => {
     console.error('Audio error:', e);
     setIsLoading(false);
-    toast.error('Error playing this track. Please try again later.');
+    
+    // Check if currentTrack exists and if it has valid audio URL
+    if (currentTrack) {
+      // Try to provide a more specific error message
+      if (!currentTrack.audioUrl && !currentTrack.audio_file_path) {
+        toast.error(`Track "${currentTrack.title}" has no audio file attached.`);
+      } else {
+        toast.error('Error playing this track. Please try again later.');
+      }
+    } else {
+      toast.error('Error playing audio. No track selected.');
+    }
   };
   
   const playTrack = (track: Track) => {
@@ -146,6 +170,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     
     if (isPlaying) {
       audioRef.current.pause();
+      setIsPlaying(false);
     } else {
       const playPromise = audioRef.current.play();
       
@@ -153,12 +178,19 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
         playPromise.catch(error => {
           console.error('Play was prevented:', error);
           setIsPlaying(false);
-          toast.error('Unable to play track. Please try again.');
+          
+          if (error.name === 'NotSupportedError') {
+            toast.error('Audio format not supported or file not found.');
+          } else if (error.name === 'NotAllowedError') {
+            toast.error('Playback was prevented by your browser. Please enable autoplay.');
+          } else {
+            toast.error('Unable to play track. Please try again.');
+          }
         });
       }
+      
+      setIsPlaying(true);
     }
-    
-    setIsPlaying(!isPlaying);
   };
   
   const playNext = () => {

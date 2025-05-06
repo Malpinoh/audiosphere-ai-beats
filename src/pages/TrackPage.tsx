@@ -1,12 +1,12 @@
-
 import { useParams } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { useTrack } from "@/hooks/use-track";
 import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Play, Pause, Heart, Share, Music, Bookmark } from "lucide-react";
+import { Play, Pause, Heart, Share, Music, Bookmark, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function TrackPage() {
   const { trackId } = useParams<{ trackId: string }>();
@@ -15,6 +15,7 @@ export default function TrackPage() {
   const [isLiked, setIsLiked] = useState(false);
   
   const isCurrentTrack = currentTrack?.id === track?.id;
+  const hasAudioUrl = track?.audioUrl || track?.audio_file_path;
   
   const handlePlayPause = () => {
     if (isCurrentTrack) {
@@ -72,6 +73,7 @@ export default function TrackPage() {
                     onClick={handlePlayPause}
                     size="icon"
                     className="h-20 w-20 rounded-full bg-primary/90 hover:bg-primary text-white shadow-xl"
+                    disabled={!hasAudioUrl}
                   >
                     {isCurrentTrack && isPlaying ? (
                       <Pause className="h-10 w-10" />
@@ -81,6 +83,15 @@ export default function TrackPage() {
                   </Button>
                 </div>
               </div>
+
+              {!hasAudioUrl && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    This track doesn't have an audio file attached.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
             
             <div className="md:col-span-7 space-y-6">
@@ -108,8 +119,14 @@ export default function TrackPage() {
                   onClick={handlePlayPause}
                   size="lg"
                   className="w-full gap-2 maudio-gradient-bg"
+                  disabled={!hasAudioUrl}
                 >
-                  {isCurrentTrack && isPlaying ? (
+                  {!hasAudioUrl ? (
+                    <>
+                      <AlertCircle className="h-5 w-5" />
+                      No Audio Available
+                    </>
+                  ) : isCurrentTrack && isPlaying ? (
                     <>
                       <Pause className="h-5 w-5" />
                       Pause

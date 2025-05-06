@@ -1,18 +1,28 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { Track, TracksFilter } from "@/types/track-types";
 
 // Helper function to format tracks with proper URLs
 export function formatTracks(data: any[]): Track[] {
-  return data.map((track) => ({
-    ...track,
-    cover: track.cover_art_path.startsWith('http') 
-      ? track.cover_art_path 
-      : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${track.cover_art_path}`,
-    audioUrl: track.audio_file_path.startsWith('http')
-      ? track.audio_file_path
-      : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${track.audio_file_path}`,
-  }));
+  return data.map((track) => {
+    // First ensure we have the track object with all properties
+    const formattedTrack = { ...track };
+    
+    // Handle cover art URL formatting
+    if (track.cover_art_path) {
+      formattedTrack.cover = track.cover_art_path.startsWith('http') 
+        ? track.cover_art_path 
+        : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${track.cover_art_path}`;
+    }
+    
+    // Handle audio file URL formatting
+    if (track.audio_file_path) {
+      formattedTrack.audioUrl = track.audio_file_path.startsWith('http')
+        ? track.audio_file_path
+        : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${track.audio_file_path}`;
+    }
+    
+    return formattedTrack;
+  });
 }
 
 // Fetch tracks based on filters
@@ -169,16 +179,26 @@ export async function fetchTrack(id: string) {
     return null;
   }
   
-  // Format the track data
-  return {
+  // Format the track data with proper URLs
+  const formattedTrack: Track = {
     ...data,
-    cover: data.cover_art_path.startsWith('http') 
-      ? data.cover_art_path 
-      : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${data.cover_art_path}`,
-    audioUrl: data.audio_file_path.startsWith('http')
-      ? data.audio_file_path
-      : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${data.audio_file_path}`,
   };
+  
+  // Handle cover art URL formatting
+  if (data.cover_art_path) {
+    formattedTrack.cover = data.cover_art_path.startsWith('http') 
+      ? data.cover_art_path 
+      : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${data.cover_art_path}`;
+  }
+  
+  // Handle audio file URL formatting
+  if (data.audio_file_path) {
+    formattedTrack.audioUrl = data.audio_file_path.startsWith('http')
+      ? data.audio_file_path
+      : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${data.audio_file_path}`;
+  }
+  
+  return formattedTrack;
 }
 
 // Log a stream play

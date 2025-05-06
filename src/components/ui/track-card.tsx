@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Play, Pause, Heart } from "lucide-react";
+import { Play, Pause, Heart, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
 import { Link } from "react-router-dom";
@@ -15,6 +15,7 @@ interface TrackCardProps {
 export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackCardProps) {
   const { playTrack, togglePlay, currentTrack, isPlaying } = useMusicPlayer();
   const isCurrentTrack = currentTrack?.id === track.id;
+  const hasAudioUrl = track.audioUrl || track.audio_file_path;
   
   const handlePlayClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -22,7 +23,7 @@ export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackC
     
     if (isCurrentTrack) {
       togglePlay();
-    } else {
+    } else if (track) {
       playTrack(track);
     }
   };
@@ -39,17 +40,23 @@ export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackC
           
           {!hidePlay && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button 
-                onClick={handlePlayClick}
-                className="rounded-full bg-primary/90 hover:bg-primary h-12 w-12 flex items-center justify-center"
-                size="icon"
-              >
-                {isCurrentTrack && isPlaying ? (
-                  <Pause className="h-5 w-5" />
-                ) : (
-                  <Play className="h-5 w-5 ml-0.5" />
-                )}
-              </Button>
+              {!hasAudioUrl ? (
+                <div className="bg-primary/90 h-12 w-12 rounded-full flex items-center justify-center">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+              ) : (
+                <Button 
+                  onClick={handlePlayClick}
+                  className="rounded-full bg-primary/90 hover:bg-primary h-12 w-12 flex items-center justify-center"
+                  size="icon"
+                >
+                  {isCurrentTrack && isPlaying ? (
+                    <Pause className="h-5 w-5" />
+                  ) : (
+                    <Play className="h-5 w-5 ml-0.5" />
+                  )}
+                </Button>
+              )}
             </div>
           )}
         </div>
