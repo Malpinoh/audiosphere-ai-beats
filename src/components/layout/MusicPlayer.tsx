@@ -92,7 +92,7 @@ const MusicPlayer = () => {
                   <Link to={`/track/${currentTrack.id}`} className="text-sm font-medium truncate hover:text-primary">
                     {currentTrack.title}
                   </Link>
-                  <Link to={`/artist/${currentTrack.artist_id || '0'}`} className="text-xs text-muted-foreground truncate hover:text-primary block">
+                  <Link to={`/artist/${encodeURIComponent(currentTrack.artist)}`} className="text-xs text-muted-foreground truncate hover:text-primary block">
                     {currentTrack.artist}
                   </Link>
                 </div>

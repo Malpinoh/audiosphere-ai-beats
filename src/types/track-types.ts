@@ -12,6 +12,8 @@ export interface Track {
   tags: string[];
   published: boolean;
   description?: string;
+  // Optional artist ID field for future use
+  artist_id?: string;
   // Formatted URLs
   cover?: string;
   audioUrl?: string;

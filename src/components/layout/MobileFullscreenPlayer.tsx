@@ -80,7 +80,7 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: MobileFullscreenPlay
         <Link to={`/track/${currentTrack.id}`} className="text-xl font-bold block hover:text-primary">
           {currentTrack.title}
         </Link>
-        <Link to={`/artist/${currentTrack.artist_id || '0'}`} className="text-sm text-muted-foreground hover:text-primary">
+        <Link to={`/artist/${encodeURIComponent(currentTrack.artist)}`} className="text-sm text-muted-foreground hover:text-primary">
           {currentTrack.artist}
         </Link>
       </div>
