@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -11,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { UserCircle, Bell, Lock, LogOut, Camera, Music, Globe, Line, Users } from "lucide-react";
+import { UserCircle, Bell, Lock, LogOut, Camera, Music, Globe, Users } from "lucide-react";
 import { VerificationBadgeRequest } from "@/components/profile/VerificationBadgeRequest";
 
 export default function AccountSettings() {
