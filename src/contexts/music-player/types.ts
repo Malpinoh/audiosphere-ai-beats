@@ -20,4 +20,13 @@ export interface MusicPlayerContextType {
   toggleMute: () => void;
   addToQueue: (track: Track) => void;
   removeFromQueue: (trackId: string) => void;
+  likedTracks: Set<string>;
+  savedTracks: Set<string>;
+  likeTrack: (trackId: string) => Promise<boolean>;
+  unlikeTrack: (trackId: string) => Promise<boolean>;
+  saveTrack: (trackId: string) => Promise<boolean>;
+  unsaveTrack: (trackId: string) => Promise<boolean>;
+  isTrackLiked: (trackId: string) => boolean;
+  isTrackSaved: (trackId: string) => boolean;
+  shareTrack: (trackId: string) => void;
 }

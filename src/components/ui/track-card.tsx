@@ -13,9 +13,10 @@ interface TrackCardProps {
 }
 
 export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackCardProps) {
-  const { playTrack, togglePlay, currentTrack, isPlaying } = useMusicPlayer();
+  const { playTrack, togglePlay, currentTrack, isPlaying, isTrackLiked, likeTrack, unlikeTrack } = useMusicPlayer();
   const isCurrentTrack = currentTrack?.id === track.id;
   const hasAudioUrl = track.audioUrl || track.audio_file_path;
+  const liked = isTrackLiked(track.id);
   
   const handlePlayClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -25,6 +26,17 @@ export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackC
       togglePlay();
     } else if (track) {
       playTrack(track);
+    }
+  };
+  
+  const handleLikeClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (liked) {
+      await unlikeTrack(track.id);
+    } else {
+      await likeTrack(track.id);
     }
   };
   
@@ -59,6 +71,16 @@ export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackC
               )}
             </div>
           )}
+          
+          {/* Like button */}
+          <Button
+            onClick={handleLikeClick}
+            size="icon"
+            variant="ghost"
+            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <Heart className={`h-4 w-4 ${liked ? 'fill-secondary text-secondary' : 'text-white'}`} />
+          </Button>
         </div>
         
         <div className="p-3 space-y-1">

@@ -6,14 +6,24 @@ import { useMusicPlayer } from "@/contexts/music-player";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Play, Pause, Heart, Share, Music, Bookmark, AlertCircle } from "lucide-react";
-import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function TrackPage() {
   const { trackId } = useParams<{ trackId: string }>();
   const { track, loading, error } = useTrack(trackId);
-  const { currentTrack, isPlaying, playTrack, togglePlay } = useMusicPlayer();
-  const [isLiked, setIsLiked] = useState(false);
+  const { 
+    currentTrack, 
+    isPlaying, 
+    playTrack, 
+    togglePlay, 
+    isTrackLiked,
+    isTrackSaved,
+    likeTrack,
+    unlikeTrack,
+    saveTrack,
+    unsaveTrack,
+    shareTrack
+  } = useMusicPlayer();
   
   const isCurrentTrack = currentTrack?.id === track?.id;
   const hasAudioUrl = track?.audioUrl || track?.audio_file_path;
@@ -26,8 +36,29 @@ export default function TrackPage() {
     }
   };
   
-  const toggleLike = () => {
-    setIsLiked(!isLiked);
+  const handleLikeToggle = async () => {
+    if (!track) return;
+    
+    if (isTrackLiked(track.id)) {
+      await unlikeTrack(track.id);
+    } else {
+      await likeTrack(track.id);
+    }
+  };
+  
+  const handleSaveToggle = async () => {
+    if (!track) return;
+    
+    if (isTrackSaved(track.id)) {
+      await unsaveTrack(track.id);
+    } else {
+      await saveTrack(track.id);
+    }
+  };
+  
+  const handleShare = () => {
+    if (!track) return;
+    shareTrack(track.id);
   };
   
   return (
@@ -143,17 +174,25 @@ export default function TrackPage() {
                 <div className="flex gap-2">
                   <Button 
                     variant="outline" 
-                    className="gap-2 flex-1"
-                    onClick={toggleLike}
+                    className={`gap-2 flex-1 ${isTrackLiked(track.id) ? 'border-secondary' : ''}`}
+                    onClick={handleLikeToggle}
                   >
-                    <Heart className={`h-5 w-5 ${isLiked ? 'fill-secondary text-secondary' : ''}`} />
-                    {isLiked ? 'Liked' : 'Like'}
+                    <Heart className={`h-5 w-5 ${isTrackLiked(track.id) ? 'fill-secondary text-secondary' : ''}`} />
+                    {isTrackLiked(track.id) ? 'Liked' : 'Like'}
                   </Button>
-                  <Button variant="outline" className="gap-2 flex-1">
-                    <Bookmark className="h-5 w-5" />
-                    Save
+                  <Button 
+                    variant="outline" 
+                    className={`gap-2 flex-1 ${isTrackSaved(track.id) ? 'border-secondary' : ''}`}
+                    onClick={handleSaveToggle}
+                  >
+                    <Bookmark className={`h-5 w-5 ${isTrackSaved(track.id) ? 'fill-secondary text-secondary' : ''}`} />
+                    {isTrackSaved(track.id) ? 'Saved' : 'Save'}
                   </Button>
-                  <Button variant="outline" className="gap-2 flex-1">
+                  <Button 
+                    variant="outline" 
+                    className="gap-2 flex-1"
+                    onClick={handleShare}
+                  >
                     <Share className="h-5 w-5" />
                     Share
                   </Button>

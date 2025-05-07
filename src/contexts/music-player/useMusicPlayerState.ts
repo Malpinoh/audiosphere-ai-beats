@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { toast } from "sonner";
 import { Track } from "@/types/track-types";
 import { logStreamPlay } from "@/services/track-service";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useMusicPlayerState() {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -14,8 +15,42 @@ export function useMusicPlayerState() {
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [playbackStarted, setPlaybackStarted] = useState(false);
+  const [likedTracks, setLikedTracks] = useState<Set<string>>(new Set());
+  const [savedTracks, setSavedTracks] = useState<Set<string>>(new Set());
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Load liked and saved tracks from localStorage on init
+  useEffect(() => {
+    const loadUserPreferences = () => {
+      try {
+        const likedTracksData = localStorage.getItem('likedTracks');
+        if (likedTracksData) {
+          const parsedLikedTracks = JSON.parse(likedTracksData);
+          setLikedTracks(new Set(parsedLikedTracks));
+        }
+        
+        const savedTracksData = localStorage.getItem('savedTracks');
+        if (savedTracksData) {
+          const parsedSavedTracks = JSON.parse(savedTracksData);
+          setSavedTracks(new Set(parsedSavedTracks));
+        }
+      } catch (error) {
+        console.error('Error loading user track preferences:', error);
+      }
+    };
+    
+    loadUserPreferences();
+  }, []);
+
+  // Save liked and saved tracks to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('likedTracks', JSON.stringify([...likedTracks]));
+  }, [likedTracks]);
+
+  useEffect(() => {
+    localStorage.setItem('savedTracks', JSON.stringify([...savedTracks]));
+  }, [savedTracks]);
   
   useEffect(() => {
     // Create audio element if it doesn't exist
@@ -231,6 +266,169 @@ export function useMusicPlayerState() {
     setQueue(queue.filter(track => track.id !== trackId));
   };
 
+  // New functions for like, save and share
+  const isTrackLiked = (trackId: string): boolean => {
+    return likedTracks.has(trackId);
+  };
+
+  const isTrackSaved = (trackId: string): boolean => {
+    return savedTracks.has(trackId);
+  };
+
+  const likeTrack = async (trackId: string): Promise<boolean> => {
+    try {
+      // Try to update like count in Supabase if user is logged in
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // First check if the track exists
+        const { data: track, error: trackError } = await supabase
+          .from('tracks')
+          .select('id, like_count')
+          .eq('id', trackId)
+          .single();
+        
+        if (trackError || !track) {
+          console.error('Error finding track:', trackError);
+        } else {
+          // Update the like count
+          const { error } = await supabase
+            .from('tracks')
+            .update({ like_count: (track.like_count || 0) + 1 })
+            .eq('id', trackId);
+          
+          if (error) {
+            console.error('Error updating like count:', error);
+          }
+        }
+      }
+
+      // Update local state regardless of database update
+      setLikedTracks(prev => {
+        const newSet = new Set(prev);
+        newSet.add(trackId);
+        return newSet;
+      });
+      
+      toast.success("Added to your liked tracks");
+      return true;
+    } catch (error) {
+      console.error('Error liking track:', error);
+      toast.error("Couldn't add to liked tracks");
+      return false;
+    }
+  };
+
+  const unlikeTrack = async (trackId: string): Promise<boolean> => {
+    try {
+      // Try to update like count in Supabase if user is logged in
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // First check if the track exists
+        const { data: track, error: trackError } = await supabase
+          .from('tracks')
+          .select('id, like_count')
+          .eq('id', trackId)
+          .single();
+        
+        if (trackError || !track) {
+          console.error('Error finding track:', trackError);
+        } else {
+          // Update the like count (ensure it doesn't go below 0)
+          const { error } = await supabase
+            .from('tracks')
+            .update({ like_count: Math.max(0, (track.like_count || 0) - 1) })
+            .eq('id', trackId);
+          
+          if (error) {
+            console.error('Error updating like count:', error);
+          }
+        }
+      }
+
+      // Update local state regardless of database update
+      setLikedTracks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(trackId);
+        return newSet;
+      });
+      
+      toast.success("Removed from your liked tracks");
+      return true;
+    } catch (error) {
+      console.error('Error unliking track:', error);
+      toast.error("Couldn't remove from liked tracks");
+      return false;
+    }
+  };
+
+  const saveTrack = async (trackId: string): Promise<boolean> => {
+    try {
+      // TODO: Add database interaction for saved tracks when feature is extended
+      setSavedTracks(prev => {
+        const newSet = new Set(prev);
+        newSet.add(trackId);
+        return newSet;
+      });
+      
+      toast.success("Added to your library");
+      return true;
+    } catch (error) {
+      console.error('Error saving track:', error);
+      toast.error("Couldn't add to library");
+      return false;
+    }
+  };
+
+  const unsaveTrack = async (trackId: string): Promise<boolean> => {
+    try {
+      // TODO: Add database interaction for saved tracks when feature is extended
+      setSavedTracks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(trackId);
+        return newSet;
+      });
+      
+      toast.success("Removed from your library");
+      return true;
+    } catch (error) {
+      console.error('Error removing saved track:', error);
+      toast.error("Couldn't remove from library");
+      return false;
+    }
+  };
+
+  const shareTrack = (trackId: string) => {
+    // Create the share URL
+    const shareUrl = `${window.location.origin}/track/${trackId}`;
+    
+    // Use Web Share API if available
+    if (navigator.share) {
+      navigator.share({
+        title: currentTrack?.title || 'Check out this track',
+        text: `Listen to ${currentTrack?.title} by ${currentTrack?.artist}`,
+        url: shareUrl
+      }).catch(error => {
+        console.error('Error sharing:', error);
+        // Fallback
+        copyToClipboard(shareUrl);
+      });
+    } else {
+      // Fallback to copying to clipboard
+      copyToClipboard(shareUrl);
+    }
+  };
+  
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        toast.success("Link copied to clipboard");
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+        toast.error("Couldn't copy link");
+      });
+  };
+
   return {
     currentTrack,
     isPlaying,
@@ -250,5 +448,14 @@ export function useMusicPlayerState() {
     toggleMute,
     addToQueue,
     removeFromQueue,
+    likedTracks,
+    savedTracks,
+    likeTrack,
+    unlikeTrack,
+    saveTrack,
+    unsaveTrack,
+    isTrackLiked,
+    isTrackSaved,
+    shareTrack
   };
 }
