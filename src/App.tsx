@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MusicPlayerProvider } from "@/contexts/MusicPlayerContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useCapacitor } from "@/hooks/use-capacitor";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -95,6 +96,8 @@ const HomeRoute = () => {
 };
 
 const AppRoutes = () => {
+  const { isNative } = useCapacitor();
+
   return (
     <Routes>
       <Route path="/" element={<HomeRoute />} />
@@ -155,20 +158,25 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <MusicPlayerProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </MusicPlayerProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Initialize Capacitor if needed
+  useCapacitor();
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <MusicPlayerProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </MusicPlayerProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

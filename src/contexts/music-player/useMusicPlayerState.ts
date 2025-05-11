@@ -1,9 +1,9 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { toast } from "sonner";
 import { Track } from "@/types/track-types";
 import { logStreamPlay } from "@/services/track-service";
 import { supabase } from "@/integrations/supabase/client";
+import { Capacitor } from '@capacitor/core';
 
 export function useMusicPlayerState() {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -63,6 +63,11 @@ export function useMusicPlayerState() {
       audioRef.current.addEventListener('error', handleAudioError);
       audioRef.current.addEventListener('playing', handlePlayStart);
       audioRef.current.addEventListener('canplay', handleCanPlay);
+      
+      // Set up media session API for native controls if available
+      if ('mediaSession' in navigator) {
+        setupMediaSessionHandlers();
+      }
     }
     
     return () => {
@@ -78,6 +83,26 @@ export function useMusicPlayerState() {
       }
     };
   }, []);
+  
+  // Set up media session handlers for native media controls
+  const setupMediaSessionHandlers = () => {
+    navigator.mediaSession.setActionHandler('play', () => {
+      if (audioRef.current && !isPlaying) {
+        audioRef.current.play().catch(console.error);
+        setIsPlaying(true);
+      }
+    });
+    
+    navigator.mediaSession.setActionHandler('pause', () => {
+      if (audioRef.current && isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    });
+    
+    navigator.mediaSession.setActionHandler('previoustrack', playPrevious);
+    navigator.mediaSession.setActionHandler('nexttrack', playNext);
+  };
   
   // Update audio src when currentTrack changes
   useEffect(() => {
@@ -111,6 +136,17 @@ export function useMusicPlayerState() {
       console.error('No audio source available for:', currentTrack.title);
       toast.error('Audio source not available for this track');
       setIsLoading(false);
+    }
+    
+    // Update media session metadata if available
+    if ('mediaSession' in navigator && currentTrack) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentTrack.title,
+        artist: currentTrack.artist,
+        artwork: [
+          { src: currentTrack.cover || currentTrack.cover_art_path, sizes: '512x512', type: 'image/jpeg' }
+        ]
+      });
     }
   }, [currentTrack]);
   
@@ -402,14 +438,28 @@ export function useMusicPlayerState() {
     const shareUrl = `${window.location.origin}/track/${trackId}`;
     
     // Use Web Share API if available
-    if (navigator.share) {
+    if (Capacitor.isNativePlatform() && Capacitor.Plugins.Share) {
+      try {
+        Capacitor.Plugins.Share.share({
+          title: currentTrack?.title || 'Check out this track',
+          text: `Listen to ${currentTrack?.title} by ${currentTrack?.artist}`,
+          url: shareUrl,
+          dialogTitle: 'Share this track'
+        }).catch(error => {
+          console.error('Error sharing:', error);
+          copyToClipboard(shareUrl);
+        });
+      } catch (error) {
+        console.error('Error using native share:', error);
+        copyToClipboard(shareUrl);
+      }
+    } else if (navigator.share) {
       navigator.share({
         title: currentTrack?.title || 'Check out this track',
         text: `Listen to ${currentTrack?.title} by ${currentTrack?.artist}`,
         url: shareUrl
       }).catch(error => {
         console.error('Error sharing:', error);
-        // Fallback
         copyToClipboard(shareUrl);
       });
     } else {
