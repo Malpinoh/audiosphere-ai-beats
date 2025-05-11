@@ -4,6 +4,7 @@ import { Track } from "@/types/track-types";
 import { logStreamPlay } from "@/services/track-service";
 import { supabase } from "@/integrations/supabase/client";
 import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 
 export function useMusicPlayerState() {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
