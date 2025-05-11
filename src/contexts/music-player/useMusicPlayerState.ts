@@ -438,9 +438,9 @@ export function useMusicPlayerState() {
     const shareUrl = `${window.location.origin}/track/${trackId}`;
     
     // Use Web Share API if available
-    if (Capacitor.isNativePlatform() && Capacitor.Plugins.Share) {
+    if (Capacitor.isNativePlatform() && Share) {
       try {
-        Capacitor.Plugins.Share.share({
+        Share.share({
           title: currentTrack?.title || 'Check out this track',
           text: `Listen to ${currentTrack?.title} by ${currentTrack?.artist}`,
           url: shareUrl,

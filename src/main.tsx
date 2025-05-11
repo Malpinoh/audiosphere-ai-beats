@@ -8,7 +8,12 @@ import './index.css';
 
 // Show splash screen if running in native mode
 if (Capacitor.isNativePlatform()) {
-  SplashScreen.show();
+  // Use try/catch to prevent errors in browser environment
+  try {
+    SplashScreen.show();
+  } catch (error) {
+    console.error('Error showing splash screen:', error);
+  }
 }
 
 createRoot(document.getElementById("root")!).render(

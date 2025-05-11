@@ -1,8 +1,9 @@
 
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { StatusBar } from '@capacitor/status-bar';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
+import { Share } from '@capacitor/share';
 
 export function useCapacitor() {
   const [isNative, setIsNative] = useState<boolean>(false);
@@ -19,7 +20,7 @@ export function useCapacitor() {
 
   const initializeNative = async () => {
     try {
-      await StatusBar.setStyle({ style: 'dark' });
+      await StatusBar.setStyle({ style: Style.Dark });
       await StatusBar.setBackgroundColor({ color: '#121212' });
       
       // Hide the splash screen with a fade out
@@ -32,9 +33,9 @@ export function useCapacitor() {
   };
   
   const shareContent = async (title: string, text: string, url: string) => {
-    if (Capacitor.isNativePlatform() && Capacitor.Plugins.Share) {
+    if (Capacitor.isNativePlatform()) {
       try {
-        await Capacitor.Plugins.Share.share({
+        await Share.share({
           title,
           text,
           url,
