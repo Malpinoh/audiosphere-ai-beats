@@ -1,8 +1,6 @@
 
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { SplashScreen } from '@capacitor/splash-screen';
 import { Share } from '@capacitor/share';
 
 export function useCapacitor() {
@@ -20,7 +18,14 @@ export function useCapacitor() {
 
   const initializeNative = async () => {
     try {
-      await StatusBar.setStyle({ style: Style.Dark });
+      // Dynamically import StatusBar and SplashScreen to prevent build errors
+      const statusBarModule = await import('@capacitor/status-bar');
+      const splashScreenModule = await import('@capacitor/splash-screen');
+      
+      const StatusBar = statusBarModule.StatusBar;
+      const SplashScreen = splashScreenModule.SplashScreen;
+      
+      await StatusBar.setStyle({ style: statusBarModule.Style.Dark });
       await StatusBar.setBackgroundColor({ color: '#121212' });
       
       // Hide the splash screen with a fade out
