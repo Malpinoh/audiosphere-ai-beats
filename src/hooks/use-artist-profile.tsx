@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,8 +47,8 @@ export function useArtistProfile(artistId?: string) {
           username: data.username,
           full_name: data.full_name,
           avatar_url: data.avatar_url,
-          bio: data.bio || null,
-          website: data.website || null,
+          bio: data.bio,
+          website: data.website,
           follower_count: data.follower_count || 0,
           monthly_listeners: data.monthly_listeners || 0,
           is_verified: data.is_verified || false,
@@ -94,8 +95,8 @@ export function useArtistProfile(artistId?: string) {
             username: payload.new.username,
             full_name: payload.new.full_name,
             avatar_url: payload.new.avatar_url,
-            bio: payload.new.bio || null,
-            website: payload.new.website || null,
+            bio: payload.new.bio,
+            website: payload.new.website,
             follower_count: payload.new.follower_count || 0,
             monthly_listeners: payload.new.monthly_listeners || 0,
             is_verified: payload.new.is_verified || false,

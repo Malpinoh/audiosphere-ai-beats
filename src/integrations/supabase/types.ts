@@ -280,33 +280,42 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string | null
           follower_count: number | null
           full_name: string | null
           id: string
           is_verified: boolean | null
+          monthly_listeners: number | null
           role: Database["public"]["Enums"]["app_role"]
           username: string | null
+          website: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           follower_count?: number | null
           full_name?: string | null
           id: string
           is_verified?: boolean | null
+          monthly_listeners?: number | null
           role?: Database["public"]["Enums"]["app_role"]
           username?: string | null
+          website?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           follower_count?: number | null
           full_name?: string | null
           id?: string
           is_verified?: boolean | null
+          monthly_listeners?: number | null
           role?: Database["public"]["Enums"]["app_role"]
           username?: string | null
+          website?: string | null
         }
         Relationships: []
       }
