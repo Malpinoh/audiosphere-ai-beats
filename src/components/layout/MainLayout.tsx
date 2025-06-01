@@ -4,7 +4,6 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import MusicPlayer from "./MusicPlayer";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useCapacitor } from "@/hooks/use-capacitor";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -16,10 +15,9 @@ const MainLayout = ({
   hidePlayer = false
 }: MainLayoutProps) => {
   const isMobile = useIsMobile();
-  const { isNative } = useCapacitor();
   
   return (
-    <div className={`flex flex-col min-h-screen ${isNative ? 'pt-safe' : ''}`}>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
       
       <div className="flex flex-1">

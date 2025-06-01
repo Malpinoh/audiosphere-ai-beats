@@ -1,10 +1,9 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { toast } from "sonner";
 import { Track } from "@/types/track-types";
 import { logStreamPlay } from "@/services/track-service";
 import { supabase } from "@/integrations/supabase/client";
-import { Capacitor } from '@capacitor/core';
-import { Share } from '@capacitor/share';
 
 export function useMusicPlayerState() {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -439,22 +438,7 @@ export function useMusicPlayerState() {
     const shareUrl = `${window.location.origin}/track/${trackId}`;
     
     // Use Web Share API if available
-    if (Capacitor.isNativePlatform() && Share) {
-      try {
-        Share.share({
-          title: currentTrack?.title || 'Check out this track',
-          text: `Listen to ${currentTrack?.title} by ${currentTrack?.artist}`,
-          url: shareUrl,
-          dialogTitle: 'Share this track'
-        }).catch(error => {
-          console.error('Error sharing:', error);
-          copyToClipboard(shareUrl);
-        });
-      } catch (error) {
-        console.error('Error using native share:', error);
-        copyToClipboard(shareUrl);
-      }
-    } else if (navigator.share) {
+    if (navigator.share) {
       navigator.share({
         title: currentTrack?.title || 'Check out this track',
         text: `Listen to ${currentTrack?.title} by ${currentTrack?.artist}`,

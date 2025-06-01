@@ -20,15 +20,4 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Externalize Capacitor dependencies to avoid build issues
-  build: {
-    rollupOptions: {
-      external: [
-        '@capacitor/core',
-        '@capacitor/splash-screen',
-        '@capacitor/status-bar',
-        '@capacitor/share'
-      ]
-    }
-  }
 }));
