@@ -90,9 +90,11 @@ const AdminPanel = () => {
   if (!isAdminChecked) {
     return (
       <MainLayout>
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-8">Admin Panel</h1>
-          <p className="text-center">Checking admin privileges...</p>
+        <div className="min-h-screen bg-gradient-to-br from-slate-900/50 via-purple-900/50 to-slate-900/50">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold mb-8 text-white">Admin Panel</h1>
+            <p className="text-center text-white/60">Checking admin privileges...</p>
+          </div>
         </div>
       </MainLayout>
     );
@@ -102,9 +104,11 @@ const AdminPanel = () => {
   if (!isAuthenticated) {
     return (
       <MainLayout>
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-8">Admin Panel</h1>
-          <AdminAuth onAuth={handleAdminAuth} />
+        <div className="min-h-screen bg-gradient-to-br from-slate-900/50 via-purple-900/50 to-slate-900/50">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold mb-8 text-white">Admin Panel</h1>
+            <AdminAuth onAuth={handleAdminAuth} />
+          </div>
         </div>
       </MainLayout>
     );
@@ -112,47 +116,53 @@ const AdminPanel = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-8 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold">Admin Panel</h1>
-          <Button 
-            variant="outline" 
-            onClick={() => setIsAuthenticated(false)}
-          >
-            Logout
-          </Button>
-        </div>
-
-        <Tabs defaultValue="users" className="w-full">
-          <div className="overflow-x-auto pb-2">
-            <TabsList className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-6'} w-full mb-4 md:mb-8`}>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="songs">Songs</TabsTrigger>
-              <TabsTrigger value="uploads">Uploads</TabsTrigger>
-              <TabsTrigger value="comments">Comments</TabsTrigger>
-              <TabsTrigger value="reports">Reports</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            </TabsList>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900/50 via-purple-900/50 to-slate-900/50">
+        <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-8 gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">Admin Panel</h1>
+              <p className="text-white/60">Manage platform operations and content</p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAuthenticated(false)}
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              Logout
+            </Button>
           </div>
-          <TabsContent value="users" className="mt-4 md:mt-6">
-            <UsersManagement />
-          </TabsContent>
-          <TabsContent value="songs" className="mt-4 md:mt-6">
-            <SongsManagement />
-          </TabsContent>
-          <TabsContent value="uploads" className="mt-4 md:mt-6">
-            <UploadsManagement />
-          </TabsContent>
-          <TabsContent value="comments" className="mt-4 md:mt-6">
-            <CommentsManagement />
-          </TabsContent>
-          <TabsContent value="reports" className="mt-4 md:mt-6">
-            <ReportsManagement />
-          </TabsContent>
-          <TabsContent value="analytics" className="mt-4 md:mt-6">
-            <Analytics />
-          </TabsContent>
-        </Tabs>
+
+          <Tabs defaultValue="users" className="w-full">
+            <div className="overflow-x-auto pb-2">
+              <TabsList className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-6'} w-full mb-4 md:mb-8 bg-black/40 border-white/10`}>
+                <TabsTrigger value="users" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Users</TabsTrigger>
+                <TabsTrigger value="songs" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Songs</TabsTrigger>
+                <TabsTrigger value="uploads" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Uploads</TabsTrigger>
+                <TabsTrigger value="comments" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Comments</TabsTrigger>
+                <TabsTrigger value="reports" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Reports</TabsTrigger>
+                <TabsTrigger value="analytics" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Analytics</TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="users" className="mt-4 md:mt-6">
+              <UsersManagement />
+            </TabsContent>
+            <TabsContent value="songs" className="mt-4 md:mt-6">
+              <SongsManagement />
+            </TabsContent>
+            <TabsContent value="uploads" className="mt-4 md:mt-6">
+              <UploadsManagement />
+            </TabsContent>
+            <TabsContent value="comments" className="mt-4 md:mt-6">
+              <CommentsManagement />
+            </TabsContent>
+            <TabsContent value="reports" className="mt-4 md:mt-6">
+              <ReportsManagement />
+            </TabsContent>
+            <TabsContent value="analytics" className="mt-4 md:mt-6">
+              <Analytics />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </MainLayout>
   );

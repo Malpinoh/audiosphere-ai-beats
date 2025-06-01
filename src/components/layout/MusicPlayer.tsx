@@ -31,12 +31,14 @@ const MusicPlayer = () => {
     setVolume,
     toggleMute,
     playTrack,
-    removeFromQueue
+    removeFromQueue,
+    likeTrack,
+    unlikeTrack,
+    isTrackLiked
   } = useMusicPlayer();
   
   const [repeat, setRepeat] = useState(false);
   const [shuffle, setShuffle] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   
   const isMobile = useIsMobile();
@@ -49,8 +51,14 @@ const MusicPlayer = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
   
-  const toggleLike = () => {
-    setIsLiked(!isLiked);
+  const handleLikeToggle = () => {
+    if (!currentTrack) return;
+    
+    if (isTrackLiked(currentTrack.id)) {
+      unlikeTrack(currentTrack.id);
+    } else {
+      likeTrack(currentTrack.id);
+    }
   };
   
   // Skip 15% of track when clicking on previous/next, unless we're near start/end
@@ -72,14 +80,14 @@ const MusicPlayer = () => {
   
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 bg-maudio-darker border-t border-border p-3 z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 p-3 z-40">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-4">
-          {/* Track Info */}
+          {/* Track Info - Apple Music style */}
           <div className="flex items-center space-x-3 w-full md:w-1/4">
             {currentTrack ? (
               <>
                 <div 
-                  className="h-12 w-12 bg-muted rounded-md overflow-hidden cursor-pointer"
+                  className="h-12 w-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg overflow-hidden cursor-pointer shadow-lg"
                   onClick={isMobile ? openFullscreen : undefined}
                 >
                   <img 
@@ -88,42 +96,42 @@ const MusicPlayer = () => {
                     className="h-full w-full object-cover"
                   />
                 </div>
-                <div className="truncate">
-                  <Link to={`/track/${currentTrack.id}`} className="text-sm font-medium truncate hover:text-primary">
+                <div className="truncate flex-1">
+                  <Link to={`/track/${currentTrack.id}`} className="text-sm font-medium truncate hover:text-white text-gray-100 block">
                     {currentTrack.title}
                   </Link>
-                  <Link to={`/artist/${encodeURIComponent(currentTrack.artist)}`} className="text-xs text-muted-foreground truncate hover:text-primary block">
+                  <Link to={`/artist/${encodeURIComponent(currentTrack.artist)}`} className="text-xs text-gray-400 truncate hover:text-white block">
                     {currentTrack.artist}
                   </Link>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="text-muted-foreground hover:text-primary"
-                  onClick={toggleLike}
+                  className="text-gray-400 hover:text-white"
+                  onClick={handleLikeToggle}
                 >
-                  <Heart className={`h-4 w-4 ${isLiked ? 'fill-secondary text-secondary' : ''}`} />
+                  <Heart className={`h-4 w-4 ${isTrackLiked(currentTrack.id) ? 'fill-red-500 text-red-500' : ''}`} />
                 </Button>
               </>
             ) : (
-              <div className="flex items-center text-muted-foreground text-sm italic">
+              <div className="flex items-center text-gray-400 text-sm italic">
                 No track selected
               </div>
             )}
           </div>
           
-          {/* Player Controls - Only show on desktop or as minimal on mobile */}
+          {/* Player Controls - Apple Music style */}
           <div className="flex flex-col space-y-2 w-full md:w-2/4">
             {/* On mobile, just show play/pause button */}
             {isMobile ? (
               <div className="flex items-center justify-center">
                 <Button 
                   onClick={togglePlay}
-                  className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 text-white"
+                  className="h-10 w-10 rounded-full bg-white hover:bg-gray-200 text-black"
                   disabled={!currentTrack}
                 >
                   {isLoading ? (
-                    <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="h-5 w-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
                   ) : isPlaying ? (
                     <Pause className="h-5 w-5" /> 
                   ) : (
@@ -137,7 +145,7 @@ const MusicPlayer = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={`text-muted-foreground hover:text-primary ${shuffle ? 'text-primary' : ''}`}
+                    className={`text-gray-400 hover:text-white ${shuffle ? 'text-white' : ''}`}
                     onClick={() => setShuffle(!shuffle)}
                   >
                     <Shuffle className="h-4 w-4" />
@@ -145,7 +153,7 @@ const MusicPlayer = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="text-muted-foreground hover:text-primary"
+                    className="text-gray-400 hover:text-white"
                     onClick={handleSkipBackward}
                     disabled={!currentTrack}
                   >
@@ -153,11 +161,11 @@ const MusicPlayer = () => {
                   </Button>
                   <Button 
                     onClick={togglePlay}
-                    className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 text-white"
+                    className="h-10 w-10 rounded-full bg-white hover:bg-gray-200 text-black"
                     disabled={!currentTrack}
                   >
                     {isLoading ? (
-                      <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="h-5 w-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
                     ) : isPlaying ? (
                       <Pause className="h-5 w-5" /> 
                     ) : (
@@ -167,7 +175,7 @@ const MusicPlayer = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="text-muted-foreground hover:text-primary"
+                    className="text-gray-400 hover:text-white"
                     onClick={playNext}
                     disabled={!currentTrack || queue.length === 0}
                   >
@@ -176,7 +184,7 @@ const MusicPlayer = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={`text-muted-foreground hover:text-primary ${repeat ? 'text-primary' : ''}`}
+                    className={`text-gray-400 hover:text-white ${repeat ? 'text-white' : ''}`}
                     onClick={() => setRepeat(!repeat)}
                   >
                     <Repeat className="h-4 w-4" />
@@ -184,36 +192,36 @@ const MusicPlayer = () => {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs text-muted-foreground">{formatTime(currentTime)}</span>
+                  <span className="text-xs text-gray-400">{formatTime(currentTime)}</span>
                   <Slider
                     value={[currentTime]}
                     max={duration || 1}
                     step={1}
-                    className="flex-1"
+                    className="flex-1 [&_.relative]:bg-white/20 [&_[role=slider]]:bg-white [&_[role=slider]]:border-white"
                     onValueChange={(value) => seekTo(value[0])}
                     disabled={!currentTrack}
                   />
-                  <span className="text-xs text-muted-foreground">{formatTime(duration)}</span>
+                  <span className="text-xs text-gray-400">{formatTime(duration)}</span>
                 </div>
               </>
             )}
           </div>
           
-          {/* Volume & Expand */}
+          {/* Volume & Queue Controls */}
           <div className="flex items-center space-x-3 w-full md:w-1/4 justify-end">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
+                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
                   <ListMusic className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-black/95 border-white/10">
                 <div className="h-full flex flex-col">
-                  <h3 className="text-lg font-semibold mb-2">Queue</h3>
-                  <Separator className="mb-4" />
+                  <h3 className="text-lg font-semibold mb-2 text-white">Queue</h3>
+                  <Separator className="mb-4 bg-white/10" />
                   <ScrollArea className="flex-1">
                     {queue.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
+                      <div className="text-center py-8 text-gray-400">
                         <p>Your queue is empty</p>
                       </div>
                     ) : (
@@ -221,8 +229,8 @@ const MusicPlayer = () => {
                         {queue.map((track) => (
                           <div 
                             key={track.id}
-                            className={`flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 ${
-                              currentTrack?.id === track.id ? 'bg-muted' : ''
+                            className={`flex items-center gap-3 p-2 rounded-md hover:bg-white/5 ${
+                              currentTrack?.id === track.id ? 'bg-white/10' : ''
                             }`}
                           >
                             <div className="h-10 w-10 flex-shrink-0 rounded overflow-hidden">
@@ -233,13 +241,13 @@ const MusicPlayer = () => {
                               />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-medium truncate">{track.title}</h4>
-                              <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+                              <h4 className="text-sm font-medium truncate text-white">{track.title}</h4>
+                              <p className="text-xs text-gray-400 truncate">{track.artist}</p>
                             </div>
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-8 w-8 flex-shrink-0" 
+                              className="h-8 w-8 flex-shrink-0 text-gray-400 hover:text-white" 
                               onClick={() => playTrack(track)}
                             >
                               {currentTrack?.id === track.id && isPlaying ? (
@@ -251,7 +259,7 @@ const MusicPlayer = () => {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-8 w-8 flex-shrink-0 text-muted-foreground" 
+                              className="h-8 w-8 flex-shrink-0 text-gray-400 hover:text-white" 
                               onClick={() => removeFromQueue(track.id)}
                             >
                               <span className="sr-only">Remove</span>
@@ -271,7 +279,7 @@ const MusicPlayer = () => {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="text-muted-foreground hover:text-primary"
+                  className="text-gray-400 hover:text-white"
                   onClick={toggleMute}
                 >
                   {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -280,7 +288,7 @@ const MusicPlayer = () => {
                   value={[isMuted ? 0 : volume]}
                   max={100}
                   step={1}
-                  className="w-20"
+                  className="w-20 [&_.relative]:bg-white/20 [&_[role=slider]]:bg-white [&_[role=slider]]:border-white"
                   onValueChange={(value) => {
                     setVolume(value[0]);
                   }}
@@ -291,7 +299,7 @@ const MusicPlayer = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-muted-foreground hover:text-primary"
+              className="text-gray-400 hover:text-white"
               onClick={isMobile ? openFullscreen : undefined}
             >
               {isMobile ? (
