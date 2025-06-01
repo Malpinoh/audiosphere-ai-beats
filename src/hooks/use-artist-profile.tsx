@@ -6,8 +6,8 @@ import { toast } from "sonner";
 
 export interface ArtistProfile {
   id: string;
-  username: string;
-  full_name: string;
+  username: string | null;
+  full_name: string | null;
   avatar_url: string | null;
   bio: string | null;
   website: string | null;
@@ -41,7 +41,21 @@ export function useArtistProfile(artistId?: string) {
           
         if (error) throw error;
         
-        setArtistProfile(data as ArtistProfile);
+        // Map the database response to our interface
+        const mappedProfile: ArtistProfile = {
+          id: data.id,
+          username: data.username,
+          full_name: data.full_name,
+          avatar_url: data.avatar_url,
+          bio: data.bio || null,
+          website: data.website || null,
+          follower_count: data.follower_count || 0,
+          monthly_listeners: data.monthly_listeners || 0,
+          is_verified: data.is_verified || false,
+          role: data.role
+        };
+        
+        setArtistProfile(mappedProfile);
         
         // Check if current user is following this artist
         if (user && targetArtistId !== user.id) {
@@ -76,7 +90,19 @@ export function useArtistProfile(artistId?: string) {
           filter: `id=eq.${targetArtistId}`
         },
         (payload) => {
-          setArtistProfile(payload.new as ArtistProfile);
+          const mappedProfile: ArtistProfile = {
+            id: payload.new.id,
+            username: payload.new.username,
+            full_name: payload.new.full_name,
+            avatar_url: payload.new.avatar_url,
+            bio: payload.new.bio || null,
+            website: payload.new.website || null,
+            follower_count: payload.new.follower_count || 0,
+            monthly_listeners: payload.new.monthly_listeners || 0,
+            is_verified: payload.new.is_verified || false,
+            role: payload.new.role
+          };
+          setArtistProfile(mappedProfile);
         }
       )
       .on(
@@ -103,9 +129,17 @@ export function useArtistProfile(artistId?: string) {
     if (!user) return;
     
     try {
+      // Filter out fields that don't exist in the database table
+      const dbUpdates: any = {};
+      if (updates.full_name !== undefined) dbUpdates.full_name = updates.full_name;
+      if (updates.username !== undefined) dbUpdates.username = updates.username;
+      if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+      if (updates.website !== undefined) dbUpdates.website = updates.website;
+      if (updates.avatar_url !== undefined) dbUpdates.avatar_url = updates.avatar_url;
+      
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', user.id);
         
       if (error) throw error;

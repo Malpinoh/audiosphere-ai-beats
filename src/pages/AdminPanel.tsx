@@ -33,7 +33,7 @@ export default function AdminPanel() {
   if (!profile || profile.role !== 'admin') {
     return (
       <MainLayout>
-        <AdminAuth />
+        <AdminAuth onAuth={() => {}} />
       </MainLayout>
     );
   }

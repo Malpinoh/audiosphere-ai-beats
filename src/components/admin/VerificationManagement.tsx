@@ -14,11 +14,11 @@ interface VerificationRequest {
   status: string;
   reason: string;
   submitted_at: string;
-  profiles: {
+  profiles?: {
     full_name: string;
     username: string;
     avatar_url: string;
-  };
+  } | null;
 }
 
 export function VerificationManagement() {
@@ -29,20 +29,30 @@ export function VerificationManagement() {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const { data, error } = await supabase
+        const { data: requestsData, error } = await supabase
           .from('verification_requests')
-          .select(`
-            *,
-            profiles:user_id (
-              full_name,
-              username,
-              avatar_url
-            )
-          `)
+          .select('*')
           .order('submitted_at', { ascending: false });
           
         if (error) throw error;
-        setRequests(data as VerificationRequest[]);
+        
+        // Fetch profiles separately to avoid relation issues
+        const requestsWithProfiles = await Promise.all(
+          requestsData.map(async (request) => {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('full_name, username, avatar_url')
+              .eq('id', request.user_id)
+              .single();
+              
+            return {
+              ...request,
+              profiles: profileData
+            };
+          })
+        );
+        
+        setRequests(requestsWithProfiles);
       } catch (error) {
         console.error('Error fetching verification requests:', error);
         toast.error('Failed to load verification requests');
@@ -153,13 +163,13 @@ export function VerificationManagement() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <img
-                      src={request.profiles.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(request.profiles.full_name)}&background=random`}
-                      alt={request.profiles.full_name}
+                      src={request.profiles?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(request.profiles?.full_name || 'User')}&background=random`}
+                      alt={request.profiles?.full_name || 'User'}
                       className="w-10 h-10 rounded-full"
                     />
                     <div>
-                      <h3 className="font-medium">{request.profiles.full_name}</h3>
-                      <p className="text-sm text-muted-foreground">@{request.profiles.username}</p>
+                      <h3 className="font-medium">{request.profiles?.full_name || 'Unknown User'}</h3>
+                      <p className="text-sm text-muted-foreground">@{request.profiles?.username || 'unknown'}</p>
                     </div>
                   </div>
                   {getStatusBadge(request.status)}
