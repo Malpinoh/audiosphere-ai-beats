@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,7 +34,7 @@ export function useArtistProfile(artistId?: string) {
         
         const { data, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role')
           .eq('id', targetArtistId)
           .single();
           

@@ -81,6 +81,8 @@ const RecommendationsPage = () => {
       tags: [],
       published: true,
       cover: trackData.cover,
+      user_id: trackData.user_id || "unknown", // Add missing user_id
+      duration: trackData.duration || 0 // Add missing duration
     };
   };
 
