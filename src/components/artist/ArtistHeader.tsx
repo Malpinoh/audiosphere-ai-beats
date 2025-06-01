@@ -1,11 +1,11 @@
 
-import { Heart, Users, Music, Share, Loader2 } from "lucide-react";
+import { Heart, Users, Music, Share, Loader2, CheckCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import type { Artist } from "@/hooks/use-artist";
+import type { ArtistProfile } from "@/hooks/use-artist-profile";
 
 interface ArtistHeaderProps {
-  artist: Artist;
+  artist: ArtistProfile;
   isFollowing: boolean;
   followLoading: boolean;
   handleToggleFollow: () => Promise<void>;
@@ -21,67 +21,89 @@ export const ArtistHeader = ({
   getAvatarImage,
   tracksCount
 }: ArtistHeaderProps) => {
+  const formatFollowers = (count: number) => {
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1)}M`;
+    } else if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K`;
+    }
+    return count.toString();
+  };
+
   return (
-    <div className="relative h-[300px] overflow-hidden bg-maudio-darker">
-      {/* Cover Image - Using a gradient as fallback */}
-      <div className="absolute inset-0 opacity-40">
-        {/* Use a placeholder gradient if no image */}
-        <div className="w-full h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
-      </div>
-      
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-maudio-dark via-transparent to-transparent"></div>
+    <div className="relative h-[400px] overflow-hidden bg-gradient-to-br from-purple-900/80 via-pink-900/60 to-blue-900/80">
+      {/* Background blur effect */}
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
       
       {/* Artist Info */}
       <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end gap-6">
-        <Avatar className="h-32 w-32 rounded-full border-4 border-white/10">
-          <img src={getAvatarImage()} alt={artist.full_name} />
-        </Avatar>
+        <div className="relative">
+          <Avatar className="h-32 w-32 rounded-full border-4 border-white/20 shadow-2xl">
+            <img src={getAvatarImage()} alt={artist.full_name} />
+          </Avatar>
+          {artist.is_verified && (
+            <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-2 border-2 border-white">
+              <CheckCircle className="h-4 w-4 text-white" />
+            </div>
+          )}
+        </div>
         
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl md:text-4xl font-bold">{artist.full_name}</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-4xl md:text-5xl font-bold text-white">{artist.full_name}</h1>
             {artist.is_verified && (
-              <span className="bg-blue-500 text-white text-xs rounded-full p-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </span>
+              <CheckCircle className="h-6 w-6 text-blue-400" />
             )}
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
-            <span className="flex items-center gap-1">
+          
+          {artist.username && (
+            <p className="text-lg text-white/80 mb-3">@{artist.username}</p>
+          )}
+          
+          <div className="flex items-center gap-6 text-white/90">
+            <span className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              {artist.follower_count.toLocaleString()} followers
+              {formatFollowers(artist.follower_count)} followers
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-2">
               <Music className="h-4 w-4" />
               {tracksCount} tracks
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="text-sm">
+                {formatFollowers(artist.monthly_listeners || 0)} monthly listeners
+              </span>
             </span>
           </div>
         </div>
         
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-3">
           {tracksCount > 0 && (
-            <Button className="gap-2 maudio-gradient-bg">
-              <Play className="h-4 w-4" />
+            <Button className="gap-2 bg-white text-black hover:bg-white/90 px-8 py-3 rounded-full font-semibold">
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+              </svg>
               Play All
             </Button>
           )}
           <Button 
             variant={isFollowing ? "outline" : "default"}
-            className={`gap-2 ${isFollowing ? "border-primary text-primary" : "maudio-gradient-bg"}`}
+            className={`gap-2 px-6 py-3 rounded-full font-semibold ${
+              isFollowing 
+                ? "border-white/30 text-white hover:bg-white/10" 
+                : "bg-transparent border-2 border-white text-white hover:bg-white hover:text-black"
+            }`}
             onClick={handleToggleFollow}
             disabled={followLoading}
           >
             {followLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Heart className="h-4 w-4" fill={isFollowing ? "currentColor" : "none"} />
             )}
             {isFollowing ? "Following" : "Follow"}
           </Button>
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" className="rounded-full border-white/30 text-white hover:bg-white/10">
             <Share className="h-4 w-4" />
           </Button>
         </div>
@@ -89,6 +111,3 @@ export const ArtistHeader = ({
     </div>
   );
 };
-
-// Missing 'Play' component, adding it here:
-import { Play } from "lucide-react";

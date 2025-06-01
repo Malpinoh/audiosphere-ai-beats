@@ -7,9 +7,8 @@ import { QuickStats } from "@/components/dashboard/QuickStats";
 import { DashboardTabs } from "@/components/dashboard/DashboardTabs";
 import { InsightsSection } from "@/components/dashboard/InsightsSection";
 import { PromotionSection } from "@/components/dashboard/PromotionSection";
-import { ProfilePictureUploader } from "@/components/profile/ProfilePictureUploader";
+import { ArtistProfileEditor } from "@/components/artist/ArtistProfileEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 export default function ArtistDashboard() {
   const { user, profile } = useAuth();
@@ -28,24 +27,10 @@ export default function ArtistDashboard() {
             <p className="text-lg text-white/60">Manage your music and connect with your audience</p>
           </div>
           
-          <div className="flex flex-col md:flex-row items-start gap-6 mb-8">
-            <Card className="w-full md:w-auto bg-black/40 border-white/10 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-white">Artist Profile</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center">
-                <ProfilePictureUploader size="lg" />
-                <h2 className="text-xl font-bold mt-4 text-white">{profile.full_name}</h2>
-                <p className="text-white/60">@{profile.username || 'artist'}</p>
-                <div className="mt-4">
-                  <Button asChild variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                    <a href="/account-settings">Edit Profile</a>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <ArtistProfileEditor />
             
-            <div className="flex-1 w-full">
+            <div className="space-y-6">
               <DashboardHeader />
               <QuickStats />
             </div>

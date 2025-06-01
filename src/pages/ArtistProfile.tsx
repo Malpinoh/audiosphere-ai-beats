@@ -1,11 +1,12 @@
 
 import { useParams } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
-import { useTracks } from "@/hooks/use-tracks";
-import { useArtist } from "@/hooks/use-artist";
+import { useArtistProfile } from "@/hooks/use-artist-profile";
+import { useArtistTracks } from "@/hooks/use-artist-tracks";
 import { ArtistHeader } from "@/components/artist/ArtistHeader";
 import { ArtistMobileActions } from "@/components/artist/ArtistMobileActions";
 import { ArtistTabs } from "@/components/artist/ArtistTabs";
+import { ArtistStatsDisplay } from "@/components/artist/ArtistStatsDisplay";
 import { ArtistLoadingState } from "@/components/artist/ArtistLoadingState";
 import { ArtistNotFound } from "@/components/artist/ArtistNotFound";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -14,22 +15,20 @@ const ArtistProfile = () => {
   const { artistId } = useParams<{ artistId: string }>();
   const isMobile = useIsMobile();
   
-  // Use our custom hooks
   const { 
-    artist, 
+    artistProfile, 
     loading, 
     isFollowing, 
     followLoading, 
-    handleToggleFollow,
-    getAvatarImage
-  } = useArtist(artistId);
+    toggleFollow
+  } = useArtistProfile(artistId);
   
-  // Fetch tracks by this artist
-  const { tracks, loading: tracksLoading } = useTracks({
-    published: true,
-    artist: artist?.full_name || "",
-    orderBy: { column: "play_count", ascending: false }
-  });
+  const { tracks, loading: tracksLoading } = useArtistTracks(artistId || '');
+
+  const getAvatarImage = () => {
+    if (artistProfile?.avatar_url) return artistProfile.avatar_url;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(artistProfile?.full_name || "Artist")}&background=random`;
+  };
 
   if (loading) {
     return (
@@ -39,7 +38,7 @@ const ArtistProfile = () => {
     );
   }
   
-  if (!artist) {
+  if (!artistProfile) {
     return (
       <MainLayout>
         <ArtistNotFound />
@@ -51,10 +50,10 @@ const ArtistProfile = () => {
     <MainLayout>
       {/* Artist Header */}
       <ArtistHeader 
-        artist={artist}
+        artist={artistProfile}
         isFollowing={isFollowing}
         followLoading={followLoading}
-        handleToggleFollow={handleToggleFollow}
+        handleToggleFollow={toggleFollow}
         getAvatarImage={getAvatarImage}
         tracksCount={tracks.length}
       />
@@ -64,12 +63,14 @@ const ArtistProfile = () => {
         <ArtistMobileActions 
           isFollowing={isFollowing}
           followLoading={followLoading}
-          handleToggleFollow={handleToggleFollow}
+          handleToggleFollow={toggleFollow}
           tracksCount={tracks.length}
         />
         
+        <ArtistStatsDisplay artistId={artistProfile.id} />
+        
         <ArtistTabs 
-          artist={artist}
+          artist={artistProfile}
           tracks={tracks}
           tracksLoading={tracksLoading}
           isMobile={isMobile}

@@ -1,171 +1,114 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AdminAuth } from "@/components/admin/AdminAuth";
+import { Analytics } from "@/components/admin/Analytics";
 import { UsersManagement } from "@/components/admin/UsersManagement";
 import { SongsManagement } from "@/components/admin/SongsManagement";
 import { UploadsManagement } from "@/components/admin/UploadsManagement";
-import { CommentsManagement } from "@/components/admin/CommentsManagement";
 import { ReportsManagement } from "@/components/admin/ReportsManagement";
-import { Analytics } from "@/components/admin/Analytics";
-import { AdminAuth } from "@/components/admin/AdminAuth";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { CommentsManagement } from "@/components/admin/CommentsManagement";
+import { VerificationManagement } from "@/components/admin/VerificationManagement";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  BarChart3, 
+  Users, 
+  Music, 
+  Upload, 
+  Flag, 
+  MessageSquare,
+  Shield
+} from "lucide-react";
 
-const AdminPanel = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdminChecked, setIsAdminChecked] = useState(false);
+export default function AdminPanel() {
   const { user, profile } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
-
-  // Check if the logged-in user is an admin
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      // If user is not logged in, they can't be an admin
-      if (!user) {
-        setIsAdminChecked(true);
-        return;
-      }
-
-      // If we already have the profile and role from the auth context
-      if (profile) {
-        if (profile.role === 'admin') {
-          setIsAuthenticated(true);
-        }
-        setIsAdminChecked(true);
-        return;
-      }
-
-      // If profile is not loaded yet, fetch it
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-
-        if (data.role === 'admin') {
-          setIsAuthenticated(true);
-        } else {
-          // Redirect non-admin users
-          toast({
-            title: "Access Denied",
-            description: "You do not have permission to access the admin panel",
-            variant: "destructive",
-          });
-          navigate('/');
-        }
-      } catch (error) {
-        console.error("Error checking admin status:", error);
-        navigate('/');
-      } finally {
-        setIsAdminChecked(true);
-      }
-    };
-
-    checkAdminStatus();
-  }, [user, profile, navigate, toast]);
-
-  // Simple authentication for admin login
-  const handleAdminAuth = (success: boolean) => {
-    setIsAuthenticated(success);
-    if (!success) {
-      toast({
-        title: "Authentication Failed",
-        description: "Invalid credentials or insufficient permissions",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Show loading state
-  if (!isAdminChecked) {
+  
+  // Redirect if not logged in
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Show auth component if not admin
+  if (!profile || profile.role !== 'admin') {
     return (
       <MainLayout>
-        <div className="min-h-screen bg-gradient-to-br from-slate-900/50 via-purple-900/50 to-slate-900/50">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8 text-white">Admin Panel</h1>
-            <p className="text-center text-white/60">Checking admin privileges...</p>
-          </div>
-        </div>
+        <AdminAuth />
       </MainLayout>
     );
   }
-
-  // Show admin login form if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <MainLayout>
-        <div className="min-h-screen bg-gradient-to-br from-slate-900/50 via-purple-900/50 to-slate-900/50">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8 text-white">Admin Panel</h1>
-            <AdminAuth onAuth={handleAdminAuth} />
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
+  
   return (
     <MainLayout>
       <div className="min-h-screen bg-gradient-to-br from-slate-900/50 via-purple-900/50 to-slate-900/50">
-        <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-8 gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white">Admin Panel</h1>
-              <p className="text-white/60">Manage platform operations and content</p>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAuthenticated(false)}
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-            >
-              Logout
-            </Button>
+        <div className="container py-8">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold mb-4 text-white">Admin Panel</h1>
+            <p className="text-lg text-white/60">Manage your music platform</p>
           </div>
-
-          <Tabs defaultValue="users" className="w-full">
-            <div className="overflow-x-auto pb-2">
-              <TabsList className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-6'} w-full mb-4 md:mb-8 bg-black/40 border-white/10`}>
-                <TabsTrigger value="users" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Users</TabsTrigger>
-                <TabsTrigger value="songs" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Songs</TabsTrigger>
-                <TabsTrigger value="uploads" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Uploads</TabsTrigger>
-                <TabsTrigger value="comments" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Comments</TabsTrigger>
-                <TabsTrigger value="reports" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Reports</TabsTrigger>
-                <TabsTrigger value="analytics" className="data-[state=active]:bg-white/20 text-white/80 data-[state=active]:text-white">Analytics</TabsTrigger>
-              </TabsList>
-            </div>
-            <TabsContent value="users" className="mt-4 md:mt-6">
+          
+          <Tabs defaultValue="analytics" className="space-y-6">
+            <TabsList className="bg-black/20 border-white/10 p-1">
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Users
+              </TabsTrigger>
+              <TabsTrigger value="songs" className="flex items-center gap-2">
+                <Music className="h-4 w-4" />
+                Songs
+              </TabsTrigger>
+              <TabsTrigger value="uploads" className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Uploads
+              </TabsTrigger>
+              <TabsTrigger value="verification" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Verification
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="flex items-center gap-2">
+                <Flag className="h-4 w-4" />
+                Reports
+              </TabsTrigger>
+              <TabsTrigger value="comments" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Comments
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="analytics">
+              <Analytics />
+            </TabsContent>
+            
+            <TabsContent value="users">
               <UsersManagement />
             </TabsContent>
-            <TabsContent value="songs" className="mt-4 md:mt-6">
+            
+            <TabsContent value="songs">
               <SongsManagement />
             </TabsContent>
-            <TabsContent value="uploads" className="mt-4 md:mt-6">
+            
+            <TabsContent value="uploads">
               <UploadsManagement />
             </TabsContent>
-            <TabsContent value="comments" className="mt-4 md:mt-6">
-              <CommentsManagement />
+            
+            <TabsContent value="verification">
+              <VerificationManagement />
             </TabsContent>
-            <TabsContent value="reports" className="mt-4 md:mt-6">
+            
+            <TabsContent value="reports">
               <ReportsManagement />
             </TabsContent>
-            <TabsContent value="analytics" className="mt-4 md:mt-6">
-              <Analytics />
+            
+            <TabsContent value="comments">
+              <CommentsManagement />
             </TabsContent>
           </Tabs>
         </div>
       </div>
     </MainLayout>
   );
-};
-
-export default AdminPanel;
+}
