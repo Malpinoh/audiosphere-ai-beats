@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -19,6 +18,7 @@ interface Artist {
   is_verified: boolean;
   bio?: string;
   website?: string;
+  tracks: number;
 }
 
 const LoadingArtistCard = () => (
