@@ -15,6 +15,7 @@ import UploadPage from "./pages/UploadPage";
 import RecommendationsPage from "./pages/RecommendationsPage";
 import AdminPanel from "./pages/AdminPanel";
 import ArtistProfile from "./pages/ArtistProfile";
+import ArtistsPage from "./pages/ArtistsPage";
 import ApiDocumentation from "./pages/ApiDocumentation";
 import NotFound from "./pages/NotFound";
 import TrackPage from "./pages/TrackPage";

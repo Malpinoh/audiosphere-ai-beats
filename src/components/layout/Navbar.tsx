@@ -1,268 +1,256 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, LogIn, User, Menu, X, LogOut, Upload, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Menu, Upload, User, LogOut, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { SearchBar } from "@/components/layout/SearchBar";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { SearchBar } from "./SearchBar";
-import { toast } from "sonner";
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
-  
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const toggleSearch = () => setIsSearchOpen(!isSearchOpen);
-  
+
   const handleSignOut = async () => {
     await signOut();
-    toast.success("You've been signed out successfully");
-    navigate("/");
+    navigate('/login');
   };
-  
-  const getUserInitials = () => {
-    if (profile?.full_name) {
-      return profile.full_name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .substring(0, 2);
-    }
-    
-    if (user?.email) {
-      return user.email.substring(0, 2).toUpperCase();
-    }
-    
-    return "MA";
-  };
-  
+
   return (
-    <nav className="sticky top-0 z-50 bg-maudio-darker border-b border-border py-3 px-4 md:px-6">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center">
-          <span className="text-2xl font-bold maudio-gradient-text">MAUDIO</span>
-        </Link>
-        
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-6">
-          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
-            Home
+    <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">M</span>
+            </div>
+            <span className="font-bold text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              MAUDIO
+            </span>
           </Link>
-          <Link to="/browse" className="text-sm font-medium hover:text-primary transition-colors">
-            Browse
-          </Link>
-          <Link to="/charts" className="text-sm font-medium hover:text-primary transition-colors">
-            Charts
-          </Link>
-          <Link to="/playlists" className="text-sm font-medium hover:text-primary transition-colors">
-            Playlists
-          </Link>
-        </div>
-        
-        {/* Search bar (Desktop) */}
-        <div className="hidden md:flex items-center">
-          <SearchBar className="w-64" />
-        </div>
-        
-        {/* Auth buttons (Desktop) */}
-        <div className="hidden md:flex items-center space-x-3">
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar>
-                    <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <div className="flex items-center justify-start gap-2 p-2">
-                  <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium">{profile?.full_name || profile?.username || 'User'}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                  </div>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/upload" className="cursor-pointer flex w-full items-center">
-                    <Upload className="mr-2 h-4 w-4" />
-                    <span>Upload Track</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/account-settings" className="cursor-pointer flex w-full items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/account-settings" className="cursor-pointer flex w-full items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className="cursor-pointer text-destructive focus:text-destructive"
-                  onClick={handleSignOut}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <>
-              <Button variant="outline" size="sm" asChild className="gap-1">
-                <Link to="/login">
-                  <LogIn className="h-4 w-4" />
-                  <span>Sign In</span>
-                </Link>
-              </Button>
-              <Button size="sm" asChild className="gap-1 maudio-gradient-bg">
-                <Link to="/signup">
-                  <User className="h-4 w-4" />
-                  <span>Sign Up</span>
-                </Link>
-              </Button>
-            </>
-          )}
-        </div>
-        
-        {/* Mobile Controls */}
-        <div className="flex md:hidden items-center gap-2">
-          <button onClick={toggleSearch} className="maudio-icon-button">
-            <Search className="h-5 w-5" />
-          </button>
-          <button onClick={toggleMenu} className="maudio-icon-button">
-            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-      </div>
-      
-      {/* Mobile Search Bar */}
-      {isSearchOpen && (
-        <div className="md:hidden p-3 border-t border-border animate-fade-in">
-          <SearchBar />
-        </div>
-      )}
-      
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden p-4 border-t border-border animate-fade-in bg-maudio-darker space-y-4">
-          <div className="space-y-3">
-            <Link 
-              to="/" 
-              className="block py-2 text-sm font-medium hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            <Link to="/" className="text-gray-300 hover:text-white transition-colors">
               Home
             </Link>
-            <Link 
-              to="/browse" 
-              className="block py-2 text-sm font-medium hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link to="/browse" className="text-gray-300 hover:text-white transition-colors">
               Browse
             </Link>
-            <Link 
-              to="/charts" 
-              className="block py-2 text-sm font-medium hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link to="/artists" className="text-gray-300 hover:text-white transition-colors">
+              Artists
+            </Link>
+            <Link to="/charts" className="text-gray-300 hover:text-white transition-colors">
               Charts
             </Link>
-            <Link 
-              to="/playlists" 
-              className="block py-2 text-sm font-medium hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <Link to="/playlists" className="text-gray-300 hover:text-white transition-colors">
               Playlists
             </Link>
+            
+            {/* Search Bar */}
+            <SearchBar className="w-64" />
           </div>
-          
-          {user ? (
-            <div className="space-y-3 pt-3 border-t border-border">
-              {profile && (
-                <div className="flex items-center space-x-3 pb-2">
-                  <Avatar>
-                    <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback>{getUserInitials()}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{profile?.full_name || profile?.username || 'User'}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+
+          {/* Right side items */}
+          <div className="flex items-center space-x-4">
+            {/* Mobile menu button */}
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden text-white">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-black border-gray-800">
+                <div className="flex flex-col space-y-4 mt-8">
+                  <Link 
+                    to="/" 
+                    className="text-gray-300 hover:text-white transition-colors py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Home
+                  </Link>
+                  <Link 
+                    to="/browse" 
+                    className="text-gray-300 hover:text-white transition-colors py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Browse
+                  </Link>
+                  <Link 
+                    to="/artists" 
+                    className="text-gray-300 hover:text-white transition-colors py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Artists
+                  </Link>
+                  <Link 
+                    to="/charts" 
+                    className="text-gray-300 hover:text-white transition-colors py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Charts
+                  </Link>
+                  <Link 
+                    to="/playlists" 
+                    className="text-gray-300 hover:text-white transition-colors py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Playlists
+                  </Link>
+                  
+                  {/* Mobile Search */}
+                  <div className="pt-4 border-t border-gray-800">
+                    <SearchBar className="w-full" />
+                  </div>
+                  
+                  {/* Mobile Auth Section */}
+                  <div className="pt-4 border-t border-gray-800">
+                    {user ? (
+                      <div className="space-y-3">
+                        {(profile?.role === 'artist' || profile?.role === 'distributor' || profile?.role === 'admin') && (
+                          <Link 
+                            to="/upload" 
+                            className="block text-gray-300 hover:text-white transition-colors py-2"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            Upload
+                          </Link>
+                        )}
+                        {profile?.role === 'artist' && (
+                          <Link 
+                            to="/artist-dashboard" 
+                            className="block text-gray-300 hover:text-white transition-colors py-2"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            Dashboard
+                          </Link>
+                        )}
+                        <Link 
+                          to="/account-settings" 
+                          className="block text-gray-300 hover:text-white transition-colors py-2"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                          Account
+                        </Link>
+                        <button
+                          onClick={() => {
+                            handleSignOut();
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className="block text-red-400 hover:text-red-300 transition-colors py-2 text-left w-full"
+                        >
+                          Sign Out
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col space-y-2">
+                        <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
+                            Sign In
+                          </Button>
+                        </Link>
+                        <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Button className="w-full maudio-gradient-bg">
+                            Sign Up
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 </div>
+              </SheetContent>
+            </Sheet>
+
+            {/* Desktop Auth */}
+            <div className="hidden md:flex items-center space-x-4">
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={profile?.avatar_url || ""} alt={profile?.full_name || ""} />
+                        <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                          {profile?.full_name?.[0] || profile?.username?.[0] || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 bg-black border-gray-800" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none text-white">
+                          {profile?.full_name || profile?.username}
+                        </p>
+                        <p className="text-xs leading-none text-gray-400">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-gray-800" />
+                    {(profile?.role === 'artist' || profile?.role === 'distributor' || profile?.role === 'admin') && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/upload" className="cursor-pointer text-gray-300 hover:text-white">
+                          <Upload className="mr-2 h-4 w-4" />
+                          <span>Upload Music</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {profile?.role === 'artist' && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/artist-dashboard" className="cursor-pointer text-gray-300 hover:text-white">
+                          <BarChart3 className="mr-2 h-4 w-4" />
+                          <span>Dashboard</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem asChild>
+                      <Link to="/account-settings" className="cursor-pointer text-gray-300 hover:text-white">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Account</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-gray-800" />
+                    <DropdownMenuItem 
+                      onClick={handleSignOut}
+                      className="cursor-pointer text-red-400 hover:text-red-300 focus:text-red-300"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Sign Out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <Link to="/login">
+                    <Button variant="ghost" className="text-gray-300 hover:text-white">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/signup">
+                    <Button className="maudio-gradient-bg">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </div>
               )}
-              
-              <Link 
-                to="/upload" 
-                className="flex items-center py-2 text-sm font-medium hover:text-primary transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                Upload Track
-              </Link>
-              
-              <Link 
-                to="/account-settings" 
-                className="flex items-center py-2 text-sm font-medium hover:text-primary transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </Link>
-              
-              <Link 
-                to="/account-settings" 
-                className="flex items-center py-2 text-sm font-medium hover:text-primary transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Link>
-              
-              <button
-                onClick={() => {
-                  handleSignOut();
-                  setIsMenuOpen(false);
-                }}
-                className="flex items-center py-2 text-sm font-medium text-destructive hover:text-destructive/80 transition-colors w-full"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </button>
             </div>
-          ) : (
-            <div className="flex flex-col gap-3 pt-3 border-t border-border">
-              <Button variant="outline" asChild className="justify-center">
-                <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                  Sign In
-                </Link>
-              </Button>
-              <Button asChild className="justify-center maudio-gradient-bg">
-                <Link to="/signup" onClick={() => setIsMenuOpen(false)}>
-                  Sign Up
-                </Link>
-              </Button>
-            </div>
-          )}
+          </div>
         </div>
-      )}
+      </div>
     </nav>
   );
 };
