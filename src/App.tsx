@@ -94,6 +94,7 @@ const AppRoutes = () => {
         } 
       />
       <Route path="/recommendations" element={<RecommendationsPage />} />
+      <Route path="/artists" element={<ArtistsPage />} />
       <Route path="/artist/:artistId" element={<ArtistProfile />} />
       <Route path="/track/:trackId" element={<TrackPage />} />
       <Route path="/report" element={<ReportPage />} />
