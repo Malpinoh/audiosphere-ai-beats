@@ -76,31 +76,12 @@ const ContentCreatorRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Home route that redirects based on role
-const HomeRoute = () => {
-  const { user, profile, loading } = useAuth();
-  
-  // Show loading or home page while auth is loading
-  if (loading || !user || !profile) {
-    return <Index />;
-  }
-  
-  // Redirect based on role
-  if (profile.role === 'artist') {
-    return <Navigate to="/artist-dashboard" replace />;
-  } else if (profile.role === 'admin') {
-    return <Navigate to="/admin" replace />;
-  } else {
-    return <Index />;
-  }
-};
-
 const AppRoutes = () => {
   const { isNative } = useCapacitor();
 
   return (
     <Routes>
-      <Route path="/" element={<HomeRoute />} />
+      <Route path="/" element={<Index />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route 
@@ -128,10 +109,10 @@ const AppRoutes = () => {
       <Route path="/charts" element={<ChartsPage />} />
       <Route path="/playlists" element={<PlaylistsPage />} />
       
-      {/* Settings and info pages - fixed route */}
+      {/* Settings and info pages */}
       <Route path="/account-settings" element={<AccountSettings />} />
-      <Route path="/account" element={<AccountSettings />} /> {/* Alternative path */}
-      <Route path="/profile" element={<AccountSettings />} /> {/* Alternative path */}
+      <Route path="/account" element={<AccountSettings />} />
+      <Route path="/profile" element={<AccountSettings />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/contact-us" element={<ContactUs />} />

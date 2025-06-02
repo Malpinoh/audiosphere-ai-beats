@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, LogIn, User, Menu, X, LogOut, Upload, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -13,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SearchBar } from "./SearchBar";
 import { toast } from "sonner";
 
 const Navbar = () => {
@@ -72,13 +72,8 @@ const Navbar = () => {
         </div>
         
         {/* Search bar (Desktop) */}
-        <div className="hidden md:flex items-center relative">
-          <Input
-            type="search"
-            placeholder="Search tracks, artists..."
-            className="w-64 bg-muted focus-visible:ring-primary"
-          />
-          <Search className="absolute right-3 h-4 w-4 text-muted-foreground" />
+        <div className="hidden md:flex items-center">
+          <SearchBar className="w-64" />
         </div>
         
         {/* Auth buttons (Desktop) */}
@@ -108,13 +103,13 @@ const Navbar = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/profile" className="cursor-pointer flex w-full items-center">
+                  <Link to="/account-settings" className="cursor-pointer flex w-full items-center">
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/settings" className="cursor-pointer flex w-full items-center">
+                  <Link to="/account-settings" className="cursor-pointer flex w-full items-center">
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </Link>
@@ -161,14 +156,7 @@ const Navbar = () => {
       {/* Mobile Search Bar */}
       {isSearchOpen && (
         <div className="md:hidden p-3 border-t border-border animate-fade-in">
-          <div className="relative">
-            <Input
-              type="search"
-              placeholder="Search tracks, artists..."
-              className="w-full bg-muted focus-visible:ring-primary"
-            />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          </div>
+          <SearchBar />
         </div>
       )}
       
@@ -231,7 +219,7 @@ const Navbar = () => {
               </Link>
               
               <Link 
-                to="/profile" 
+                to="/account-settings" 
                 className="flex items-center py-2 text-sm font-medium hover:text-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -240,7 +228,7 @@ const Navbar = () => {
               </Link>
               
               <Link 
-                to="/settings" 
+                to="/account-settings" 
                 className="flex items-center py-2 text-sm font-medium hover:text-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >

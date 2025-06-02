@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Section } from "@/components/sections/FeaturedSection";
 import { Button } from "@/components/ui/button";
@@ -79,7 +79,8 @@ const LoadingTrackCard = () => (
 
 const BrowsePage = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || "");
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [currentFilter, setCurrentFilter] = useState<TracksFilter>({
@@ -88,6 +89,20 @@ const BrowsePage = () => {
   });
   
   const { tracks, loading } = useTracks(currentFilter);
+
+  // Handle URL search parameters
+  useEffect(() => {
+    const searchFromUrl = searchParams.get('search');
+    if (searchFromUrl) {
+      setSearchTerm(searchFromUrl);
+      const newFilter: TracksFilter = {
+        published: true,
+        limit: 20,
+        searchTerm: searchFromUrl
+      };
+      setCurrentFilter(newFilter);
+    }
+  }, [searchParams]);
   
   const handleSearch = () => {
     const newFilter: TracksFilter = {
@@ -145,7 +160,7 @@ const BrowsePage = () => {
                   <SelectValue placeholder="Genre" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Genres</SelectItem>
+                  <SelectItem value="">All Genres</SelectItem>
                   {genres.map(genre => (
                     <SelectItem key={genre.id} value={genre.id}>
                       {genre.name}
@@ -159,7 +174,7 @@ const BrowsePage = () => {
                   <SelectValue placeholder="Mood" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Moods</SelectItem>
+                  <SelectItem value="">All Moods</SelectItem>
                   {moods.map(mood => (
                     <SelectItem key={mood.toLowerCase()} value={mood.toLowerCase()}>
                       {mood}

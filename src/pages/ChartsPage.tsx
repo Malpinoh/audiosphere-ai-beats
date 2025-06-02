@@ -44,7 +44,7 @@ const TrackRanking = ({ rank, track }: { rank: number, track: any }) => {
       </div>
       
       <div className="text-right text-sm text-muted-foreground shrink-0">
-        {track.play_count.toLocaleString()} plays
+        {(track.play_count || 0).toLocaleString()} plays
       </div>
     </div>
   );
@@ -68,6 +68,7 @@ const ChartsPage = () => {
   }, [loadingRegions, regions, selectedRegion]);
   
   const formatRegionName = (code: string) => {
+    if (!code) return 'Global';
     const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
     try {
       return regionNames.of(code);
@@ -119,7 +120,7 @@ const ChartsPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {loadingRegions ? (
-                    <SelectItem value="loading-regions">Loading regions...</SelectItem>
+                    <SelectItem value="loading-regions" disabled>Loading regions...</SelectItem>
                   ) : regions.length > 0 ? (
                     regions.map(region => (
                       <SelectItem key={region} value={region}>
@@ -127,7 +128,7 @@ const ChartsPage = () => {
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="no-regions">No regions available</SelectItem>
+                    <SelectItem value="no-regions" disabled>No regions available</SelectItem>
                   )}
                 </SelectContent>
               </Select>

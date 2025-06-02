@@ -8,6 +8,7 @@ import { Plus, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlaylistCard } from "@/components/ui/playlist-card";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Mock playlists for demonstration
 const mockPlaylists = [
@@ -60,6 +61,7 @@ const mockPlaylists = [
 const PlaylistsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
   
   const filteredPlaylists = mockPlaylists.filter(playlist => 
     playlist.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -77,10 +79,12 @@ const PlaylistsPage = () => {
             </p>
           </div>
           
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create Playlist
-          </Button>
+          {user && (
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Create Playlist
+            </Button>
+          )}
         </div>
         
         {/* Search */}
@@ -131,13 +135,25 @@ const PlaylistsPage = () => {
           </div>
         </div>
         
-        {/* My Playlists - would show user's playlists when authentication is implemented */}
+        {/* My Playlists */}
         <div className="mb-10">
           <h2 className="text-xl font-bold mb-4">My Playlists</h2>
-          <div className="bg-maudio-darker rounded-lg p-10 text-center">
-            <p className="text-muted-foreground mb-4">Sign in to create and view your playlists</p>
-            <Button>Sign In</Button>
-          </div>
+          {user ? (
+            <div className="bg-maudio-darker rounded-lg p-10 text-center">
+              <p className="text-muted-foreground mb-4">You haven't created any playlists yet</p>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First Playlist
+              </Button>
+            </div>
+          ) : (
+            <div className="bg-maudio-darker rounded-lg p-10 text-center">
+              <p className="text-muted-foreground mb-4">Sign in to create and view your playlists</p>
+              <Button asChild>
+                <a href="/login">Sign In</a>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </MainLayout>
