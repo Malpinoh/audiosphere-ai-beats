@@ -81,8 +81,8 @@ const BrowsePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || "");
-  const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
-  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const [selectedGenre, setSelectedGenre] = useState<string>("all-genres");
+  const [selectedMood, setSelectedMood] = useState<string>("all-moods");
   const [currentFilter, setCurrentFilter] = useState<TracksFilter>({
     published: true,
     limit: 20
@@ -109,8 +109,8 @@ const BrowsePage = () => {
       published: true,
       limit: 20,
       searchTerm: searchTerm || undefined,
-      genre: selectedGenre || undefined,
-      mood: selectedMood || undefined
+      genre: selectedGenre === "all-genres" ? undefined : selectedGenre,
+      mood: selectedMood === "all-moods" ? undefined : selectedMood
     };
     
     setCurrentFilter(newFilter);
@@ -155,12 +155,12 @@ const BrowsePage = () => {
             </div>
             
             <div className="flex gap-2">
-              <Select value={selectedGenre || ""} onValueChange={setSelectedGenre}>
+              <Select value={selectedGenre} onValueChange={setSelectedGenre}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Genre" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Genres</SelectItem>
+                  <SelectItem value="all-genres">All Genres</SelectItem>
                   {genres.map(genre => (
                     <SelectItem key={genre.id} value={genre.id}>
                       {genre.name}
@@ -169,12 +169,12 @@ const BrowsePage = () => {
                 </SelectContent>
               </Select>
               
-              <Select value={selectedMood || ""} onValueChange={setSelectedMood}>
+              <Select value={selectedMood} onValueChange={setSelectedMood}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Mood" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Moods</SelectItem>
+                  <SelectItem value="all-moods">All Moods</SelectItem>
                   {moods.map(mood => (
                     <SelectItem key={mood.toLowerCase()} value={mood.toLowerCase()}>
                       {mood}
