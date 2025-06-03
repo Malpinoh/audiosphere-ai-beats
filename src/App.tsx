@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -29,6 +28,7 @@ import TermsOfService from "./pages/TermsOfService";
 import ContactUs from "./pages/ContactUs";
 import ArtistDashboard from "./pages/ArtistDashboard";
 import PromotePage from "./pages/PromotePage";
+import ServiceInfoPage from "./pages/ServiceInfoPage";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +115,7 @@ const AppRoutes = () => {
       <Route path="/account-settings" element={<AccountSettings />} />
       <Route path="/account" element={<AccountSettings />} />
       <Route path="/profile" element={<AccountSettings />} />
+      <Route path="/service-info" element={<ServiceInfoPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/contact-us" element={<ContactUs />} />

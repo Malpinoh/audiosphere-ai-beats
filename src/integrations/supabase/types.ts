@@ -357,6 +357,24 @@ export type Database = {
           },
         ]
       }
+      system_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+        }
+        Relationships: []
+      }
       tracks: {
         Row: {
           artist: string
@@ -501,6 +519,10 @@ export type Database = {
           last_played_at: string
           region_country: string
         }[]
+      }
+      update_monthly_listeners: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
