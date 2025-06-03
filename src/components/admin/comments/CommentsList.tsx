@@ -33,9 +33,9 @@ export function CommentsList({
   
   const filteredComments = comments.filter(comment => 
     comment.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    comment.profiles.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    comment.tracks.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    comment.tracks.artist.toLowerCase().includes(searchTerm.toLowerCase())
+    comment.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    comment.track_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    comment.track_artist.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

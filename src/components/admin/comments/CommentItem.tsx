@@ -4,13 +4,15 @@ import {
   CheckCircle, 
   EyeOff, 
   Flag, 
-  Trash2 
+  Trash2,
+  Shield 
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Comment } from "./types";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CommentItemProps {
   comment: Comment;
@@ -30,11 +32,24 @@ export function CommentItem({
       <TableCell className="max-w-md">
         <div className="truncate">{comment.content}</div>
       </TableCell>
-      <TableCell>{comment.profiles.username}</TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage src={comment.avatar_url} />
+            <AvatarFallback>{comment.username[0]?.toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="flex items-center gap-1">
+            <span>{comment.username}</span>
+            {comment.is_verified && (
+              <Shield className="h-3 w-3 text-blue-500" />
+            )}
+          </div>
+        </div>
+      </TableCell>
       <TableCell>
         <div className="flex flex-col">
-          <span className="font-medium">{comment.tracks.title}</span>
-          <span className="text-sm text-muted-foreground">{comment.tracks.artist}</span>
+          <span className="font-medium">{comment.track_title}</span>
+          <span className="text-sm text-muted-foreground">{comment.track_artist}</span>
         </div>
       </TableCell>
       <TableCell className="hidden md:table-cell">{new Date(comment.created_at).toLocaleDateString()}</TableCell>

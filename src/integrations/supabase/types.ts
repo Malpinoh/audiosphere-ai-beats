@@ -50,6 +50,54 @@ export type Database = {
           },
         ]
       }
+      comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          flagged: boolean | null
+          id: string
+          likes_count: number | null
+          status: string
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          flagged?: boolean | null
+          id?: string
+          likes_count?: number | null
+          status?: string
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          flagged?: boolean | null
+          id?: string
+          likes_count?: number | null
+          status?: string
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       distributor_earnings: {
         Row: {
           amount: number
@@ -472,6 +520,40 @@ export type Database = {
       }
     }
     Views: {
+      comments_with_details: {
+        Row: {
+          avatar_url: string | null
+          content: string | null
+          created_at: string | null
+          flagged: boolean | null
+          follower_count: number | null
+          id: string | null
+          is_verified: boolean | null
+          likes_count: number | null
+          status: string | null
+          track_artist: string | null
+          track_id: string | null
+          track_title: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       global_charts: {
         Row: {
           last_played_at: string | null
