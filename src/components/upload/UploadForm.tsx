@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -228,6 +227,13 @@ export function UploadForm() {
       return;
     }
 
+    // Validate audio file format
+    const supportedFormats = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
+    if (!supportedFormats.includes(audioFile.type)) {
+      toast.error("Audio file was not properly converted. Please try uploading again.");
+      return;
+    }
+
     setIsUploading(true);
 
     try {
@@ -329,7 +335,7 @@ export function UploadForm() {
               </h3>
               
               <FileUploader 
-                accept=".mp3,.wav"
+                accept="audio/*"
                 maxSize={30} // 30MB
                 onFileSelected={onAudioFileSelected}
                 selectedFile={audioFile}

@@ -1,7 +1,9 @@
 
 import React, { useState, useRef } from "react";
-import { Upload, FileAudio, FileImage, AlertCircle } from "lucide-react";
+import { Upload, FileAudio, FileImage, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface FileUploaderProps {
   accept: string;
@@ -20,6 +22,7 @@ export function FileUploader({
 }: FileUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -41,19 +44,68 @@ export function FileUploader({
       return false;
     }
 
-    // Check file type
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const acceptedTypes = accept.split(',').map(type => 
-      type.trim().replace('.', '').toLowerCase()
-    );
-    
-    if (!fileExtension || !acceptedTypes.includes(fileExtension)) {
-      setError(`Invalid file type. Accepted types: ${accept}`);
-      return false;
-    }
-
     setError(null);
     return true;
+  };
+
+  const convertAudioFile = async (file: File): Promise<File> => {
+    if (fileType !== "audio") return file;
+    
+    // Check if file is already in supported format
+    const supportedFormats = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
+    if (supportedFormats.includes(file.type)) {
+      return file;
+    }
+    
+    setIsConverting(true);
+    toast.info("Converting audio to supported format...");
+    
+    try {
+      const formData = new FormData();
+      formData.append('audio_file', file);
+      
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authToken = sessionData.session?.access_token;
+      
+      const response = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/audio-converter', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Conversion failed');
+      }
+      
+      const convertedBuffer = await response.arrayBuffer();
+      const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+      const convertedFile = new File([convertedBuffer], `${baseName}.mp3`, {
+        type: 'audio/mpeg'
+      });
+      
+      toast.success("Audio converted successfully!");
+      return convertedFile;
+    } catch (error) {
+      console.error('Conversion error:', error);
+      toast.error(`Conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  const processFile = async (file: File) => {
+    if (!validateFile(file)) return;
+    
+    try {
+      const processedFile = await convertAudioFile(file);
+      onFileSelected(processedFile);
+    } catch (error) {
+      console.error('File processing error:', error);
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -63,18 +115,14 @@ export function FileUploader({
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
-      if (validateFile(file)) {
-        onFileSelected(file);
-      }
+      processFile(file);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      if (validateFile(file)) {
-        onFileSelected(file);
-      }
+      processFile(file);
     }
   };
 
@@ -87,8 +135,22 @@ export function FileUploader({
   };
 
   const getPlaceholderText = () => {
-    return fileType === "audio" ? "Upload your track (MP3 or WAV)" : "Upload cover art (JPG or PNG)";
+    return fileType === "audio" ? "Upload your track (Any audio format)" : "Upload cover art (JPG or PNG)";
   };
+
+  if (isConverting) {
+    return (
+      <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-6 text-center">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <p className="mt-2 font-medium">Converting audio file...</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Please wait while we convert your audio to a supported format
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -105,7 +167,7 @@ export function FileUploader({
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
-          accept={accept}
+          accept={fileType === "audio" ? "audio/*" : accept}
           className="hidden"
         />
         
@@ -127,6 +189,11 @@ export function FileUploader({
             <p className="text-xs text-muted-foreground mt-1">
               Max size: {maxSize}MB
             </p>
+            {fileType === "audio" && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Supports: MP3, WAV, AAC, FLAC, OGG (auto-converted)
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -145,6 +212,7 @@ export function FileUploader({
             variant="outline" 
             size="sm" 
             onClick={handleButtonClick}
+            disabled={isConverting}
           >
             Change file
           </Button>
