@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { Comment } from '../comments/types';
 import { Report } from '../reports/types';
@@ -9,79 +8,114 @@ export const getMockComments = (): Comment[] => {
     {
       id: uuidv4(),
       content: "This track is amazing! Love the bass line.",
-      profiles: { username: "music_lover_42" },
-      tracks: { title: "Summer Groove", artist: "DJ Horizon" },
+      username: "music_lover_42",
+      avatar_url: undefined,
+      follower_count: 150,
+      is_verified: false,
+      track_title: "Summer Groove",
+      track_artist: "DJ Horizon",
       created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
       status: "active",
       flagged: false,
       user_id: uuidv4(),
-      track_id: uuidv4()
+      track_id: uuidv4(),
+      likes_count: 23
     },
     {
       id: uuidv4(),
       content: "First!!! This song is fire 🔥🔥🔥",
-      profiles: { username: "beat_master" },
-      tracks: { title: "Midnight Drive", artist: "Luna Wave" },
+      username: "beat_master",
+      avatar_url: undefined,
+      follower_count: 89,
+      is_verified: true,
+      track_title: "Midnight Drive",
+      track_artist: "Luna Wave",
       created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
       status: "active",
       flagged: false,
       user_id: uuidv4(),
-      track_id: uuidv4()
+      track_id: uuidv4(),
+      likes_count: 12
     },
     {
       id: uuidv4(),
       content: "The lyrics are really deep. Makes me think about life.",
-      profiles: { username: "deep_thoughts" },
-      tracks: { title: "Reflections", artist: "Echo Mind" },
+      username: "deep_thoughts",
+      avatar_url: undefined,
+      follower_count: 203,
+      is_verified: false,
+      track_title: "Reflections",
+      track_artist: "Echo Mind",
       created_at: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
       status: "active",
       flagged: false,
       user_id: uuidv4(),
-      track_id: uuidv4()
+      track_id: uuidv4(),
+      likes_count: 45
     },
     {
       id: uuidv4(),
       content: "Check out my mixtape at [spam link removed]",
-      profiles: { username: "promo_spammer" },
-      tracks: { title: "Urban Whispers", artist: "Street Poet" },
+      username: "promo_spammer",
+      avatar_url: undefined,
+      follower_count: 5,
+      is_verified: false,
+      track_title: "Urban Whispers",
+      track_artist: "Street Poet",
       created_at: new Date(Date.now() - 96 * 60 * 60 * 1000).toISOString(),
       status: "hidden",
       flagged: true,
       user_id: uuidv4(),
-      track_id: uuidv4()
+      track_id: uuidv4(),
+      likes_count: 0
     },
     {
       id: uuidv4(),
       content: "This is terrible. The mixing is awful and the vocals are off-key.",
-      profiles: { username: "harsh_critic" },
-      tracks: { title: "First Try", artist: "Newbie Artist" },
+      username: "harsh_critic",
+      avatar_url: undefined,
+      follower_count: 34,
+      is_verified: false,
+      track_title: "First Try",
+      track_artist: "Newbie Artist",
       created_at: new Date(Date.now() - 120 * 60 * 60 * 1000).toISOString(),
       status: "active",
       flagged: true,
       user_id: uuidv4(),
-      track_id: uuidv4()
+      track_id: uuidv4(),
+      likes_count: 2
     },
     {
       id: uuidv4(),
       content: "I've listened to this track 100 times already! Can't get enough.",
-      profiles: { username: "superfan2023" },
-      tracks: { title: "Hypnotic", artist: "Trance Master" },
+      username: "superfan2023",
+      avatar_url: undefined,
+      follower_count: 567,
+      is_verified: true,
+      track_title: "Hypnotic",
+      track_artist: "Trance Master",
       created_at: new Date(Date.now() - 144 * 60 * 60 * 1000).toISOString(),
       status: "active",
       flagged: false,
       user_id: uuidv4(),
-      track_id: uuidv4()
+      track_id: uuidv4(),
+      likes_count: 89
     },
     {
       id: uuidv4(),
       content: "[Comment removed for violation of community guidelines]",
-      profiles: { username: "banned_user" },
-      tracks: { title: "Controversial", artist: "Rebel Artist" },
+      username: "banned_user",
+      avatar_url: undefined,
+      follower_count: 1,
+      is_verified: false,
+      track_title: "Controversial",
+      track_artist: "Rebel Artist",
       created_at: new Date(Date.now() - 168 * 60 * 60 * 1000).toISOString(),
       status: "deleted",
       flagged: true,
       user_id: uuidv4(),
-      track_id: uuidv4()
+      track_id: uuidv4(),
+      likes_count: 0
     }
   ];
 };

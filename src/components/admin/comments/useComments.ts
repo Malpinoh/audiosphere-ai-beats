@@ -35,7 +35,7 @@ export function useComments() {
         track_title: comment.track_title,
         track_artist: comment.track_artist,
         created_at: comment.created_at,
-        status: comment.status,
+        status: comment.status as "active" | "hidden" | "deleted",
         flagged: comment.flagged || false,
         user_id: comment.user_id,
         track_id: comment.track_id,
