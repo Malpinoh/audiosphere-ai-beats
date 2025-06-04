@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Upload, Music, FileImage, Tag, X, Loader2, Sparkles } from "lucide-react";
+import { Upload, Music, FileImage, Tag, X, Loader2, Sparkles, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,6 +55,7 @@ export function UploadForm() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzedTags, setAnalyzedTags] = useState<string[]>([]);
   const [isAutoAnalysisEnabled, setIsAutoAnalysisEnabled] = useState(true);
+  const [audioFormatWarning, setAudioFormatWarning] = useState<string | null>(null);
   const { user, profile } = useAuth();
 
   const form = useForm<UploadFormValues>({
@@ -72,8 +73,31 @@ export function UploadForm() {
 
   const lyrics = form.watch("lyrics");
 
+  // Function to check audio format compatibility
+  const checkAudioCompatibility = (file: File) => {
+    const audio = new Audio();
+    const supportedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac'];
+    
+    if (!supportedTypes.includes(file.type)) {
+      setAudioFormatWarning(
+        `Warning: ${file.type || 'Unknown format'} may not be supported by all browsers. MP3 and WAV are recommended for best compatibility.`
+      );
+    } else {
+      setAudioFormatWarning(null);
+    }
+
+    // Test if the browser can play this audio type
+    const canPlay = audio.canPlayType(file.type);
+    if (canPlay === '') {
+      setAudioFormatWarning(
+        `Warning: Your browser may not support this audio format (${file.type || 'unknown'}). Consider converting to MP3 or WAV for better compatibility.`
+      );
+    }
+  };
+
   const onAudioFileSelected = async (file: File) => {
     setAudioFile(file);
+    checkAudioCompatibility(file);
     
     const fileName = file.name;
     const titleFromFile = fileName.substring(0, fileName.lastIndexOf(".")).replace(/[-_]/g, " ");
@@ -227,11 +251,19 @@ export function UploadForm() {
       return;
     }
 
-    // Validate audio file format
+    // Enhanced audio file format validation
     const supportedFormats = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
-    if (!supportedFormats.includes(audioFile.type)) {
-      toast.error("Audio file was not properly converted. Please try uploading again.");
+    const fileExtension = audioFile.name.split('.').pop()?.toLowerCase();
+    const acceptedExtensions = ['mp3', 'wav', 'mpeg'];
+    
+    if (!supportedFormats.includes(audioFile.type) && !acceptedExtensions.includes(fileExtension || '')) {
+      toast.error("Unsupported audio format. Please upload MP3 or WAV files for best compatibility.");
       return;
+    }
+
+    // Show warning if format might cause issues
+    if (audioFormatWarning) {
+      toast.warning(audioFormatWarning);
     }
 
     setIsUploading(true);
@@ -293,13 +325,21 @@ export function UploadForm() {
         throw new Error(errorData.message || 'Upload failed: HTTP ' + uploadResponse.status);
       }
       
-      toast.success("Track uploaded successfully!");
+      const responseData = await uploadResponse.json();
+      
+      toast.success("Track uploaded successfully! Artist profile automatically created.");
+      
+      // Show additional info about artist profile creation
+      if (responseData.data?.analyzed_data) {
+        toast.info("An artist profile has been automatically created and can be claimed by the artist.");
+      }
       
       form.reset();
       setAudioFile(null);
       setCoverArt(null);
       setCoverArtPreview(null);
       setAnalyzedTags([]);
+      setAudioFormatWarning(null);
     } catch (error) {
       console.error("Upload error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to upload track. Please try again.");
@@ -341,6 +381,13 @@ export function UploadForm() {
                 selectedFile={audioFile}
                 fileType="audio"
               />
+              
+              {audioFormatWarning && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md flex items-start space-x-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-yellow-800">{audioFormatWarning}</p>
+                </div>
+              )}
             </div>
 
             <div className="bg-card border border-border rounded-md p-4">
@@ -428,6 +475,9 @@ export function UploadForm() {
                   <FormControl>
                     <Input placeholder="Your artist name" {...field} />
                   </FormControl>
+                  <FormDescription>
+                    An artist profile will be automatically created and can be claimed by the artist.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

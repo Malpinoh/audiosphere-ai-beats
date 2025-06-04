@@ -50,6 +50,59 @@ export type Database = {
           },
         ]
       }
+      artist_claims: {
+        Row: {
+          artist_name: string
+          artist_profile_id: string | null
+          claim_status: string
+          claimant_user_id: string | null
+          created_at: string | null
+          evidence_text: string | null
+          evidence_urls: string[] | null
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          submitted_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          artist_name: string
+          artist_profile_id?: string | null
+          claim_status?: string
+          claimant_user_id?: string | null
+          created_at?: string | null
+          evidence_text?: string | null
+          evidence_urls?: string[] | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          artist_name?: string
+          artist_profile_id?: string | null
+          claim_status?: string
+          claimant_user_id?: string | null
+          created_at?: string | null
+          evidence_text?: string | null
+          evidence_urls?: string[] | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_claims_artist_profile_id_fkey"
+            columns: ["artist_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           content: string
@@ -327,8 +380,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auto_created: boolean | null
           avatar_url: string | null
           bio: string | null
+          claimable: boolean | null
           created_at: string | null
           follower_count: number | null
           full_name: string | null
@@ -340,8 +395,10 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          auto_created?: boolean | null
           avatar_url?: string | null
           bio?: string | null
+          claimable?: boolean | null
           created_at?: string | null
           follower_count?: number | null
           full_name?: string | null
@@ -353,8 +410,10 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          auto_created?: boolean | null
           avatar_url?: string | null
           bio?: string | null
+          claimable?: boolean | null
           created_at?: string | null
           follower_count?: number | null
           full_name?: string | null
@@ -426,6 +485,7 @@ export type Database = {
       tracks: {
         Row: {
           artist: string
+          artist_profile_id: string | null
           audio_file_path: string
           cover_art_path: string
           description: string | null
@@ -444,6 +504,7 @@ export type Database = {
         }
         Insert: {
           artist: string
+          artist_profile_id?: string | null
           audio_file_path: string
           cover_art_path: string
           description?: string | null
@@ -462,6 +523,7 @@ export type Database = {
         }
         Update: {
           artist?: string
+          artist_profile_id?: string | null
           audio_file_path?: string
           cover_art_path?: string
           description?: string | null
@@ -479,6 +541,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tracks_artist_profile_id_fkey"
+            columns: ["artist_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tracks_user_id_fkey"
             columns: ["user_id"]
@@ -589,6 +658,10 @@ export type Database = {
       }
     }
     Functions: {
+      create_artist_profile_if_not_exists: {
+        Args: { artist_name: string }
+        Returns: string
+      }
       generate_api_key: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -608,7 +681,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "distributor" | "editorial" | "user" | "artist"
+      app_role:
+        | "admin"
+        | "distributor"
+        | "editorial"
+        | "user"
+        | "artist"
+        | "support"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -724,7 +803,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "distributor", "editorial", "user", "artist"],
+      app_role: [
+        "admin",
+        "distributor",
+        "editorial",
+        "user",
+        "artist",
+        "support",
+      ],
     },
   },
 } as const
