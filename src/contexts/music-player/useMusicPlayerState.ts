@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { toast } from "sonner";
 import { Track } from "@/types/track-types";
@@ -57,12 +56,23 @@ export function useMusicPlayerState() {
     if (!audioRef.current) {
       audioRef.current = new Audio();
       
+      // Set audio element properties for better compatibility
+      audioRef.current.preload = 'auto';
+      audioRef.current.crossOrigin = 'anonymous';
+      
       audioRef.current.addEventListener('timeupdate', updateProgress);
       audioRef.current.addEventListener('loadedmetadata', onMetadataLoaded);
       audioRef.current.addEventListener('ended', handleTrackEnd);
       audioRef.current.addEventListener('error', handleAudioError);
       audioRef.current.addEventListener('playing', handlePlayStart);
       audioRef.current.addEventListener('canplay', handleCanPlay);
+      audioRef.current.addEventListener('loadstart', () => {
+        console.log('Audio load started');
+      });
+      audioRef.current.addEventListener('canplaythrough', () => {
+        console.log('Audio can play through');
+        setIsLoading(false);
+      });
       
       // Set up media session API for native controls if available
       if ('mediaSession' in navigator) {
@@ -83,6 +93,41 @@ export function useMusicPlayerState() {
       }
     };
   }, []);
+  
+  // Function to validate and potentially convert audio URL
+  const getValidAudioUrl = async (track: Track): Promise<string | null> => {
+    const audioSrc = track.audioUrl || track.audio_file_path;
+    
+    if (!audioSrc) {
+      console.error('No audio source available for:', track.title);
+      return null;
+    }
+    
+    console.log('Original audio source:', audioSrc);
+    
+    // Check if it's a Supabase storage URL and ensure it's properly formatted
+    if (audioSrc.includes('supabase.co/storage/v1/object/public/')) {
+      // The URL is already a public URL, use it as is
+      return audioSrc;
+    } else if (audioSrc.includes('/storage/v1/object/public/')) {
+      // Add the full domain if missing
+      return `https://qkpjlfcpncvvjyzfolag.supabase.co${audioSrc}`;
+    }
+    
+    // For other URLs, try to validate they exist
+    try {
+      const response = await fetch(audioSrc, { method: 'HEAD' });
+      if (response.ok) {
+        return audioSrc;
+      } else {
+        console.error('Audio file not accessible:', response.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error validating audio URL:', error);
+      return null;
+    }
+  };
   
   // Set up media session handlers for native media controls
   const setupMediaSessionHandlers = () => {
@@ -111,32 +156,45 @@ export function useMusicPlayerState() {
     setIsLoading(true);
     setPlaybackStarted(false);
     
-    // Use the formatted audioUrl if available, otherwise fallback to audio_file_path
-    const audioSrc = currentTrack.audioUrl || currentTrack.audio_file_path;
-    
-    // Debug information
-    console.log("Setting audio source:", audioSrc);
-    
-    // Only set src if we have a valid audio source
-    if (audioSrc) {
-      audioRef.current.src = audioSrc;
-      audioRef.current.load();
-      
-      if (isPlaying) {
-        const playPromise = audioRef.current.play();
+    const loadAudio = async () => {
+      try {
+        const validUrl = await getValidAudioUrl(currentTrack);
         
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.error('Auto-play was prevented:', error);
-            setIsPlaying(false);
-          });
+        if (!validUrl) {
+          toast.error(`Cannot play "${currentTrack.title}" - audio file not found`);
+          setIsLoading(false);
+          return;
         }
+        
+        console.log('Setting validated audio source:', validUrl);
+        
+        if (audioRef.current) {
+          // Reset audio element
+          audioRef.current.src = '';
+          audioRef.current.load();
+          
+          // Set new source
+          audioRef.current.src = validUrl;
+          audioRef.current.load();
+          
+          if (isPlaying) {
+            try {
+              await audioRef.current.play();
+            } catch (error) {
+              console.error('Auto-play was prevented:', error);
+              setIsPlaying(false);
+              handleAudioError(error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading audio:', error);
+        toast.error(`Error loading "${currentTrack.title}"`);
+        setIsLoading(false);
       }
-    } else {
-      console.error('No audio source available for:', currentTrack.title);
-      toast.error('Audio source not available for this track');
-      setIsLoading(false);
-    }
+    };
+    
+    loadAudio();
     
     // Update media session metadata if available
     if ('mediaSession' in navigator && currentTrack) {
@@ -167,11 +225,13 @@ export function useMusicPlayerState() {
     if (!audioRef.current) return;
     
     setDuration(audioRef.current.duration);
+    console.log('Audio metadata loaded, duration:', audioRef.current.duration);
   };
   
   const handlePlayStart = () => {
     if (!playbackStarted && currentTrack) {
       setPlaybackStarted(true);
+      console.log('Playback started for:', currentTrack.title);
       // Log play count
       logStreamPlay(currentTrack.id).catch(err => {
         console.error('Failed to log stream play:', err);
@@ -180,31 +240,55 @@ export function useMusicPlayerState() {
   };
   
   const handleCanPlay = () => {
+    console.log('Audio can play');
     setIsLoading(false);
   };
   
   const handleTrackEnd = () => {
+    console.log('Track ended, playing next');
     playNext();
   };
   
   const handleAudioError = (e: any) => {
-    console.error('Audio error:', e);
+    console.error('Audio error details:', e);
     setIsLoading(false);
+    setIsPlaying(false);
     
-    // Check if currentTrack exists and if it has valid audio URL
     if (currentTrack) {
-      // Try to provide a more specific error message
-      if (!currentTrack.audioUrl && !currentTrack.audio_file_path) {
-        toast.error(`Track "${currentTrack.title}" has no audio file attached.`);
+      // Provide more specific error messages based on error type
+      if (e?.target?.error) {
+        const errorCode = e.target.error.code;
+        switch (errorCode) {
+          case 1: // MEDIA_ERR_ABORTED
+            toast.error('Playback was aborted');
+            break;
+          case 2: // MEDIA_ERR_NETWORK
+            toast.error('Network error - check your connection');
+            break;
+          case 3: // MEDIA_ERR_DECODE
+            toast.error('Audio format not supported or file corrupted');
+            break;
+          case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
+            toast.error('Audio file format not supported');
+            break;
+          default:
+            toast.error(`Error playing "${currentTrack.title}"`);
+        }
+      } else if (e?.name === 'NotSupportedError') {
+        toast.error('Audio format not supported by your browser');
+      } else if (e?.name === 'NotAllowedError') {
+        toast.error('Playback prevented - please enable autoplay');
       } else {
-        toast.error('Error playing this track. Please try again later.');
+        toast.error(`Cannot play "${currentTrack.title}" - audio file may be corrupted`);
       }
     } else {
-      toast.error('Error playing audio. No track selected.');
+      toast.error('Audio playback error');
     }
   };
   
   const playTrack = (track: Track) => {
+    console.log('Playing track:', track.title, 'Audio URL:', track.audioUrl || track.audio_file_path);
+    
     // If the track is not in the queue, add it
     if (!queue.some(t => t.id === track.id)) {
       setQueue(prevQueue => [...prevQueue, track]);
@@ -227,14 +311,7 @@ export function useMusicPlayerState() {
         playPromise.catch(error => {
           console.error('Play was prevented:', error);
           setIsPlaying(false);
-          
-          if (error.name === 'NotSupportedError') {
-            toast.error('Audio format not supported or file not found.');
-          } else if (error.name === 'NotAllowedError') {
-            toast.error('Playback was prevented by your browser. Please enable autoplay.');
-          } else {
-            toast.error('Unable to play track. Please try again.');
-          }
+          handleAudioError(error);
         });
       }
       
