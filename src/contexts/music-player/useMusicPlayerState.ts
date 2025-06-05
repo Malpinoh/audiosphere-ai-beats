@@ -52,36 +52,58 @@ export function useMusicPlayerState() {
   }, [savedTracks]);
   
   useEffect(() => {
-    // Create audio element if it doesn't exist
+    // Create audio element with enhanced cross-browser support
     if (!audioRef.current) {
       audioRef.current = new Audio();
       
-      // Set audio element properties for better compatibility and format support
+      // Enhanced audio element properties for better compatibility
       audioRef.current.preload = 'auto';
       audioRef.current.crossOrigin = 'anonymous';
       
-      // Add support for multiple audio formats
-      audioRef.current.addEventListener('loadstart', () => {
+      // Add multiple format support detection
+      const audio = audioRef.current;
+      
+      // Test browser support for different audio formats
+      const formatSupport = {
+        mp3: audio.canPlayType('audio/mpeg') !== '',
+        wav: audio.canPlayType('audio/wav') !== '',
+        ogg: audio.canPlayType('audio/ogg') !== '',
+        aac: audio.canPlayType('audio/aac') !== ''
+      };
+      
+      console.log('Browser audio format support:', formatSupport);
+      
+      // Enhanced event listeners for better error handling
+      audio.addEventListener('loadstart', () => {
         console.log('Audio load started');
+        setIsLoading(true);
       });
       
-      audioRef.current.addEventListener('canplay', () => {
+      audio.addEventListener('canplay', () => {
         console.log('Audio can play');
         setIsLoading(false);
       });
       
-      audioRef.current.addEventListener('canplaythrough', () => {
+      audio.addEventListener('canplaythrough', () => {
         console.log('Audio can play through');
         setIsLoading(false);
       });
       
-      audioRef.current.addEventListener('timeupdate', updateProgress);
-      audioRef.current.addEventListener('loadedmetadata', onMetadataLoaded);
-      audioRef.current.addEventListener('ended', handleTrackEnd);
-      audioRef.current.addEventListener('error', handleAudioError);
-      audioRef.current.addEventListener('playing', handlePlayStart);
+      audio.addEventListener('timeupdate', updateProgress);
+      audio.addEventListener('loadedmetadata', onMetadataLoaded);
+      audio.addEventListener('ended', handleTrackEnd);
+      audio.addEventListener('error', handleAudioError);
+      audio.addEventListener('playing', handlePlayStart);
+      audio.addEventListener('waiting', () => {
+        console.log('Audio buffering...');
+        setIsLoading(true);
+      });
+      audio.addEventListener('stalled', () => {
+        console.log('Audio stalled');
+        setIsLoading(false);
+      });
       
-      // Set up media session API for native controls if available
+      // Enhanced media session API setup for mobile controls
       if ('mediaSession' in navigator) {
         setupMediaSessionHandlers();
       }
@@ -89,18 +111,19 @@ export function useMusicPlayerState() {
     
     return () => {
       if (audioRef.current) {
-        audioRef.current.removeEventListener('timeupdate', updateProgress);
-        audioRef.current.removeEventListener('loadedmetadata', onMetadataLoaded);
-        audioRef.current.removeEventListener('ended', handleTrackEnd);
-        audioRef.current.removeEventListener('error', handleAudioError);
-        audioRef.current.removeEventListener('playing', handlePlayStart);
-        audioRef.current.pause();
+        const audio = audioRef.current;
+        audio.removeEventListener('timeupdate', updateProgress);
+        audio.removeEventListener('loadedmetadata', onMetadataLoaded);
+        audio.removeEventListener('ended', handleTrackEnd);
+        audio.removeEventListener('error', handleAudioError);
+        audio.removeEventListener('playing', handlePlayStart);
+        audio.pause();
         audioRef.current = null;
       }
     };
   }, []);
   
-  // Function to validate and convert audio URL with better format support
+  // Enhanced function to validate and get the best audio URL
   const getValidAudioUrl = async (track: Track): Promise<string | null> => {
     const audioSrc = track.audioUrl || track.audio_file_path;
     
@@ -111,16 +134,26 @@ export function useMusicPlayerState() {
     
     console.log('Original audio source:', audioSrc);
     
-    // Check if it's a Supabase storage URL and ensure it's properly formatted
+    // Construct proper Supabase storage URL with correct MIME type handling
+    let finalUrl: string;
+    
     if (audioSrc.includes('supabase.co/storage/v1/object/public/')) {
-      return audioSrc;
+      finalUrl = audioSrc;
     } else if (audioSrc.includes('/storage/v1/object/public/')) {
-      return `https://qkpjlfcpncvvjyzfolag.supabase.co${audioSrc}`;
+      finalUrl = `https://qkpjlfcpncvvjyzfolag.supabase.co${audioSrc}`;
+    } else {
+      finalUrl = `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${audioSrc}`;
     }
     
-    // For other URLs, validate they exist and are accessible
+    // Add cache busting parameter for better reliability
+    const separator = finalUrl.includes('?') ? '&' : '?';
+    finalUrl += `${separator}v=${Date.now()}`;
+    
+    console.log('Final audio URL:', finalUrl);
+    
     try {
-      const response = await fetch(audioSrc, { method: 'HEAD' });
+      // Validate the URL is accessible
+      const response = await fetch(finalUrl, { method: 'HEAD' });
       if (response.ok) {
         const contentType = response.headers.get('content-type');
         console.log('Audio content type:', contentType);
@@ -128,45 +161,67 @@ export function useMusicPlayerState() {
         // Check if the audio format is supported by the browser
         if (audioRef.current && contentType) {
           const isSupported = audioRef.current.canPlayType(contentType);
+          console.log('Browser support for this format:', isSupported);
+          
           if (isSupported === '') {
-            console.warn('Audio format may not be supported:', contentType);
-            // Try to fallback to generic audio type
-            return audioSrc;
+            console.warn('Audio format may not be fully supported:', contentType);
+            // Still try to play it as many browsers have partial support
           }
         }
         
-        return audioSrc;
+        return finalUrl;
       } else {
-        console.error('Audio file not accessible:', response.status);
+        console.error('Audio file not accessible:', response.status, response.statusText);
         return null;
       }
     } catch (error) {
       console.error('Error validating audio URL:', error);
-      return null;
+      return finalUrl; // Return URL anyway, let the browser try
     }
   };
   
-  // Set up media session handlers for native media controls
+  // Enhanced media session handlers for better mobile support
   const setupMediaSessionHandlers = () => {
-    navigator.mediaSession.setActionHandler('play', () => {
-      if (audioRef.current && !isPlaying) {
-        audioRef.current.play().catch(console.error);
-        setIsPlaying(true);
-      }
-    });
-    
-    navigator.mediaSession.setActionHandler('pause', () => {
-      if (audioRef.current && isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      }
-    });
-    
-    navigator.mediaSession.setActionHandler('previoustrack', playPrevious);
-    navigator.mediaSession.setActionHandler('nexttrack', playNext);
+    try {
+      navigator.mediaSession.setActionHandler('play', () => {
+        console.log('Media session: play');
+        if (audioRef.current && !isPlaying) {
+          audioRef.current.play().catch(console.error);
+          setIsPlaying(true);
+        }
+      });
+      
+      navigator.mediaSession.setActionHandler('pause', () => {
+        console.log('Media session: pause');
+        if (audioRef.current && isPlaying) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        }
+      });
+      
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        console.log('Media session: previous track');
+        playPrevious();
+      });
+      
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        console.log('Media session: next track');
+        playNext();
+      });
+
+      // Add seek support for mobile
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        console.log('Media session: seek to', details.seekTime);
+        if (details.seekTime && audioRef.current) {
+          audioRef.current.currentTime = details.seekTime;
+        }
+      });
+    } catch (error) {
+      console.log('Media session not fully supported:', error);
+    }
   };
   
-  // Update audio src when currentTrack changes with better format handling
+  // Enhanced audio loading with better format handling
   useEffect(() => {
     if (!audioRef.current || !currentTrack) return;
     
@@ -178,7 +233,7 @@ export function useMusicPlayerState() {
         const validUrl = await getValidAudioUrl(currentTrack);
         
         if (!validUrl) {
-          toast.error(`Cannot play "${currentTrack.title}" - audio file not found or format not supported`);
+          toast.error(`Cannot play "${currentTrack.title}" - audio file not found`);
           setIsLoading(false);
           return;
         }
@@ -186,28 +241,33 @@ export function useMusicPlayerState() {
         console.log('Setting validated audio source:', validUrl);
         
         if (audioRef.current) {
-          // Reset audio element
+          // Reset audio element with enhanced error handling
           audioRef.current.src = '';
           audioRef.current.load();
           
-          // Set new source with format detection
+          // Set new source
           audioRef.current.src = validUrl;
           
-          // Check browser support for the audio format
+          // Additional load event for debugging
           audioRef.current.addEventListener('loadstart', () => {
             console.log('Audio loading started for:', currentTrack.title);
-          });
+          }, { once: true });
           
           audioRef.current.addEventListener('error', (e) => {
-            console.error('Audio loading error:', e);
+            console.error('Audio loading error for:', currentTrack.title, e);
             handleAudioError(e);
-          });
+          }, { once: true });
           
+          // Load the audio
           audioRef.current.load();
           
+          // Auto-play if needed
           if (isPlaying) {
             try {
-              await audioRef.current.play();
+              const playPromise = audioRef.current.play();
+              if (playPromise !== undefined) {
+                await playPromise;
+              }
             } catch (error) {
               console.error('Auto-play was prevented:', error);
               setIsPlaying(false);
@@ -217,26 +277,59 @@ export function useMusicPlayerState() {
         }
       } catch (error) {
         console.error('Error loading audio:', error);
-        toast.error(`Error loading "${currentTrack.title}" - unsupported format`);
+        toast.error(`Error loading "${currentTrack.title}"`);
         setIsLoading(false);
       }
     };
     
     loadAudio();
     
-    // Update media session metadata if available
+    // Enhanced media session metadata for mobile
     if ('mediaSession' in navigator && currentTrack) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentTrack.title,
-        artist: currentTrack.artist,
-        artwork: [
-          { src: currentTrack.cover || currentTrack.cover_art_path, sizes: '512x512', type: 'image/jpeg' }
-        ]
-      });
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: currentTrack.title,
+          artist: currentTrack.artist,
+          album: currentTrack.album || 'Unknown Album',
+          artwork: [
+            { 
+              src: currentTrack.cover || currentTrack.cover_art_path || '/placeholder.svg', 
+              sizes: '96x96', 
+              type: 'image/png' 
+            },
+            { 
+              src: currentTrack.cover || currentTrack.cover_art_path || '/placeholder.svg', 
+              sizes: '128x128', 
+              type: 'image/png' 
+            },
+            { 
+              src: currentTrack.cover || currentTrack.cover_art_path || '/placeholder.svg', 
+              sizes: '192x192', 
+              type: 'image/png' 
+            },
+            { 
+              src: currentTrack.cover || currentTrack.cover_art_path || '/placeholder.svg', 
+              sizes: '256x256', 
+              type: 'image/png' 
+            },
+            { 
+              src: currentTrack.cover || currentTrack.cover_art_path || '/placeholder.svg', 
+              sizes: '384x384', 
+              type: 'image/png' 
+            },
+            { 
+              src: currentTrack.cover || currentTrack.cover_art_path || '/placeholder.svg', 
+              sizes: '512x512', 
+              type: 'image/png' 
+            }
+          ]
+        });
+      } catch (error) {
+        console.log('Error setting media session metadata:', error);
+      }
     }
   }, [currentTrack]);
   
-  // Update volume when it changes
   useEffect(() => {
     if (!audioRef.current) return;
     
@@ -267,11 +360,6 @@ export function useMusicPlayerState() {
     }
   };
   
-  const handleCanPlay = () => {
-    console.log('Audio can play');
-    setIsLoading(false);
-  };
-  
   const handleTrackEnd = () => {
     console.log('Track ended, playing next');
     playNext();
@@ -283,7 +371,7 @@ export function useMusicPlayerState() {
     setIsPlaying(false);
     
     if (currentTrack) {
-      // Provide more specific error messages based on error type
+      // Enhanced error messages for different browsers and devices
       if (e?.target?.error) {
         const errorCode = e.target.error.code;
         switch (errorCode) {
@@ -291,30 +379,28 @@ export function useMusicPlayerState() {
             toast.error('Playback was aborted');
             break;
           case 2: // MEDIA_ERR_NETWORK
-            toast.error('Network error - check your connection');
+            toast.error('Network error - check your connection and try again');
             break;
           case 3: // MEDIA_ERR_DECODE
-            toast.error(`Audio format not supported by your browser. Try using a different format for "${currentTrack.title}"`);
+            toast.error(`Audio format not supported by your browser. "${currentTrack.title}" may need to be re-uploaded as MP3`);
             break;
           case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
-            toast.error(`Audio file format not supported by your browser. "${currentTrack.title}" may need to be re-encoded`);
+            toast.error(`Audio file format not supported. "${currentTrack.title}" should be uploaded as MP3 for maximum compatibility`);
             break;
           default:
-            toast.error(`Error playing "${currentTrack.title}" - format may not be supported`);
+            toast.error(`Error playing "${currentTrack.title}" - please try refreshing the page`);
         }
       } else if (e?.name === 'NotSupportedError') {
-        toast.error(`Audio format not supported by your browser for "${currentTrack.title}"`);
+        toast.error(`Audio format not supported by your browser for "${currentTrack.title}". Please try on a different browser or device.`);
       } else if (e?.name === 'NotAllowedError') {
-        toast.error('Playback prevented - please enable autoplay');
+        toast.error('Playback prevented - please enable autoplay in your browser settings');
       } else {
-        toast.error(`Cannot play "${currentTrack.title}" - audio file may be corrupted or format unsupported`);
+        toast.error(`Cannot play "${currentTrack.title}" - please try refreshing the page or use a different browser`);
       }
     } else {
-      toast.error('Audio playback error - format may not be supported');
+      toast.error('Audio playback error - please try again');
     }
   };
-  
-  // ... keep existing code (playTrack, togglePlay, playNext, playPrevious, seekTo, setVolume, toggleMute, addToQueue, removeFromQueue functions)
   
   const playTrack = (track: Track) => {
     console.log('Playing track:', track.title, 'Audio URL:', track.audioUrl || track.audio_file_path);
@@ -338,14 +424,18 @@ export function useMusicPlayerState() {
       const playPromise = audioRef.current.play();
       
       if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error('Play was prevented:', error);
-          setIsPlaying(false);
-          handleAudioError(error);
-        });
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch(error => {
+            console.error('Play was prevented:', error);
+            setIsPlaying(false);
+            handleAudioError(error);
+          });
+      } else {
+        setIsPlaying(true);
       }
-      
-      setIsPlaying(true);
     }
   };
   
@@ -409,7 +499,6 @@ export function useMusicPlayerState() {
     setQueue(queue.filter(track => track.id !== trackId));
   };
 
-  // ... keep existing code (like, save and share functions)
   const isTrackLiked = (trackId: string): boolean => {
     return likedTracks.has(trackId);
   };

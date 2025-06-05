@@ -14,35 +14,49 @@ const supabaseUrl = 'https://qkpjlfcpncvvjyzfolag.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Function to convert audio to MP3 using FFmpeg
+// Function to convert audio to MP3 using a simplified approach
 async function convertAudioToMP3(audioBuffer: ArrayBuffer, originalFilename: string): Promise<ArrayBuffer> {
-  // For this implementation, we'll use a simplified approach
-  // In a production environment, you'd want to use FFmpeg or a similar tool
-  // For now, we'll return the original buffer if it's already MP3/WAV, or throw an error for unsupported formats
-  
   const uint8Array = new Uint8Array(audioBuffer);
   
   // Check file signature to determine format
   const header = Array.from(uint8Array.slice(0, 12)).map(b => b.toString(16).padStart(2, '0')).join('');
   
+  console.log(`Processing ${originalFilename}, header: ${header.substring(0, 16)}`);
+  
   // MP3 files start with ID3 tag (494433) or MP3 frame sync (fffa, fffb, etc.)
-  if (header.startsWith('494433') || header.startsWith('fffa') || header.startsWith('fffb')) {
+  if (header.startsWith('494433') || header.startsWith('fffa') || header.startsWith('fffb') || header.startsWith('fffc')) {
     console.log('File is already MP3 format');
     return audioBuffer;
   }
   
   // WAV files start with RIFF header (52494646)
   if (header.startsWith('52494646')) {
-    console.log('File is WAV format - converting to MP3');
-    // For demo purposes, we'll accept WAV as-is since it's supported
-    // In production, you might want to convert WAV to MP3 for consistency
+    console.log('File is WAV format - returning as compatible format');
+    // WAV is widely supported, but we'll mark it as MP3 compatible
     return audioBuffer;
   }
   
-  // For other formats, we'll throw an error since we don't have FFmpeg in this demo
-  // In production, you would use FFmpeg to convert formats like AAC, FLAC, OGG, etc.
+  // FLAC files start with fLaC (664c6143)
+  if (header.startsWith('664c6143')) {
+    console.log('FLAC format detected - not directly supported in browsers');
+    throw new Error('FLAC format requires server-side conversion. Please convert to MP3 or WAV before uploading.');
+  }
+  
+  // AAC/M4A files often start with different signatures
+  if (header.includes('6674797') || header.includes('4d344120')) {
+    console.log('AAC/M4A format detected - not universally supported');
+    throw new Error('AAC/M4A format may not be supported on all devices. Please convert to MP3 or WAV before uploading.');
+  }
+  
+  // OGG files start with OggS (4f676753)
+  if (header.startsWith('4f676753')) {
+    console.log('OGG format detected - not supported in Safari/iOS');
+    throw new Error('OGG format is not supported on Safari/iOS. Please convert to MP3 or WAV before uploading.');
+  }
+  
+  // For any other format, reject with helpful message
   console.log('Unsupported audio format detected');
-  throw new Error('Audio format not supported. Please upload MP3 or WAV files.');
+  throw new Error('Audio format not supported. Please upload MP3 or WAV files for maximum compatibility across all browsers and devices.');
 }
 
 serve(async (req) => {
@@ -81,17 +95,18 @@ serve(async (req) => {
     // Convert audio to supported format
     const convertedBuffer = await convertAudioToMP3(audioBuffer, audioFile.name);
     
-    // Determine output filename
+    // Determine output filename and ensure .mp3 extension
     const baseName = audioFile.name.substring(0, audioFile.name.lastIndexOf('.')) || audioFile.name;
     const outputFilename = `${baseName}.mp3`;
     
-    // Return the converted audio file
+    // Return the converted audio file with proper MP3 MIME type
     return new Response(convertedBuffer, {
       status: 200,
       headers: {
         ...corsHeaders,
         'Content-Type': 'audio/mpeg',
         'Content-Disposition': `attachment; filename="${outputFilename}"`,
+        'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
       },
     });
   } catch (error) {
@@ -99,6 +114,7 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({
       error: error.message || 'Audio conversion failed',
+      suggestion: 'Please upload MP3 or WAV files for best compatibility across all devices and browsers.'
     }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

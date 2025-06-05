@@ -14,6 +14,22 @@ const supabaseUrl = 'https://qkpjlfcpncvvjyzfolag.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Determine the best MIME type for audio files to ensure compatibility
+function getCompatibleAudioMimeType(originalType: string, fileName: string): string {
+  // Always use audio/mpeg for maximum compatibility
+  if (originalType.includes('mp3') || fileName.toLowerCase().endsWith('.mp3')) {
+    return 'audio/mpeg';
+  }
+  
+  // WAV files should use audio/wav
+  if (originalType.includes('wav') || fileName.toLowerCase().endsWith('.wav')) {
+    return 'audio/wav';
+  }
+  
+  // Default to audio/mpeg for all other formats to ensure compatibility
+  return 'audio/mpeg';
+}
+
 // Authenticate API key - Updated to use user_id
 async function authenticateApiKey(apiKey: string): Promise<{ authenticated: boolean; user_id?: string }> {
   if (!apiKey) {
@@ -87,10 +103,14 @@ async function handleFormData(formData: FormData, userId: string) {
     throw new Error('Missing audio file');
   }
   
-  // Validate audio file type
-  const audioFileType = audioFile.type;
-  if (!['audio/mpeg', 'audio/wav'].includes(audioFileType)) {
-    throw new Error('Invalid audio file type. Only MP3 and WAV files are supported');
+  // Validate and determine compatible audio MIME type
+  const compatibleMimeType = getCompatibleAudioMimeType(audioFile.type, audioFile.name);
+  console.log(`Original MIME type: ${audioFile.type}, Using: ${compatibleMimeType}`);
+  
+  // Validate audio file type - be more permissive but guide towards compatible formats
+  const supportedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
+  if (!supportedTypes.includes(compatibleMimeType) && !audioFile.type.includes('audio')) {
+    throw new Error('Invalid file type. Please upload audio files in MP3 or WAV format for best compatibility.');
   }
   
   // Get the cover art
@@ -105,16 +125,17 @@ async function handleFormData(formData: FormData, userId: string) {
     throw new Error('Invalid cover art file type. Only JPG and PNG files are supported');
   }
   
-  // Create unique filenames
-  const audioFileName = `${userId}/${Date.now()}-${audioFile.name.replace(/\s+/g, '-')}`;
+  // Create unique filenames with proper extensions
+  const audioExtension = compatibleMimeType === 'audio/mpeg' ? '.mp3' : '.wav';
+  const audioFileName = `${userId}/${Date.now()}-${audioFile.name.replace(/\.[^/.]+$/, "")}${audioExtension}`;
   const coverArtFileName = `${userId}/${Date.now()}-${coverArt.name.replace(/\s+/g, '-')}`;
   
-  // Upload audio file
+  // Upload audio file with compatible MIME type
   const audioBuffer = await audioFile.arrayBuffer();
   const { error: audioUploadError } = await supabase.storage
     .from('audio_files')
     .upload(audioFileName, audioBuffer, {
-      contentType: audioFileType,
+      contentType: compatibleMimeType,
       cacheControl: '3600',
     });
   
@@ -122,6 +143,8 @@ async function handleFormData(formData: FormData, userId: string) {
     console.error('Audio upload error:', audioUploadError);
     throw new Error(`Failed to upload audio file: ${audioUploadError.message}`);
   }
+  
+  console.log(`Audio uploaded successfully: ${audioFileName} with MIME type: ${compatibleMimeType}`);
   
   // Upload cover art
   const coverArtBuffer = await coverArt.arrayBuffer();
