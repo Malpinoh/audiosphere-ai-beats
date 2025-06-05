@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +14,8 @@ export interface ArtistProfile {
   monthly_listeners: number;
   is_verified: boolean;
   role: string;
+  claimable?: boolean;
+  auto_created?: boolean;
 }
 
 export function useArtistProfile(artistId?: string) {
@@ -35,7 +36,7 @@ export function useArtistProfile(artistId?: string) {
         
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role')
+          .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role, claimable, auto_created')
           .eq('id', targetArtistId)
           .single();
           
@@ -52,7 +53,9 @@ export function useArtistProfile(artistId?: string) {
           follower_count: data.follower_count || 0,
           monthly_listeners: data.monthly_listeners || 0,
           is_verified: data.is_verified || false,
-          role: data.role
+          role: data.role,
+          claimable: data.claimable || false,
+          auto_created: data.auto_created || false
         };
         
         setArtistProfile(mappedProfile);
@@ -100,7 +103,9 @@ export function useArtistProfile(artistId?: string) {
             follower_count: payload.new.follower_count || 0,
             monthly_listeners: payload.new.monthly_listeners || 0,
             is_verified: payload.new.is_verified || false,
-            role: payload.new.role
+            role: payload.new.role,
+            claimable: payload.new.claimable || false,
+            auto_created: payload.new.auto_created || false
           };
           setArtistProfile(mappedProfile);
         }

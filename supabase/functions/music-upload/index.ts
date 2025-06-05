@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { analyzeMusicContent } from './audio-analysis.ts';
@@ -174,6 +173,23 @@ async function handleFormData(formData: FormData, userId: string) {
     duration = parseInt(formData.get('duration') as string, 10);
   }
   
+  // Create or get artist profile using the function
+  let artistProfileId = null;
+  try {
+    const { data: profileData, error: profileError } = await supabase
+      .rpc('create_artist_profile_if_not_exists', { artist_name: artist });
+    
+    if (profileError) {
+      console.error('Error creating artist profile:', profileError);
+      // Continue without artist profile ID
+    } else {
+      artistProfileId = profileData;
+    }
+  } catch (error) {
+    console.error('Error creating artist profile:', error);
+    // Continue without artist profile ID
+  }
+  
   // Insert track into database
   const { data: track, error: trackInsertError } = await supabase
     .from('tracks')
@@ -190,6 +206,7 @@ async function handleFormData(formData: FormData, userId: string) {
       lyrics,
       duration,
       published: formData.get('published') === 'true',
+      artist_profile_id: artistProfileId,
     })
     .select()
     .single();
@@ -203,6 +220,7 @@ async function handleFormData(formData: FormData, userId: string) {
   return {
     track,
     analyzed_data: analyzedData,
+    artist_profile_created: !!artistProfileId,
   };
 }
 
