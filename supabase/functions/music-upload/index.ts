@@ -87,7 +87,6 @@ async function handleFormData(formData: FormData, userId: string) {
         tags = [tagsField];
       }
     } catch {
-      // If JSON parsing fails, treat it as a comma-separated string
       tags = tagsField.split(',').map(tag => tag.trim());
     }
   }
@@ -103,15 +102,15 @@ async function handleFormData(formData: FormData, userId: string) {
     throw new Error('Missing audio file');
   }
   
+  // Enhanced file size validation - increased to 100MB
+  const maxAudioSize = 100 * 1024 * 1024; // 100MB
+  if (audioFile.size > maxAudioSize) {
+    throw new Error('Audio file size exceeds 100MB limit');
+  }
+  
   // Validate and determine compatible audio MIME type
   const compatibleMimeType = getCompatibleAudioMimeType(audioFile.type, audioFile.name);
   console.log(`Original MIME type: ${audioFile.type}, Using: ${compatibleMimeType}`);
-  
-  // Validate audio file type - be more permissive but guide towards compatible formats
-  const supportedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
-  if (!supportedTypes.includes(compatibleMimeType) && !audioFile.type.includes('audio')) {
-    throw new Error('Invalid file type. Please upload audio files in MP3 or WAV format for best compatibility.');
-  }
   
   // Get the cover art
   const coverArt = formData.get('cover_art') as File;
@@ -119,24 +118,37 @@ async function handleFormData(formData: FormData, userId: string) {
     throw new Error('Missing cover art');
   }
   
-  // Validate cover art file type
+  // Validate cover art file type and size
   const coverArtType = coverArt.type;
   if (!['image/jpeg', 'image/png', 'image/jpg'].includes(coverArtType)) {
     throw new Error('Invalid cover art file type. Only JPG and PNG files are supported');
   }
   
-  // Create unique filenames with proper extensions
+  const maxCoverArtSize = 10 * 1024 * 1024; // 10MB
+  if (coverArt.size > maxCoverArtSize) {
+    throw new Error('Cover art file size exceeds 10MB limit');
+  }
+  
+  // Create unique filenames with proper extensions and better structure
+  const timestamp = Date.now();
   const audioExtension = compatibleMimeType === 'audio/mpeg' ? '.mp3' : '.wav';
-  const audioFileName = `${userId}/${Date.now()}-${audioFile.name.replace(/\.[^/.]+$/, "")}${audioExtension}`;
-  const coverArtFileName = `${userId}/${Date.now()}-${coverArt.name.replace(/\s+/g, '-')}`;
+  const sanitizedTitle = title.replace(/[^a-zA-Z0-9\-_]/g, '-').toLowerCase();
+  const sanitizedArtist = artist.replace(/[^a-zA-Z0-9\-_]/g, '-').toLowerCase();
+  
+  const audioFileName = `${userId}/${timestamp}-${sanitizedArtist}-${sanitizedTitle}${audioExtension}`;
+  const coverArtFileName = `${userId}/${timestamp}-${sanitizedArtist}-${sanitizedTitle}-cover.${coverArtType.split('/')[1]}`;
+  
+  console.log(`Uploading audio file: ${audioFileName}`);
+  console.log(`Uploading cover art: ${coverArtFileName}`);
   
   // Upload audio file with compatible MIME type
   const audioBuffer = await audioFile.arrayBuffer();
-  const { error: audioUploadError } = await supabase.storage
+  const { data: audioUploadData, error: audioUploadError } = await supabase.storage
     .from('audio_files')
     .upload(audioFileName, audioBuffer, {
       contentType: compatibleMimeType,
       cacheControl: '3600',
+      upsert: false
     });
   
   if (audioUploadError) {
@@ -148,17 +160,20 @@ async function handleFormData(formData: FormData, userId: string) {
   
   // Upload cover art
   const coverArtBuffer = await coverArt.arrayBuffer();
-  const { error: coverArtUploadError } = await supabase.storage
+  const { data: coverUploadData, error: coverArtUploadError } = await supabase.storage
     .from('cover_art')
     .upload(coverArtFileName, coverArtBuffer, {
       contentType: coverArtType,
       cacheControl: '3600',
+      upsert: false
     });
   
   if (coverArtUploadError) {
     console.error('Cover art upload error:', coverArtUploadError);
     throw new Error(`Failed to upload cover art: ${coverArtUploadError.message}`);
   }
+
+  console.log(`Cover art uploaded successfully: ${coverArtFileName}`);
 
   // If AI analysis is requested, analyze the audio file
   let analyzedData = { genre, mood, suggestedTags: tags };
@@ -213,7 +228,7 @@ async function handleFormData(formData: FormData, userId: string) {
     // Continue without artist profile ID
   }
   
-  // Insert track into database
+  // Insert track into database with proper file paths
   const { data: track, error: trackInsertError } = await supabase
     .from('tracks')
     .insert({
@@ -236,14 +251,23 @@ async function handleFormData(formData: FormData, userId: string) {
   
   if (trackInsertError) {
     console.error('Track insert error:', trackInsertError);
+    
+    // Clean up uploaded files if database insert fails
+    await supabase.storage.from('audio_files').remove([audioFileName]);
+    await supabase.storage.from('cover_art').remove([coverArtFileName]);
+    
     throw new Error(`Failed to save track metadata: ${trackInsertError.message}`);
   }
+  
+  console.log(`Track saved successfully with ID: ${track.id}`);
   
   // Return track data with analyzed info
   return {
     track,
     analyzed_data: analyzedData,
     artist_profile_created: !!artistProfileId,
+    audio_file_url: `${supabaseUrl}/storage/v1/object/public/audio_files/${audioFileName}`,
+    cover_art_url: `${supabaseUrl}/storage/v1/object/public/cover_art/${coverArtFileName}`
   };
 }
 

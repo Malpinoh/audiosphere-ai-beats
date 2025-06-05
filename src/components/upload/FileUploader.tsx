@@ -60,24 +60,24 @@ export function FileUploader({
         setError(null);
         return true;
       } else if (fileName.endsWith('.m4a') || fileName.endsWith('.aac') || fileType.includes('aac')) {
-        setValidationStatus('⚠️ AAC/M4A format - may not work on all browsers, consider converting to MP3');
+        setValidationStatus('⚠️ AAC/M4A format - converting to MP3 for better compatibility');
         setError(null);
         return true;
       } else if (fileName.endsWith('.ogg') || fileType.includes('ogg')) {
-        setValidationStatus('⚠️ OGG format - not supported on Safari/iOS, recommend MP3 instead');
+        setValidationStatus('⚠️ OGG format - converting to MP3 for better compatibility');
         setError(null);
         return true;
       } else if (fileName.endsWith('.flac') || fileType.includes('flac')) {
-        setValidationStatus('❌ FLAC format - not supported in browsers, please convert to MP3');
-        setError('FLAC format is not supported in web browsers. Please convert to MP3 or WAV.');
-        return false;
+        setValidationStatus('⚠️ FLAC format - converting to MP3 for web compatibility');
+        setError(null);
+        return true;
       } else if (fileType.includes('audio') || fileName.match(/\.(mp4|wma|amr)$/)) {
-        setValidationStatus('⚠️ This audio format may not be compatible with all devices. MP3 is recommended.');
+        setValidationStatus('⚠️ This audio format will be converted to MP3 for better compatibility');
         setError(null);
         return true;
       } else {
         setValidationStatus(null);
-        setError('Please upload a valid audio file (MP3, WAV recommended)');
+        setError('Please upload a valid audio file');
         return false;
       }
     }
@@ -99,7 +99,7 @@ export function FileUploader({
     }
     
     setIsConverting(true);
-    toast.info("Checking audio format compatibility...");
+    toast.info("Converting audio format for better compatibility...");
     
     try {
       const formData = new FormData();
@@ -118,7 +118,7 @@ export function FileUploader({
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Format validation failed');
+        throw new Error(errorData.error || 'Audio conversion failed');
       }
       
       const convertedBuffer = await response.arrayBuffer();
@@ -127,13 +127,14 @@ export function FileUploader({
         type: 'audio/mpeg'
       });
       
-      toast.success("Audio format validated and optimized!");
-      setValidationStatus('✅ Audio optimized for maximum compatibility');
+      toast.success("Audio converted to MP3 for maximum compatibility!");
+      setValidationStatus('✅ Audio converted to MP3 format');
       return convertedFile;
     } catch (error) {
-      console.error('Format validation error:', error);
-      toast.error(`Format validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      throw error;
+      console.error('Audio conversion error:', error);
+      toast.error(`Audio conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Return original file if conversion fails
+      return file;
     } finally {
       setIsConverting(false);
     }
@@ -177,7 +178,7 @@ export function FileUploader({
   };
 
   const getPlaceholderText = () => {
-    return fileType === "audio" ? "Upload your track (MP3, WAV recommended)" : "Upload cover art (JPG or PNG)";
+    return fileType === "audio" ? "Upload your track (up to 100MB)" : "Upload cover art (JPG or PNG)";
   };
 
   if (isConverting) {
@@ -185,7 +186,7 @@ export function FileUploader({
       <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-6 text-center">
         <div className="flex flex-col items-center">
           <Loader2 className="h-10 w-10 text-primary animate-spin" />
-          <p className="mt-2 font-medium">Validating audio format...</p>
+          <p className="mt-2 font-medium">Converting audio format...</p>
           <p className="text-sm text-muted-foreground mt-1">
             Ensuring compatibility across all devices and browsers
           </p>
@@ -239,9 +240,8 @@ export function FileUploader({
             </p>
             {fileType === "audio" && (
               <div className="mt-3 text-xs text-muted-foreground space-y-1">
-                <p className="font-medium text-green-600">✅ Best compatibility: MP3, WAV</p>
-                <p className="text-yellow-600">⚠️ Limited support: AAC, M4A, OGG</p>
-                <p className="text-red-600">❌ Not supported: FLAC</p>
+                <p className="font-medium text-green-600">✅ Supported: MP3, WAV, AAC, OGG, FLAC</p>
+                <p className="text-blue-600">🔄 Auto-converts to MP3 for compatibility</p>
               </div>
             )}
           </div>

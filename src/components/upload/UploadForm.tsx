@@ -376,7 +376,7 @@ export function UploadForm() {
               
               <FileUploader 
                 accept="audio/*"
-                maxSize={30} // 30MB
+                maxSize={100} // Increased to 100MB
                 onFileSelected={onAudioFileSelected}
                 selectedFile={audioFile}
                 fileType="audio"
@@ -416,7 +416,7 @@ export function UploadForm() {
               ) : (
                 <FileUploader 
                   accept=".jpg,.jpeg,.png"
-                  maxSize={5} // 5MB
+                  maxSize={10} // 10MB for cover art
                   onFileSelected={onCoverArtSelected}
                   selectedFile={coverArt}
                   fileType="image"
