@@ -6,7 +6,7 @@ import { TrendingArtists, FeaturedPlaylists, PersonalizedRecommendations } from 
 import { BrowseByGenre } from "@/components/sections/GenreSection";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ShieldCheck, Flag } from "lucide-react";
+import { ShieldCheck, Flag, Upload } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
@@ -33,12 +33,20 @@ const Index = () => {
           {/* Admin Panel Link - Only shown to admin users */}
           <div className="mt-16 border-t border-white/10 pt-8 flex justify-center gap-4">
             {isAdmin && (
-              <Link to="/admin">
-                <Button variant="outline" className="flex items-center gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10">
-                  <ShieldCheck className="h-4 w-4" />
-                  Admin Panel
-                </Button>
-              </Link>
+              <>
+                <Link to="/admin">
+                  <Button variant="outline" className="flex items-center gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10">
+                    <ShieldCheck className="h-4 w-4" />
+                    Admin Panel
+                  </Button>
+                </Link>
+                <Link to="/upload">
+                  <Button variant="outline" className="flex items-center gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10">
+                    <Upload className="h-4 w-4" />
+                    Upload Music
+                  </Button>
+                </Link>
+              </>
             )}
             <Link to="/report">
               <Button variant="outline" className="flex items-center gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10">

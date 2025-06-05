@@ -12,18 +12,18 @@ export default function UploadPage() {
   
   useEffect(() => {
     // Notify user if they don't have upload permissions
-    if (user && profile && profile.role === 'user') {
-      toast.error("Only artists, distributors, and admins can upload music");
+    if (user && profile && profile.role !== 'admin') {
+      toast.error("Only admins can upload music to the platform");
     }
   }, [user, profile]);
   
-  // Redirect if user is not logged in or doesn't have appropriate role
+  // Redirect if user is not logged in
   if (!user || !profile) {
     return <Navigate to="/login" replace />;
   }
   
-  // Check if user has appropriate role
-  if (!['artist', 'distributor', 'admin'].includes(profile.role)) {
+  // Check if user has admin role only
+  if (profile.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
   
@@ -32,8 +32,8 @@ export default function UploadPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900/50 via-purple-900/50 to-slate-900/50">
         <div className="container mx-auto py-8 px-4">
           <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold mb-4 text-white">Upload Your Music</h1>
-            <p className="text-lg text-white/60">Share your creativity with the world</p>
+            <h1 className="text-4xl font-bold mb-4 text-white">Upload Music</h1>
+            <p className="text-lg text-white/60">Admin panel - Upload music to the platform</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
@@ -42,7 +42,7 @@ export default function UploadPage() {
                 <CardHeader>
                   <CardTitle className="text-white">Upload Track</CardTitle>
                   <CardDescription className="text-white/60">
-                    Share your music with the world. Upload MP3 or WAV files, add cover art, and provide details about your track.
+                    Upload music as an admin. You can specify any artist name to auto-register them on the platform.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -54,29 +54,29 @@ export default function UploadPage() {
             <div className="md:col-span-1">
               <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-white">Upload Tips</CardTitle>
+                  <CardTitle className="text-white">Admin Upload Guidelines</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3 text-sm text-white/80">
                     <li className="flex items-start">
                       <span className="font-medium mr-2 text-purple-400">•</span> 
-                      <span>Use high-quality audio files (320kbps MP3 or WAV)</span>
+                      <span>Upload high-quality audio files (320kbps MP3 or WAV)</span>
                     </li>
                     <li className="flex items-start">
                       <span className="font-medium mr-2 text-purple-400">•</span> 
-                      <span>Upload square cover art (minimum 1400x1400px)</span>
+                      <span>Artists will be auto-registered when you upload their music</span>
                     </li>
                     <li className="flex items-start">
                       <span className="font-medium mr-2 text-purple-400">•</span> 
-                      <span>Add detailed metadata to help listeners find your music</span>
+                      <span>Use square cover art (minimum 1400x1400px)</span>
                     </li>
                     <li className="flex items-start">
                       <span className="font-medium mr-2 text-purple-400">•</span> 
-                      <span>Include lyrics to increase engagement</span>
+                      <span>Include accurate metadata and genre information</span>
                     </li>
                     <li className="flex items-start">
                       <span className="font-medium mr-2 text-purple-400">•</span> 
-                      <span>Select the right mood and genre tags</span>
+                      <span>Add lyrics when available to increase engagement</span>
                     </li>
                   </ul>
                 </CardContent>

@@ -142,12 +142,9 @@ export function useMusicPlayerState() {
     } else if (audioSrc.includes('/storage/v1/object/public/')) {
       finalUrl = `https://qkpjlfcpncvvjyzfolag.supabase.co${audioSrc}`;
     } else {
+      // Ensure we're pointing to the audio_files bucket correctly
       finalUrl = `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${audioSrc}`;
     }
-    
-    // Add cache busting parameter for better reliability
-    const separator = finalUrl.includes('?') ? '&' : '?';
-    finalUrl += `${separator}v=${Date.now()}`;
     
     console.log('Final audio URL:', finalUrl);
     
@@ -157,21 +154,17 @@ export function useMusicPlayerState() {
       if (response.ok) {
         const contentType = response.headers.get('content-type');
         console.log('Audio content type:', contentType);
-        
-        // Check if the audio format is supported by the browser
-        if (audioRef.current && contentType) {
-          const isSupported = audioRef.current.canPlayType(contentType);
-          console.log('Browser support for this format:', isSupported);
-          
-          if (isSupported === '') {
-            console.warn('Audio format may not be fully supported:', contentType);
-            // Still try to play it as many browsers have partial support
-          }
-        }
-        
         return finalUrl;
       } else {
         console.error('Audio file not accessible:', response.status, response.statusText);
+        // Try alternative URL format
+        const alternativeUrl = `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${audioSrc.replace(/^.*\//, '')}`;
+        console.log('Trying alternative URL:', alternativeUrl);
+        
+        const altResponse = await fetch(alternativeUrl, { method: 'HEAD' });
+        if (altResponse.ok) {
+          return alternativeUrl;
+        }
         return null;
       }
     } catch (error) {
