@@ -290,7 +290,7 @@ export function useMusicPlayerState() {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: currentTrack.title,
           artist: currentTrack.artist,
-          album: currentTrack.album || 'Unknown Album',
+          album: currentTrack.genre || 'Unknown Album', // Use genre as album fallback since album doesn't exist
           artwork: [
             { 
               src: currentTrack.cover || currentTrack.cover_art_path || '/placeholder.svg', 
