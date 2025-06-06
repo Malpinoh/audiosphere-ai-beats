@@ -68,8 +68,60 @@ async function authenticateApiKey(apiKey: string): Promise<{ authenticated: bool
   }
 }
 
-// Handle form data parsing and file upload - Updated to use userId
+// Ensure user profile exists - NEW FUNCTION
+async function ensureUserProfile(userId: string): Promise<boolean> {
+  try {
+    // Check if profile already exists
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (existingProfile) {
+      return true;
+    }
+
+    // Profile doesn't exist, get user data from auth.users and create profile
+    const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
+    
+    if (userError || !user) {
+      console.error('Error fetching user:', userError);
+      return false;
+    }
+
+    // Create profile for the user
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: userId,
+        username: user.email?.split('@')[0] || 'admin',
+        full_name: user.user_metadata?.full_name || 'Admin User',
+        role: 'admin',
+        created_at: new Date().toISOString()
+      });
+
+    if (profileError) {
+      console.error('Error creating profile:', profileError);
+      return false;
+    }
+
+    console.log(`Profile created for user: ${userId}`);
+    return true;
+  } catch (error) {
+    console.error('Error ensuring user profile:', error);
+    return false;
+  }
+}
+
+// Handle form data parsing and file upload - Updated to ensure profile exists
 async function handleFormData(formData: FormData, userId: string) {
+  // Ensure user profile exists before proceeding
+  const profileExists = await ensureUserProfile(userId);
+  if (!profileExists) {
+    throw new Error('Failed to create or verify user profile');
+  }
+
   // Extract and validate required fields
   const title = formData.get('title') as string;
   const artist = formData.get('artist') as string;
