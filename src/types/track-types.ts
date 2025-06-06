@@ -14,6 +14,11 @@ export interface Track {
   description?: string;
   duration?: number;
   user_id: string;
+  // New fields for track types
+  track_type?: 'single' | 'ep' | 'album';
+  album_name?: string;
+  track_number?: number;
+  total_tracks?: number;
   // Optional artist ID field for future use
   artist_id?: string;
   // Formatted URLs
@@ -52,4 +57,5 @@ export interface TracksFilter {
   };
   region?: string;
   chartType?: 'global' | 'regional';
+  trackType?: 'single' | 'ep' | 'album';
 }

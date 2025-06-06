@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { analyzeMusicContent } from './audio-analysis.ts';
@@ -77,6 +78,12 @@ async function handleFormData(formData: FormData, userId: string) {
   const description = formData.get('description') as string || null;
   const lyrics = formData.get('lyrics') as string || null;
   
+  // New fields for track types
+  const trackType = formData.get('track_type') as string || 'single';
+  const albumName = formData.get('album_name') as string || null;
+  const trackNumber = formData.get('track_number') ? parseInt(formData.get('track_number') as string) : null;
+  const totalTracks = formData.get('total_tracks') ? parseInt(formData.get('total_tracks') as string) : null;
+  
   // Parse tags array
   let tags: string[] = [];
   const tagsField = formData.get('tags') as string;
@@ -94,6 +101,11 @@ async function handleFormData(formData: FormData, userId: string) {
   // Validate required fields
   if (!title || !artist || !genre || !mood) {
     throw new Error('Missing required fields: title, artist, genre, and mood are required');
+  }
+  
+  // Validate track type
+  if (!['single', 'ep', 'album'].includes(trackType)) {
+    throw new Error('Invalid track type. Must be single, ep, or album');
   }
   
   // Get the audio file
@@ -129,14 +141,15 @@ async function handleFormData(formData: FormData, userId: string) {
     throw new Error('Cover art file size exceeds 10MB limit');
   }
   
-  // Create unique filenames with proper extensions and better structure
+  // Create unique filenames with better structure (simplified path)
   const timestamp = Date.now();
   const audioExtension = compatibleMimeType === 'audio/mpeg' ? '.mp3' : '.wav';
   const sanitizedTitle = title.replace(/[^a-zA-Z0-9\-_]/g, '-').toLowerCase();
   const sanitizedArtist = artist.replace(/[^a-zA-Z0-9\-_]/g, '-').toLowerCase();
   
-  const audioFileName = `${userId}/${timestamp}-${sanitizedArtist}-${sanitizedTitle}${audioExtension}`;
-  const coverArtFileName = `${userId}/${timestamp}-${sanitizedArtist}-${sanitizedTitle}-cover.${coverArtType.split('/')[1]}`;
+  // Simplified file paths without user folders for better compatibility
+  const audioFileName = `${timestamp}-${sanitizedArtist}-${sanitizedTitle}${audioExtension}`;
+  const coverArtFileName = `${timestamp}-${sanitizedArtist}-${sanitizedTitle}-cover.${coverArtType.split('/')[1]}`;
   
   console.log(`Uploading audio file: ${audioFileName}`);
   console.log(`Uploading cover art: ${coverArtFileName}`);
@@ -228,7 +241,7 @@ async function handleFormData(formData: FormData, userId: string) {
     // Continue without artist profile ID
   }
   
-  // Insert track into database with proper file paths
+  // Insert track into database with proper file paths and new fields
   const { data: track, error: trackInsertError } = await supabase
     .from('tracks')
     .insert({
@@ -238,13 +251,18 @@ async function handleFormData(formData: FormData, userId: string) {
       genre,
       mood,
       tags,
-      audio_file_path: audioFileName,
-      cover_art_path: coverArtFileName,
+      audio_file_path: audioFileName, // Simplified path
+      cover_art_path: coverArtFileName, // Simplified path
       description,
       lyrics,
       duration,
       published: formData.get('published') === 'true',
       artist_profile_id: artistProfileId,
+      // New fields
+      track_type: trackType,
+      album_name: albumName,
+      track_number: trackNumber,
+      total_tracks: totalTracks,
     })
     .select()
     .single();

@@ -484,6 +484,7 @@ export type Database = {
       }
       tracks: {
         Row: {
+          album_name: string | null
           artist: string
           artist_profile_id: string | null
           audio_file_path: string
@@ -499,10 +500,14 @@ export type Database = {
           published: boolean | null
           tags: string[] | null
           title: string
+          total_tracks: number | null
+          track_number: number | null
+          track_type: string | null
           uploaded_at: string | null
           user_id: string
         }
         Insert: {
+          album_name?: string | null
           artist: string
           artist_profile_id?: string | null
           audio_file_path: string
@@ -518,10 +523,14 @@ export type Database = {
           published?: boolean | null
           tags?: string[] | null
           title: string
+          total_tracks?: number | null
+          track_number?: number | null
+          track_type?: string | null
           uploaded_at?: string | null
           user_id: string
         }
         Update: {
+          album_name?: string | null
           artist?: string
           artist_profile_id?: string | null
           audio_file_path?: string
@@ -537,6 +546,9 @@ export type Database = {
           published?: boolean | null
           tags?: string[] | null
           title?: string
+          total_tracks?: number | null
+          track_number?: number | null
+          track_type?: string | null
           uploaded_at?: string | null
           user_id?: string
         }

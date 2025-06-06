@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Track } from '@/types/track-types';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,59 +30,25 @@ const initialState: MusicPlayerState = {
   savedTracks: new Set(),
 };
 
-// Enhanced audio URL validation and fallback handling
-const getValidAudioUrl = async (audioFilePath: string): Promise<string> => {
+// Simplified audio URL resolution with better fallback handling
+const getValidAudioUrl = (audioFilePath: string): string => {
   if (!audioFilePath) {
     throw new Error('No audio file path provided');
   }
 
-  // Primary URL - full path with user ID folder
-  const primaryUrl = `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${audioFilePath}`;
+  console.log('Getting audio URL for path:', audioFilePath);
+
+  // If it's already a full URL, return it
+  if (audioFilePath.startsWith('http')) {
+    return audioFilePath;
+  }
+
+  // Build the public URL directly
+  const baseUrl = 'https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files';
+  const audioUrl = `${baseUrl}/${audioFilePath}`;
   
-  try {
-    console.log('Testing primary URL:', primaryUrl);
-    const response = await fetch(primaryUrl, { method: 'HEAD' });
-    if (response.ok && response.headers.get('content-type')?.includes('audio')) {
-      console.log('Primary URL is valid');
-      return primaryUrl;
-    }
-  } catch (error) {
-    console.log('Primary URL failed:', error);
-  }
-
-  // Fallback URL - try without user ID folder (for legacy files)
-  const filename = audioFilePath.split('/').pop();
-  if (filename) {
-    const fallbackUrl = `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${filename}`;
-    
-    try {
-      console.log('Testing fallback URL:', fallbackUrl);
-      const response = await fetch(fallbackUrl, { method: 'HEAD' });
-      if (response.ok && response.headers.get('content-type')?.includes('audio')) {
-        console.log('Fallback URL is valid');
-        return fallbackUrl;
-      }
-    } catch (error) {
-      console.log('Fallback URL failed:', error);
-    }
-  }
-
-  // If both fail, try using Supabase client to get signed URL
-  try {
-    console.log('Attempting to get signed URL');
-    const { data, error } = await supabase.storage
-      .from('audio_files')
-      .createSignedUrl(audioFilePath, 3600); // 1 hour expiry
-
-    if (data?.signedUrl && !error) {
-      console.log('Signed URL created successfully');
-      return data.signedUrl;
-    }
-  } catch (error) {
-    console.log('Signed URL creation failed:', error);
-  }
-
-  throw new Error(`Audio file not accessible: ${audioFilePath}`);
+  console.log('Generated audio URL:', audioUrl);
+  return audioUrl;
 };
 
 export const useMusicPlayerState = () => {
@@ -96,6 +61,7 @@ export const useMusicPlayerState = () => {
     setState(prev => ({
       ...prev,
       isLoading: false,
+      isPlaying: false,
       error: 'Failed to load or play audio.'
     }));
   }, []);
@@ -103,12 +69,16 @@ export const useMusicPlayerState = () => {
   // Update media session metadata
   const updateMediaSession = useCallback((track: Track) => {
     if ('mediaSession' in navigator) {
+      const coverUrl = track.cover_art_path?.startsWith('http') 
+        ? track.cover_art_path 
+        : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${track.cover_art_path}`;
+
       navigator.mediaSession.metadata = new MediaMetadata({
         title: track.title,
         artist: track.artist,
-        album: track.genre || 'Unknown Album',
+        album: track.album_name || track.genre || 'Unknown Album',
         artwork: [
-          { src: `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${track.cover_art_path}`, sizes: '512x512', type: 'image/jpeg' }
+          { src: coverUrl, sizes: '512x512', type: 'image/jpeg' }
         ]
       });
     }
@@ -117,14 +87,21 @@ export const useMusicPlayerState = () => {
   const loadAudio = useCallback(async (track: Track) => {
     if (!track?.audio_file_path) {
       console.error('No audio file path provided for track:', track);
+      handleAudioError(new Error('No audio file path'));
       return;
     }
 
     try {
       console.log('Loading audio for track:', track.title, 'Path:', track.audio_file_path);
       
-      const audioUrl = await getValidAudioUrl(track.audio_file_path);
-      console.log('Final audio URL:', audioUrl);
+      setState(prev => ({
+        ...prev,
+        isLoading: true,
+        error: null
+      }));
+
+      const audioUrl = getValidAudioUrl(track.audio_file_path);
+      console.log('Using audio URL:', audioUrl);
 
       if (audioRef.current) {
         // Reset audio element
@@ -134,29 +111,47 @@ export const useMusicPlayerState = () => {
         // Set new source
         audioRef.current.src = audioUrl;
         
-        // Wait for audio to load
+        // Wait for audio to load with better error handling
         await new Promise((resolve, reject) => {
           if (!audioRef.current) return reject(new Error('Audio element not available'));
           
+          const audio = audioRef.current;
+          
           const handleCanPlay = () => {
             console.log('Audio can play');
-            audioRef.current?.removeEventListener('canplay', handleCanPlay);
-            audioRef.current?.removeEventListener('error', handleError);
+            cleanup();
             resolve(true);
           };
           
           const handleError = (e: Event) => {
             console.error('Audio load error:', e);
-            audioRef.current?.removeEventListener('canplay', handleCanPlay);
-            audioRef.current?.removeEventListener('error', handleError);
-            reject(new Error('Failed to load audio'));
+            console.error('Audio element error:', audio.error);
+            cleanup();
+            reject(new Error(`Failed to load audio: ${audio.error?.message || 'Unknown error'}`));
+          };
+
+          const handleLoadStart = () => {
+            console.log('Audio load started');
+          };
+
+          const cleanup = () => {
+            audio.removeEventListener('canplay', handleCanPlay);
+            audio.removeEventListener('error', handleError);
+            audio.removeEventListener('loadstart', handleLoadStart);
           };
           
-          audioRef.current.addEventListener('canplay', handleCanPlay);
-          audioRef.current.addEventListener('error', handleError);
+          audio.addEventListener('canplay', handleCanPlay);
+          audio.addEventListener('error', handleError);
+          audio.addEventListener('loadstart', handleLoadStart);
+          
+          // Set a timeout to reject if loading takes too long
+          setTimeout(() => {
+            cleanup();
+            reject(new Error('Audio loading timeout'));
+          }, 10000);
           
           // Trigger load
-          audioRef.current.load();
+          audio.load();
         });
 
         setState(prev => ({
@@ -180,15 +175,16 @@ export const useMusicPlayerState = () => {
   const playTrack = useCallback(async (track: Track) => {
     setState(prev => ({ ...prev, isLoading: true }));
     await loadAudio(track);
-    if (audioRef.current) {
-      audioRef.current.play()
-        .then(() => setState(prev => ({ ...prev, isPlaying: true })))
-        .catch(error => {
-          console.error("Playback failed:", error);
-          handleAudioError(error);
-        });
+    if (audioRef.current && !state.error) {
+      try {
+        await audioRef.current.play();
+        setState(prev => ({ ...prev, isPlaying: true, isLoading: false }));
+      } catch (error) {
+        console.error("Playback failed:", error);
+        handleAudioError(error);
+      }
     }
-  }, [loadAudio, handleAudioError]);
+  }, [loadAudio, handleAudioError, state.error]);
 
   const play = useCallback(() => {
     if (audioRef.current) {
@@ -272,7 +268,6 @@ export const useMusicPlayerState = () => {
 
   const likeTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
-      // Here you would implement the actual like functionality with your backend
       setState(prev => ({ 
         ...prev, 
         likedTracks: new Set([...prev.likedTracks, trackId]) 
@@ -286,7 +281,6 @@ export const useMusicPlayerState = () => {
 
   const unlikeTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
-      // Here you would implement the actual unlike functionality with your backend
       setState(prev => {
         const newLikedTracks = new Set(prev.likedTracks);
         newLikedTracks.delete(trackId);
@@ -301,7 +295,6 @@ export const useMusicPlayerState = () => {
 
   const saveTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
-      // Here you would implement the actual save functionality with your backend
       setState(prev => ({ 
         ...prev, 
         savedTracks: new Set([...prev.savedTracks, trackId]) 
@@ -315,7 +308,6 @@ export const useMusicPlayerState = () => {
 
   const unsaveTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
-      // Here you would implement the actual unsave functionality with your backend
       setState(prev => {
         const newSavedTracks = new Set(prev.savedTracks);
         newSavedTracks.delete(trackId);
@@ -337,29 +329,37 @@ export const useMusicPlayerState = () => {
   }, [state.savedTracks]);
 
   const shareTrack = useCallback((trackId: string) => {
-    // Implement share functionality
     console.log('Sharing track:', trackId);
   }, []);
 
   useEffect(() => {
     if (audioRef.current) {
+      const audio = audioRef.current;
+      
       const updateCurrentTime = () => {
-        setState(prev => ({ ...prev, currentTime: audioRef.current ? audioRef.current.currentTime : 0 }));
+        setState(prev => ({ ...prev, currentTime: audio.currentTime || 0 }));
       };
 
       const updateDuration = () => {
-        setState(prev => ({ ...prev, duration: audioRef.current ? audioRef.current.duration : 0 }));
+        setState(prev => ({ ...prev, duration: audio.duration || 0 }));
       };
 
-      audioRef.current.addEventListener('timeupdate', updateCurrentTime);
-      audioRef.current.addEventListener('loadedmetadata', updateDuration);
+      const handleEnded = () => {
+        setState(prev => ({ ...prev, isPlaying: false }));
+        playNext();
+      };
+
+      audio.addEventListener('timeupdate', updateCurrentTime);
+      audio.addEventListener('loadedmetadata', updateDuration);
+      audio.addEventListener('ended', handleEnded);
 
       return () => {
-        audioRef.current?.removeEventListener('timeupdate', updateCurrentTime);
-        audioRef.current?.removeEventListener('loadedmetadata', updateDuration);
+        audio.removeEventListener('timeupdate', updateCurrentTime);
+        audio.removeEventListener('loadedmetadata', updateDuration);
+        audio.removeEventListener('ended', handleEnded);
       };
     }
-  }, []);
+  }, [playNext]);
 
   useEffect(() => {
     if ('mediaSession' in navigator) {
@@ -375,8 +375,14 @@ export const useMusicPlayerState = () => {
       navigator.mediaSession.setActionHandler('seekforward', () => {
         seekTo(Math.min(state.duration, state.currentTime + 10));
       });
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        playNext();
+      });
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        playPrevious();
+      });
     }
-  }, [play, pause, seekTo, state.currentTime, state.duration]);
+  }, [play, pause, seekTo, state.currentTime, state.duration, playNext, playPrevious]);
 
   // Return individual properties to match MusicPlayerContextType
   return {
