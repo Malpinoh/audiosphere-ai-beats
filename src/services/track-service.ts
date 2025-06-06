@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { Track, TracksFilter } from "@/types/track-types";
 
@@ -191,31 +190,8 @@ export async function fetchTrack(id: string) {
     return null;
   }
   
-  // Format the track data with proper URLs
-  const formattedTrack: Track = {
-    ...data,
-  };
-  
-  // Handle cover art URL formatting
-  if (data.cover_art_path) {
-    formattedTrack.cover = data.cover_art_path.startsWith('http') 
-      ? data.cover_art_path 
-      : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${data.cover_art_path}`;
-  }
-  
-  // Handle audio file URL formatting
-  if (data.audio_file_path) {
-    formattedTrack.audioUrl = data.audio_file_path.startsWith('http')
-      ? data.audio_file_path
-      : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${data.audio_file_path}`;
-  }
-  
-  // Ensure track_type is properly typed
-  if (data.track_type && ['single', 'ep', 'album'].includes(data.track_type)) {
-    formattedTrack.track_type = data.track_type as 'single' | 'ep' | 'album';
-  } else {
-    formattedTrack.track_type = 'single' as const;
-  }
+  // Format the track data with proper URLs using the formatTracks helper
+  const [formattedTrack] = formatTracks([data]);
   
   return formattedTrack;
 }
