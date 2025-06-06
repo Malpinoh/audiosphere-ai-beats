@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { Track, TracksFilter } from "@/types/track-types";
 
@@ -19,6 +20,13 @@ export function formatTracks(data: any[]): Track[] {
       formattedTrack.audioUrl = track.audio_file_path.startsWith('http')
         ? track.audio_file_path
         : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${track.audio_file_path}`;
+    }
+    
+    // Ensure track_type is properly typed
+    if (track.track_type && ['single', 'ep', 'album'].includes(track.track_type)) {
+      formattedTrack.track_type = track.track_type as 'single' | 'ep' | 'album';
+    } else {
+      formattedTrack.track_type = 'single';
     }
     
     return formattedTrack;
@@ -59,6 +67,10 @@ async function fetchRegularTracks(filter: TracksFilter) {
   if (filter.tags && filter.tags.length > 0) {
     // Filter by any matching tag
     query = query.contains('tags', filter.tags);
+  }
+  
+  if (filter.trackType) {
+    query = query.eq('track_type', filter.trackType);
   }
   
   if (filter.searchTerm) {
@@ -198,6 +210,13 @@ export async function fetchTrack(id: string) {
       : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${data.audio_file_path}`;
   }
   
+  // Ensure track_type is properly typed
+  if (data.track_type && ['single', 'ep', 'album'].includes(data.track_type)) {
+    formattedTrack.track_type = data.track_type as 'single' | 'ep' | 'album';
+  } else {
+    formattedTrack.track_type = 'single';
+  }
+  
   return formattedTrack;
 }
 
@@ -258,7 +277,7 @@ export async function logStreamPlay(trackId: string) {
         headers: {
           'Content-Type': 'application/json',
           'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrcGpsZmNwbmN2dmp5emZvbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMDAxMDAsImV4cCI6MjA1OTU3NjEwMH0.Lnas8tdQ_Wycaa-oWh8lCfRGkRr8IhW5CohA7n37nMg',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrcGpsZmNwbmN2dmp5emZvbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMDAxMDAsImV4cCI6MjA1OTU3NjEwMH0.Lnas8tdQ_Wycaa-oWh8lCfRGkRr8IhW5CohA7n37nMg`,
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrcGpsZmNwbmN2dmp5emZvbGFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMDAxMDAsImV4cCI6MjA1OTU3NjEwMH0.Lnas8tdQ_Wycaa-oWh8lCfRGkRr8IhW5CohA7n37nMg',
           'Prefer': 'return=minimal'
         },
         body: JSON.stringify({

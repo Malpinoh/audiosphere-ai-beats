@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -381,20 +382,20 @@ export function UploadForm() {
                 <label className="block text-sm font-medium text-white mb-2">Audio File</label>
                 <FileUploader
                   accept="audio/*"
-                  maxSize={100 * 1024 * 1024} // 100MB
-                  onFileSelect={setAudioFile}
+                  maxSize={100}
+                  onFileSelected={setAudioFile}
                   selectedFile={audioFile}
-                  type="audio"
+                  fileType="audio"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-white mb-2">Cover Art</label>
                 <FileUploader
                   accept="image/*"
-                  maxSize={10 * 1024 * 1024} // 10MB
-                  onFileSelect={setCoverArt}
+                  maxSize={10}
+                  onFileSelected={setCoverArt}
                   selectedFile={coverArt}
-                  type="image"
+                  fileType="image"
                 />
               </div>
             </div>
@@ -451,9 +452,8 @@ export function UploadForm() {
                   <FormLabel className="text-white">Tags</FormLabel>
                   <FormControl>
                     <TagInput
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Add tags to help people discover your music..."
+                      tags={field.value}
+                      setTags={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />
