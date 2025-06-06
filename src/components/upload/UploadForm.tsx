@@ -139,6 +139,14 @@ export function UploadForm() {
     setUploadProgress(0);
 
     try {
+      // Get the current session to include authorization header
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        toast.error("Authentication required. Please log in again.");
+        return;
+      }
+
       const formData = new FormData();
       
       // Add all form fields
@@ -189,6 +197,7 @@ export function UploadForm() {
         method: 'POST',
         headers: {
           'x-api-key': apiKey,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: formData,
       });
