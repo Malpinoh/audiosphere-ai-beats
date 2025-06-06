@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,6 +15,7 @@ import { TagInput } from "./TagInput";
 import { MoodSelector } from "./MoodSelector";
 import { toast } from "sonner";
 import { Loader2, Upload, Music, Album, Disc3 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const trackTypes = [
   { value: "single", label: "Single Track", icon: Music },
@@ -55,6 +55,7 @@ export function UploadForm() {
   const [coverArt, setCoverArt] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [apiKey, setApiKey] = useState<string | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -76,6 +77,50 @@ export function UploadForm() {
     },
   });
 
+  // Create API key for admin user automatically
+  useEffect(() => {
+    const createApiKey = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Check if user already has an API key
+        const { data: existingKeys } = await supabase
+          .from('api_keys')
+          .select('api_key')
+          .eq('user_id', user.id)
+          .eq('active', true)
+          .limit(1);
+
+        if (existingKeys && existingKeys.length > 0) {
+          setApiKey(existingKeys[0].api_key);
+          return;
+        }
+
+        // Create new API key for admin
+        const response = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/api-keys', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          },
+          body: JSON.stringify({
+            name: 'Admin Upload Key',
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setApiKey(result.apiKey.api_key);
+        }
+      } catch (error) {
+        console.error('Error creating API key:', error);
+      }
+    };
+
+    createApiKey();
+  }, []);
+
   const watchTrackType = form.watch("trackType");
   const watchUseAiAnalysis = form.watch("useAiAnalysis");
 
@@ -85,17 +130,15 @@ export function UploadForm() {
       return;
     }
 
+    if (!apiKey) {
+      toast.error("API key not available. Please try refreshing the page.");
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
 
     try {
-      // Get API key from local storage (in a real app, this would be securely stored)
-      const apiKey = localStorage.getItem('upload_api_key');
-      if (!apiKey) {
-        toast.error("No API key found. Please contact admin.");
-        return;
-      }
-
       const formData = new FormData();
       
       // Add all form fields
@@ -580,7 +623,7 @@ export function UploadForm() {
 
               <Button
                 type="submit"
-                disabled={isUploading || !audioFile || !coverArt}
+                disabled={isUploading || !audioFile || !coverArt || !apiKey}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-8"
               >
                 {isUploading ? (

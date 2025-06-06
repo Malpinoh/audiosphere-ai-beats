@@ -22,11 +22,11 @@ export function formatTracks(data: any[]): Track[] {
         : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files/${track.audio_file_path}`;
     }
     
-    // Ensure track_type is properly typed
+    // Ensure track_type is properly typed - this fixes the TypeScript error
     if (track.track_type && ['single', 'ep', 'album'].includes(track.track_type)) {
       formattedTrack.track_type = track.track_type as 'single' | 'ep' | 'album';
     } else {
-      formattedTrack.track_type = 'single';
+      formattedTrack.track_type = 'single' as const;
     }
     
     return formattedTrack;
@@ -214,7 +214,7 @@ export async function fetchTrack(id: string) {
   if (data.track_type && ['single', 'ep', 'album'].includes(data.track_type)) {
     formattedTrack.track_type = data.track_type as 'single' | 'ep' | 'album';
   } else {
-    formattedTrack.track_type = 'single';
+    formattedTrack.track_type = 'single' as const;
   }
   
   return formattedTrack;
