@@ -5,6 +5,7 @@ import { Navigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { UploadForm } from "@/components/upload/UploadForm";
 import { AudioDebugPanel } from "@/components/debug/AudioDebugPanel";
+import { StorageSetup } from "@/components/admin/StorageSetup";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
@@ -53,6 +54,8 @@ export default function UploadPage() {
             </div>
             
             <div className="md:col-span-1 space-y-6">
+              <StorageSetup />
+              
               <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="text-white">Admin Upload Guidelines</CardTitle>
@@ -78,6 +81,10 @@ export default function UploadPage() {
                     <li className="flex items-start">
                       <span className="font-medium mr-2 text-purple-400">•</span> 
                       <span>Add lyrics when available to increase engagement</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="font-medium mr-2 text-purple-400">•</span> 
+                      <span>Setup storage buckets before uploading</span>
                     </li>
                   </ul>
                 </CardContent>
