@@ -10,11 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileUploader } from "./FileUploader";
 import { TagInput } from "./TagInput";
 import { MoodSelector } from "./MoodSelector";
 import { toast } from "sonner";
-import { Loader2, Upload, Music, Album, Disc3 } from "lucide-react";
+import { Loader2, Upload, Music, Album, Disc3, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const trackTypes = [
@@ -55,7 +56,10 @@ export function UploadForm() {
   const [coverArt, setCoverArt] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -82,7 +86,12 @@ export function UploadForm() {
     const createApiKey = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setUploadError('User not authenticated');
+          return;
+        }
+
+        console.log('Current user:', user.id);
 
         // Check if user already has an API key
         const { data: existingKeys } = await supabase
@@ -94,10 +103,12 @@ export function UploadForm() {
 
         if (existingKeys && existingKeys.length > 0) {
           setApiKey(existingKeys[0].api_key);
+          console.log('Using existing API key');
           return;
         }
 
         // Create new API key for admin
+        console.log('Creating new API key...');
         const response = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/api-keys', {
           method: 'POST',
           headers: {
@@ -112,9 +123,15 @@ export function UploadForm() {
         if (response.ok) {
           const result = await response.json();
           setApiKey(result.apiKey.api_key);
+          console.log('API key created successfully');
+        } else {
+          const errorText = await response.text();
+          console.error('Failed to create API key:', errorText);
+          setUploadError('Failed to create API key');
         }
       } catch (error) {
         console.error('Error creating API key:', error);
+        setUploadError('Error setting up authentication');
       }
     };
 
@@ -132,20 +149,27 @@ export function UploadForm() {
 
     if (!apiKey) {
       toast.error("API key not available. Please try refreshing the page.");
+      setUploadError("API key not available");
       return;
     }
 
     setIsUploading(true);
     setUploadProgress(0);
+    setUploadStatus('uploading');
+    setUploadError(null);
+    setDebugInfo(null);
 
     try {
       // Get the current session to include authorization header
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
-        toast.error("Authentication required. Please log in again.");
-        return;
+        throw new Error("Authentication required. Please log in again.");
       }
+
+      console.log('Starting upload process...');
+      console.log('Audio file:', audioFile.name, audioFile.size, 'bytes');
+      console.log('Cover art:', coverArt.name, coverArt.size, 'bytes');
 
       const formData = new FormData();
       
@@ -190,9 +214,10 @@ export function UploadForm() {
 
       // Simulate progress
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 10, 90));
-      }, 500);
+        setUploadProgress(prev => Math.min(prev + 5, 90));
+      }, 1000);
 
+      console.log('Sending request to edge function...');
       const response = await fetch('https://qkpjlfcpncvvjyzfolag.supabase.co/functions/v1/music-upload', {
         method: 'POST',
         headers: {
@@ -205,36 +230,113 @@ export function UploadForm() {
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Upload failed');
+      const responseText = await response.text();
+      console.log('Response status:', response.status);
+      console.log('Response text:', responseText);
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
+        throw new Error(`Server returned invalid response: ${responseText.substring(0, 200)}`);
       }
 
-      const result = await response.json();
-      
+      if (!response.ok) {
+        throw new Error(result.message || `Upload failed with status ${response.status}`);
+      }
+
       if (result.success) {
+        setUploadStatus('success');
+        setDebugInfo(result.data);
         toast.success(`${data.trackType === 'single' ? 'Track' : data.trackType.toUpperCase()} uploaded successfully!`);
         
         // Reset form
         form.reset();
         setAudioFile(null);
         setCoverArt(null);
-        setUploadProgress(0);
+        
+        // Reset progress after delay
+        setTimeout(() => {
+          setUploadProgress(0);
+          setUploadStatus('idle');
+        }, 3000);
       } else {
         throw new Error(result.message || 'Upload failed');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error(error instanceof Error ? error.message : 'Upload failed. Please try again.');
+      setUploadStatus('error');
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed. Please try again.';
+      setUploadError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsUploading(false);
-      setTimeout(() => setUploadProgress(0), 2000);
     }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {/* Upload Status Alert */}
+        {(uploadStatus === 'error' || uploadStatus === 'success') && (
+          <Alert className={uploadStatus === 'error' ? 'border-red-500 bg-red-500/10' : 'border-green-500 bg-green-500/10'}>
+            {uploadStatus === 'error' ? (
+              <XCircle className="h-4 w-4 text-red-500" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+            <AlertDescription className={uploadStatus === 'error' ? 'text-red-400' : 'text-green-400'}>
+              {uploadStatus === 'error' ? (
+                <>
+                  <strong>Upload Failed:</strong> {uploadError}
+                </>
+              ) : (
+                <strong>Upload Successful!</strong> Your track has been uploaded and processed.
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Debug Info */}
+        {debugInfo && uploadStatus === 'success' && (
+          <Card className="bg-green-900/20 border-green-500/30">
+            <CardHeader>
+              <CardTitle className="text-green-400 text-sm">Upload Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-xs">
+              {debugInfo.track && (
+                <div>
+                  <p className="text-white"><strong>Track ID:</strong> {debugInfo.track.id}</p>
+                  <p className="text-white/60"><strong>Published:</strong> {debugInfo.track.published ? 'Yes' : 'No'}</p>
+                </div>
+              )}
+              {debugInfo.audio_file_url && (
+                <div>
+                  <p className="text-white/60"><strong>Audio URL:</strong></p>
+                  <p className="text-white/40 break-all">{debugInfo.audio_file_url}</p>
+                </div>
+              )}
+              {debugInfo.cover_art_url && (
+                <div>
+                  <p className="text-white/60"><strong>Cover URL:</strong></p>
+                  <p className="text-white/40 break-all">{debugInfo.cover_art_url}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Authentication Status */}
+        {!apiKey && (
+          <Alert className="border-yellow-500 bg-yellow-500/10">
+            <AlertCircle className="h-4 w-4 text-yellow-500" />
+            <AlertDescription className="text-yellow-400">
+              Setting up authentication... {uploadError && `Error: ${uploadError}`}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Track Type Selection */}
         <Card>
           <CardHeader>
@@ -656,6 +758,10 @@ export function UploadForm() {
                     className="bg-purple-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   />
+                </div>
+                <div className="flex justify-between text-xs text-white/60 mt-1">
+                  <span>Processing upload...</span>
+                  <span>{uploadProgress}%</span>
                 </div>
               </div>
             )}

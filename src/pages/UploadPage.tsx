@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { UploadForm } from "@/components/upload/UploadForm";
+import { AudioDebugPanel } from "@/components/debug/AudioDebugPanel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
@@ -51,7 +52,7 @@ export default function UploadPage() {
               </Card>
             </div>
             
-            <div className="md:col-span-1">
+            <div className="md:col-span-1 space-y-6">
               <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="text-white">Admin Upload Guidelines</CardTitle>
@@ -81,6 +82,8 @@ export default function UploadPage() {
                   </ul>
                 </CardContent>
               </Card>
+              
+              <AudioDebugPanel />
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { analyzeMusicContent } from './audio-analysis.ts';
+import { ensureStorageBuckets } from './storage-setup.ts';
 
 // Configure CORS headers
 const corsHeaders = {
@@ -17,12 +17,12 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Determine the best MIME type for audio files to ensure compatibility
 function getCompatibleAudioMimeType(originalType: string, fileName: string): string {
-  // Always use audio/mpeg for maximum compatibility
+  console.log(`Checking MIME type for: ${fileName}, original type: ${originalType}`);
+  
   if (originalType.includes('mp3') || fileName.toLowerCase().endsWith('.mp3')) {
     return 'audio/mpeg';
   }
   
-  // WAV files should use audio/wav
   if (originalType.includes('wav') || fileName.toLowerCase().endsWith('.wav')) {
     return 'audio/wav';
   }
@@ -33,7 +33,10 @@ function getCompatibleAudioMimeType(originalType: string, fileName: string): str
 
 // Authenticate API key - Updated to use user_id
 async function authenticateApiKey(apiKey: string): Promise<{ authenticated: boolean; user_id?: string }> {
+  console.log('Authenticating API key...');
+  
   if (!apiKey) {
+    console.log('No API key provided');
     return { authenticated: false };
   }
 
@@ -52,6 +55,7 @@ async function authenticateApiKey(apiKey: string): Promise<{ authenticated: bool
   
     // Check if API key is expired
     if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      console.log('API key is expired');
       return { authenticated: false };
     }
   
@@ -61,6 +65,7 @@ async function authenticateApiKey(apiKey: string): Promise<{ authenticated: bool
       .update({ last_used_at: new Date().toISOString() })
       .eq('api_key', apiKey);
   
+    console.log(`API key authenticated for user: ${data.user_id}`);
     return { authenticated: true, user_id: data.user_id };
   } catch (error) {
     console.error('API key authentication error:', error);
@@ -68,20 +73,30 @@ async function authenticateApiKey(apiKey: string): Promise<{ authenticated: bool
   }
 }
 
-// Ensure user profile exists - NEW FUNCTION
+// Ensure user profile exists
 async function ensureUserProfile(userId: string): Promise<boolean> {
+  console.log(`Ensuring profile exists for user: ${userId}`);
+  
   try {
     // Check if profile already exists
-    const { data: existingProfile } = await supabase
+    const { data: existingProfile, error: checkError } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking existing profile:', checkError);
+      return false;
+    }
 
     if (existingProfile) {
+      console.log('Profile already exists');
       return true;
     }
 
+    console.log('Profile does not exist, creating new profile...');
+    
     // Profile doesn't exist, get user data from auth.users and create profile
     const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
     
@@ -106,7 +121,7 @@ async function ensureUserProfile(userId: string): Promise<boolean> {
       return false;
     }
 
-    console.log(`Profile created for user: ${userId}`);
+    console.log(`Profile created successfully for user: ${userId}`);
     return true;
   } catch (error) {
     console.error('Error ensuring user profile:', error);
@@ -114,8 +129,16 @@ async function ensureUserProfile(userId: string): Promise<boolean> {
   }
 }
 
-// Handle form data parsing and file upload - Updated to ensure profile exists
+// Handle form data parsing and file upload with comprehensive error handling
 async function handleFormData(formData: FormData, userId: string) {
+  console.log('Starting upload process...');
+  
+  // Ensure storage buckets exist
+  const bucketsReady = await ensureStorageBuckets(supabase);
+  if (!bucketsReady) {
+    console.warn('Storage buckets may not be properly configured');
+  }
+
   // Ensure user profile exists before proceeding
   const profileExists = await ensureUserProfile(userId);
   if (!profileExists) {
@@ -129,6 +152,8 @@ async function handleFormData(formData: FormData, userId: string) {
   const mood = formData.get('mood') as string;
   const description = formData.get('description') as string || null;
   const lyrics = formData.get('lyrics') as string || null;
+  
+  console.log(`Processing upload: "${title}" by ${artist}`);
   
   // New fields for track types
   const trackType = formData.get('track_type') as string || 'single';
@@ -166,6 +191,8 @@ async function handleFormData(formData: FormData, userId: string) {
     throw new Error('Missing audio file');
   }
   
+  console.log(`Audio file: ${audioFile.name}, size: ${audioFile.size} bytes`);
+  
   // Enhanced file size validation - increased to 100MB
   const maxAudioSize = 100 * 1024 * 1024; // 100MB
   if (audioFile.size > maxAudioSize) {
@@ -174,13 +201,15 @@ async function handleFormData(formData: FormData, userId: string) {
   
   // Validate and determine compatible audio MIME type
   const compatibleMimeType = getCompatibleAudioMimeType(audioFile.type, audioFile.name);
-  console.log(`Original MIME type: ${audioFile.type}, Using: ${compatibleMimeType}`);
+  console.log(`Using MIME type: ${compatibleMimeType}`);
   
   // Get the cover art
   const coverArt = formData.get('cover_art') as File;
   if (!coverArt) {
     throw new Error('Missing cover art');
   }
+  
+  console.log(`Cover art: ${coverArt.name}, size: ${coverArt.size} bytes`);
   
   // Validate cover art file type and size
   const coverArtType = coverArt.type;
@@ -193,20 +222,19 @@ async function handleFormData(formData: FormData, userId: string) {
     throw new Error('Cover art file size exceeds 10MB limit');
   }
   
-  // Create unique filenames with better structure (simplified path)
+  // Create unique filenames with better structure
   const timestamp = Date.now();
   const audioExtension = compatibleMimeType === 'audio/mpeg' ? '.mp3' : '.wav';
   const sanitizedTitle = title.replace(/[^a-zA-Z0-9\-_]/g, '-').toLowerCase();
   const sanitizedArtist = artist.replace(/[^a-zA-Z0-9\-_]/g, '-').toLowerCase();
   
-  // Simplified file paths without user folders for better compatibility
   const audioFileName = `${timestamp}-${sanitizedArtist}-${sanitizedTitle}${audioExtension}`;
   const coverArtFileName = `${timestamp}-${sanitizedArtist}-${sanitizedTitle}-cover.${coverArtType.split('/')[1]}`;
   
-  console.log(`Uploading audio file: ${audioFileName}`);
-  console.log(`Uploading cover art: ${coverArtFileName}`);
+  console.log(`Generated filenames - Audio: ${audioFileName}, Cover: ${coverArtFileName}`);
   
   // Upload audio file with compatible MIME type
+  console.log('Uploading audio file...');
   const audioBuffer = await audioFile.arrayBuffer();
   const { data: audioUploadData, error: audioUploadError } = await supabase.storage
     .from('audio_files')
@@ -221,9 +249,10 @@ async function handleFormData(formData: FormData, userId: string) {
     throw new Error(`Failed to upload audio file: ${audioUploadError.message}`);
   }
   
-  console.log(`Audio uploaded successfully: ${audioFileName} with MIME type: ${compatibleMimeType}`);
+  console.log(`Audio uploaded successfully: ${audioFileName}`);
   
   // Upload cover art
+  console.log('Uploading cover art...');
   const coverArtBuffer = await coverArt.arrayBuffer();
   const { data: coverUploadData, error: coverArtUploadError } = await supabase.storage
     .from('cover_art')
@@ -235,48 +264,22 @@ async function handleFormData(formData: FormData, userId: string) {
   
   if (coverArtUploadError) {
     console.error('Cover art upload error:', coverArtUploadError);
+    
+    // Clean up uploaded audio file
+    await supabase.storage.from('audio_files').remove([audioFileName]);
+    
     throw new Error(`Failed to upload cover art: ${coverArtUploadError.message}`);
   }
 
   console.log(`Cover art uploaded successfully: ${coverArtFileName}`);
 
-  // If AI analysis is requested, analyze the audio file
-  let analyzedData = { genre, mood, suggestedTags: tags };
-  const useAiAnalysis = formData.get('use_ai_analysis') === 'true';
-  
-  if (useAiAnalysis) {
-    try {
-      // Analyze audio content
-      analyzedData = await analyzeMusicContent(audioFile, lyrics);
-      
-      // Override values only if requested
-      if (formData.get('override_genre') === 'true') {
-        genre = analyzedData.genre;
-      }
-      
-      if (formData.get('override_mood') === 'true') {
-        mood = analyzedData.mood;
-      }
-      
-      if (formData.get('override_tags') === 'true' || tags.length === 0) {
-        tags = analyzedData.suggestedTags;
-      } else {
-        // Merge with existing tags
-        tags = [...new Set([...tags, ...analyzedData.suggestedTags])];
-      }
-    } catch (error) {
-      console.error('AI analysis error:', error);
-      // Continue without AI analysis
-    }
-  }
-  
   // Get audio file duration
   let duration = null;
   if (formData.get('duration')) {
     duration = parseInt(formData.get('duration') as string, 10);
   }
   
-  // Create or get artist profile using the function
+  // Create or get artist profile
   let artistProfileId = null;
   try {
     const { data: profileData, error: profileError } = await supabase
@@ -284,16 +287,16 @@ async function handleFormData(formData: FormData, userId: string) {
     
     if (profileError) {
       console.error('Error creating artist profile:', profileError);
-      // Continue without artist profile ID
     } else {
       artistProfileId = profileData;
+      console.log(`Artist profile ID: ${artistProfileId}`);
     }
   } catch (error) {
     console.error('Error creating artist profile:', error);
-    // Continue without artist profile ID
   }
   
-  // Insert track into database with proper file paths and new fields
+  // Insert track into database
+  console.log('Saving track to database...');
   const { data: track, error: trackInsertError } = await supabase
     .from('tracks')
     .insert({
@@ -303,14 +306,13 @@ async function handleFormData(formData: FormData, userId: string) {
       genre,
       mood,
       tags,
-      audio_file_path: audioFileName, // Simplified path
-      cover_art_path: coverArtFileName, // Simplified path
+      audio_file_path: audioFileName,
+      cover_art_path: coverArtFileName,
       description,
       lyrics,
       duration,
       published: formData.get('published') === 'true',
       artist_profile_id: artistProfileId,
-      // New fields
       track_type: trackType,
       album_name: albumName,
       track_number: trackNumber,
@@ -331,18 +333,25 @@ async function handleFormData(formData: FormData, userId: string) {
   
   console.log(`Track saved successfully with ID: ${track.id}`);
   
-  // Return track data with analyzed info
+  // Generate public URLs for verification
+  const audioUrl = `${supabaseUrl}/storage/v1/object/public/audio_files/${audioFileName}`;
+  const coverUrl = `${supabaseUrl}/storage/v1/object/public/cover_art/${coverArtFileName}`;
+  
+  console.log(`Audio URL: ${audioUrl}`);
+  console.log(`Cover URL: ${coverUrl}`);
+  
   return {
     track,
-    analyzed_data: analyzedData,
     artist_profile_created: !!artistProfileId,
-    audio_file_url: `${supabaseUrl}/storage/v1/object/public/audio_files/${audioFileName}`,
-    cover_art_url: `${supabaseUrl}/storage/v1/object/public/cover_art/${coverArtFileName}`
+    audio_file_url: audioUrl,
+    cover_art_url: coverUrl
   };
 }
 
 // Main serve function
 serve(async (req) => {
+  console.log(`${req.method} request received at ${new Date().toISOString()}`);
+  
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -353,6 +362,7 @@ serve(async (req) => {
   
   // Only accept POST requests
   if (req.method !== 'POST') {
+    console.log('Method not allowed:', req.method);
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -363,6 +373,7 @@ serve(async (req) => {
     // Extract API key from header
     const apiKey = req.headers.get('x-api-key');
     if (!apiKey) {
+      console.log('No API key provided in request');
       return new Response(JSON.stringify({ error: 'API key required' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -372,6 +383,7 @@ serve(async (req) => {
     // Authenticate API key
     const { authenticated, user_id } = await authenticateApiKey(apiKey);
     if (!authenticated || !user_id) {
+      console.log('API key authentication failed');
       return new Response(JSON.stringify({ error: 'Invalid or expired API key' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -379,10 +391,13 @@ serve(async (req) => {
     }
 
     // Parse form data
+    console.log('Parsing form data...');
     const formData = await req.formData();
     
     // Process upload
     const result = await handleFormData(formData, user_id);
+    
+    console.log('Upload completed successfully');
     
     // Return success response
     return new Response(JSON.stringify({
@@ -396,10 +411,12 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error processing request:', error);
     
-    // Return error response
+    // Return detailed error response
     return new Response(JSON.stringify({
       success: false,
       message: error.message || 'An error occurred while processing your request',
+      error: error.toString(),
+      timestamp: new Date().toISOString()
     }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
