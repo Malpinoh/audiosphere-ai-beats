@@ -3,14 +3,17 @@ import { useParams } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { useTrack } from "@/hooks/use-track";
 import { useMusicPlayer } from "@/contexts/music-player";
+import { useTrackComments } from "@/hooks/use-track-comments";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Play, Pause, Heart, Share, Music, Bookmark, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CommentsSection } from "@/components/player/CommentsSection";
 
 export default function TrackPage() {
   const { trackId } = useParams<{ trackId: string }>();
   const { track, loading, error } = useTrack(trackId);
+  const { comments, loading: commentsLoading, addComment } = useTrackComments(trackId || null);
   const { 
     currentTrack, 
     isPlaying, 
@@ -214,6 +217,17 @@ export default function TrackPage() {
                   <Heart className="h-4 w-4" />
                   <span>{track.like_count || 0} likes</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Comments Section */}
+            <div className="md:col-span-12 mt-8">
+              <div className="bg-maudio-darker rounded-lg p-6">
+                <CommentsSection
+                  comments={comments}
+                  loading={commentsLoading}
+                  onAddComment={addComment}
+                />
               </div>
             </div>
           </div>
