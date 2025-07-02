@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileFullscreenPlayer } from "./MobileFullscreenPlayer";
 import { useTrackComments } from "@/hooks/use-track-comments";
-import { FloatingComments } from "@/components/player/FloatingComments";
+
 import { CommentsSection } from "@/components/player/CommentsSection";
 
 const MusicPlayer = () => {
@@ -87,8 +87,6 @@ const MusicPlayer = () => {
   
   return (
     <>
-      {/* Floating Comments */}
-      <FloatingComments comments={topComments} isPlaying={isPlaying} />
       
       <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 p-3 z-40">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-4">
