@@ -28,7 +28,10 @@ export function useTrackComments(trackId: string | null) {
     const fetchComments = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        console.log('Fetching comments for track:', trackId);
+        
+        // Try to fetch from the view first
+        let { data, error } = await supabase
           .from('comments_with_details')
           .select('*')
           .eq('track_id', trackId)
@@ -36,14 +39,47 @@ export function useTrackComments(trackId: string | null) {
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error("Error fetching track comments:", error);
-          return;
+          console.warn('View query failed, trying direct join:', error);
+          
+          // Fallback to direct join
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('comments')
+            .select(`
+              *,
+              profiles:user_id (
+                username,
+                avatar_url,
+                follower_count,
+                is_verified
+              )
+            `)
+            .eq('track_id', trackId)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false });
+
+          if (fallbackError) {
+            console.error("Fallback query also failed:", fallbackError);
+            return;
+          }
+
+          // Transform fallback data to match expected format
+          data = fallbackData?.map(comment => ({
+            id: comment.id,
+            content: comment.content,
+            username: comment.profiles?.username || 'Anonymous',
+            avatar_url: comment.profiles?.avatar_url,
+            follower_count: comment.profiles?.follower_count || 0,
+            is_verified: comment.profiles?.is_verified || false,
+            created_at: comment.created_at,
+            likes_count: comment.likes_count || 0,
+            user_id: comment.user_id
+          })) || [];
         }
 
         const transformedComments: TrackComment[] = (data || []).map(comment => ({
           id: comment.id,
           content: comment.content,
-          username: comment.username,
+          username: comment.username || 'Anonymous',
           avatar_url: comment.avatar_url,
           follower_count: comment.follower_count || 0,
           is_verified: comment.is_verified || false,
@@ -53,8 +89,10 @@ export function useTrackComments(trackId: string | null) {
         }));
 
         setComments(transformedComments);
+        console.log('Comments loaded successfully:', transformedComments.length);
       } catch (error) {
         console.error("Error fetching track comments:", error);
+        toast.error("Failed to load comments");
       } finally {
         setLoading(false);
       }
@@ -62,7 +100,7 @@ export function useTrackComments(trackId: string | null) {
 
     fetchComments();
 
-    // Set up real-time subscription for this track's comments
+    // Set up real-time subscription
     const subscription = supabase
       .channel(`track-comments-${trackId}`)
       .on('postgres_changes', 
@@ -93,12 +131,15 @@ export function useTrackComments(trackId: string | null) {
         return false;
       }
 
+      console.log('Adding comment for track:', trackId);
+
       const { error } = await supabase
         .from('comments')
         .insert({
           track_id: trackId,
           user_id: user.id,
-          content: content.trim()
+          content: content.trim(),
+          status: 'active'
         });
 
       if (error) {
@@ -116,7 +157,6 @@ export function useTrackComments(trackId: string | null) {
     }
   };
 
-  // Get top 5 comments based on user engagement (followers + verification)
   const getTopComments = () => {
     return [...comments]
       .sort((a, b) => {

@@ -1,10 +1,10 @@
 
 import { Loader2, CheckCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrackCard } from "@/components/ui/track-card";
 import type { Track } from "@/types/track-types";
 import type { ArtistProfile } from "@/hooks/use-artist-profile";
 import { Card, CardContent } from "@/components/ui/card";
+import { useMusicPlayer } from "@/contexts/music-player";
 
 interface ArtistTabsProps {
   artist: ArtistProfile;
@@ -14,6 +14,8 @@ interface ArtistTabsProps {
 }
 
 export const ArtistTabs = ({ artist, tracks, tracksLoading, isMobile = false }: ArtistTabsProps) => {
+  const { playTrack } = useMusicPlayer();
+
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
       return `${(num / 1000000).toFixed(1)}M`;
@@ -21,6 +23,10 @@ export const ArtistTabs = ({ artist, tracks, tracksLoading, isMobile = false }: 
       return `${(num / 1000).toFixed(1)}K`;
     }
     return num.toString();
+  };
+
+  const handleTrackPlay = (track: Track) => {
+    playTrack(track);
   };
 
   return (
@@ -41,28 +47,44 @@ export const ArtistTabs = ({ artist, tracks, tracksLoading, isMobile = false }: 
           </div>
         ) : tracks.length > 0 ? (
           <div className="space-y-3">
-            {tracks.map((track, index) => (
-              <div key={track.id} className="flex items-center gap-4 p-4 rounded-lg bg-black/20 hover:bg-black/30 transition-colors">
-                <span className="text-white/60 font-medium w-6 text-center">{index + 1}</span>
-                <img 
-                  src={track.cover_art_path} 
-                  alt={track.title}
-                  className="w-12 h-12 rounded-md object-cover"
-                />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-white truncate">{track.title}</h3>
-                  <p className="text-sm text-white/60">{track.genre}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-white">
-                    {formatNumber(track.play_count || 0)} plays
+            {tracks
+              .sort((a, b) => (b.play_count || 0) - (a.play_count || 0))
+              .map((track, index) => (
+                <div 
+                  key={track.id} 
+                  className="flex items-center gap-4 p-4 rounded-lg bg-black/20 hover:bg-black/30 transition-colors cursor-pointer group"
+                  onClick={() => handleTrackPlay(track)}
+                >
+                  <span className="text-white/60 font-medium w-6 text-center group-hover:opacity-0 transition-opacity">
+                    {index + 1}
+                  </span>
+                  <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="h-5 w-5 text-white ml-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                    </svg>
                   </div>
-                  <div className="text-xs text-white/60">
-                    {track.duration ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}` : '0:00'}
+                  <img 
+                    src={track.cover_art_path?.startsWith('http') 
+                      ? track.cover_art_path 
+                      : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${track.cover_art_path}`
+                    } 
+                    alt={track.title}
+                    className="w-12 h-12 rounded-md object-cover"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-white truncate">{track.title}</h3>
+                    <p className="text-sm text-white/60">{track.genre}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-white">
+                      {formatNumber(track.play_count || 0)} plays
+                    </div>
+                    <div className="text-xs text-white/60">
+                      {track.duration ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}` : '0:00'}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         ) : (
           <div className="text-white/60 text-center p-12">

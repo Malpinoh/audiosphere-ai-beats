@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Track } from '@/types/track-types';
 import { supabase } from '@/integrations/supabase/client';
+import { useStreamLogger } from '@/hooks/use-stream-logger';
 
 interface MusicPlayerState {
   currentTrack: Track | null;
@@ -70,6 +71,8 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   const [state, setState] = useState<MusicPlayerState>(initialState);
   const internalAudioRef = useRef<HTMLAudioElement>(null);
   const audioRef = externalAudioRef || internalAudioRef;
+  const { logStream } = useStreamLogger();
+  const streamLoggedRef = useRef<Set<string>>(new Set());
 
   // Enhanced error handling function
   const handleAudioError = useCallback((error: any, context: string = '') => {
@@ -239,7 +242,6 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       ...prev, 
       isLoading: true, 
       error: null,
-      // Add track to queue if not already present
       queue: prev.queue.some(t => t.id === track.id) ? prev.queue : [track, ...prev.queue]
     }));
     
@@ -250,13 +252,20 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
         console.log('Starting playback...');
         await audioRef.current.play();
         setState(prev => ({ ...prev, isPlaying: true, isLoading: false }));
+        
+        // Log stream play after successful playback start
+        if (!streamLoggedRef.current.has(track.id)) {
+          streamLoggedRef.current.add(track.id);
+          logStream(track.id);
+        }
+        
         console.log('Playback started successfully');
       }
     } catch (error) {
       console.error("Playback failed:", error);
       handleAudioError(error, 'playTrack');
     }
-  }, [loadAudio, handleAudioError]);
+  }, [loadAudio, handleAudioError, logStream]);
 
   const play = useCallback(async () => {
     if (audioRef.current) {
@@ -438,6 +447,12 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       const handleEnded = () => {
         console.log('Track ended, playing next...');
         setState(prev => ({ ...prev, isPlaying: false }));
+        
+        // Clear stream log for ended track
+        if (state.currentTrack) {
+          streamLoggedRef.current.delete(state.currentTrack.id);
+        }
+        
         playNext();
       };
 
@@ -458,7 +473,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
         audio.removeEventListener('error', handleAudioElementError);
       };
     }
-  }, [playNext, handleAudioError]);
+  }, [playNext, handleAudioError, state.currentTrack]);
 
   useEffect(() => {
     if ('mediaSession' in navigator) {
