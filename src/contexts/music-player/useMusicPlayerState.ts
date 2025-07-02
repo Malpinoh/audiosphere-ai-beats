@@ -367,6 +367,24 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
 
   const likeTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('likes')
+        .insert({
+          user_id: user.id,
+          track_id: trackId
+        });
+
+      if (error) {
+        console.error('Error liking track:', error);
+        return false;
+      }
+
       setState(prev => ({ 
         ...prev, 
         likedTracks: new Set([...prev.likedTracks, trackId]) 
@@ -380,6 +398,23 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
 
   const unlikeTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('likes')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('track_id', trackId);
+
+      if (error) {
+        console.error('Error unliking track:', error);
+        return false;
+      }
+
       setState(prev => {
         const newLikedTracks = new Set(prev.likedTracks);
         newLikedTracks.delete(trackId);
@@ -394,6 +429,24 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
 
   const saveTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('saved_tracks')
+        .insert({
+          user_id: user.id,
+          track_id: trackId
+        });
+
+      if (error) {
+        console.error('Error saving track:', error);
+        return false;
+      }
+
       setState(prev => ({ 
         ...prev, 
         savedTracks: new Set([...prev.savedTracks, trackId]) 
@@ -407,6 +460,23 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
 
   const unsaveTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('saved_tracks')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('track_id', trackId);
+
+      if (error) {
+        console.error('Error unsaving track:', error);
+        return false;
+      }
+
       setState(prev => {
         const newSavedTracks = new Set(prev.savedTracks);
         newSavedTracks.delete(trackId);
@@ -429,6 +499,38 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
 
   const shareTrack = useCallback((trackId: string) => {
     console.log('Sharing track:', trackId);
+  }, []);
+
+  // Load user's existing likes and saved tracks on initialization
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Load liked tracks
+        const { data: likes } = await supabase
+          .from('likes')
+          .select('track_id')
+          .eq('user_id', user.id);
+
+        // Load saved tracks
+        const { data: savedTracks } = await supabase
+          .from('saved_tracks')
+          .select('track_id')
+          .eq('user_id', user.id);
+
+        setState(prev => ({
+          ...prev,
+          likedTracks: new Set(likes?.map(like => like.track_id) || []),
+          savedTracks: new Set(savedTracks?.map(saved => saved.track_id) || [])
+        }));
+      } catch (error) {
+        console.error('Error loading user preferences:', error);
+      }
+    };
+
+    loadUserPreferences();
   }, []);
 
   useEffect(() => {
