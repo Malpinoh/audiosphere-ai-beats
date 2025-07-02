@@ -434,7 +434,7 @@ export const useMusicPlayerState = () => {
         playNext();
       };
 
-      const handleAudioError = (e: Event) => {
+      const handleAudioElementError = (e: Event) => {
         console.error('Audio element error:', e);
         handleAudioError(e, 'audio element');
       };
@@ -442,13 +442,13 @@ export const useMusicPlayerState = () => {
       audio.addEventListener('timeupdate', updateCurrentTime);
       audio.addEventListener('loadedmetadata', updateDuration);
       audio.addEventListener('ended', handleEnded);
-      audio.addEventListener('error', handleAudioError);
+      audio.addEventListener('error', handleAudioElementError);
 
       return () => {
         audio.removeEventListener('timeupdate', updateCurrentTime);
         audio.removeEventListener('loadedmetadata', updateDuration);
         audio.removeEventListener('ended', handleEnded);
-        audio.removeEventListener('error', handleAudioError);
+        audio.removeEventListener('error', handleAudioElementError);
       };
     }
   }, [playNext, handleAudioError]);

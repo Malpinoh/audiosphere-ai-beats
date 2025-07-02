@@ -292,7 +292,9 @@ export function UploadForm() {
                   <strong>Upload Failed:</strong> {uploadError}
                 </>
               ) : (
-                <strong>Upload Successful!</strong> Your track has been uploaded and processed.
+                <>
+                  <strong>Upload Successful!</strong> Your track has been uploaded and processed.
+                </>
               )}
             </AlertDescription>
           </Alert>
