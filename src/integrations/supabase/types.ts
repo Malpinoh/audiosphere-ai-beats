@@ -687,6 +687,10 @@ export type Database = {
           region_country: string
         }[]
       }
+      increment_play_count: {
+        Args: { track_uuid: string }
+        Returns: undefined
+      }
       update_monthly_listeners: {
         Args: Record<PropertyKey, never>
         Returns: undefined

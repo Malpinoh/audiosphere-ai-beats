@@ -72,7 +72,12 @@ export function useTrackComments(trackId: string | null) {
             is_verified: comment.profiles?.is_verified || false,
             created_at: comment.created_at,
             likes_count: comment.likes_count || 0,
-            user_id: comment.user_id
+            user_id: comment.user_id,
+            flagged: comment.flagged || false,
+            status: comment.status,
+            track_artist: '',
+            track_id: comment.track_id,
+            track_title: ''
           })) || [];
         }
 
