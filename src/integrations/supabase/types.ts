@@ -110,6 +110,7 @@ export type Database = {
           flagged: boolean | null
           id: string
           likes_count: number | null
+          parent_id: string | null
           status: string
           track_id: string
           user_id: string
@@ -120,6 +121,7 @@ export type Database = {
           flagged?: boolean | null
           id?: string
           likes_count?: number | null
+          parent_id?: string | null
           status?: string
           track_id: string
           user_id: string
@@ -130,11 +132,26 @@ export type Database = {
           flagged?: boolean | null
           id?: string
           likes_count?: number | null
+          parent_id?: string | null
           status?: string
           track_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments_with_details"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "comments_track_id_fkey"
             columns: ["track_id"]
@@ -454,6 +471,57 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      reports: {
+        Row: {
+          comment_id: string
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments_with_details"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_tracks: {
         Row: {

@@ -13,6 +13,8 @@ export interface TrackComment {
   created_at: string;
   likes_count: number;
   user_id: string;
+  parent_id?: string;
+  replies?: TrackComment[];
 }
 
 export function useTrackComments(trackId: string | null) {
@@ -73,6 +75,7 @@ export function useTrackComments(trackId: string | null) {
             created_at: comment.created_at,
             likes_count: comment.likes_count || 0,
             user_id: comment.user_id,
+            parent_id: comment.parent_id,
             flagged: comment.flagged || false,
             status: comment.status,
             track_artist: '',
@@ -90,10 +93,33 @@ export function useTrackComments(trackId: string | null) {
           is_verified: comment.is_verified || false,
           created_at: comment.created_at,
           likes_count: comment.likes_count || 0,
-          user_id: comment.user_id
+          user_id: comment.user_id,
+          parent_id: (comment as any).parent_id || undefined
         }));
 
-        setComments(transformedComments);
+        // Organize comments into hierarchical structure
+        const commentsMap = new Map<string, TrackComment>();
+        const rootComments: TrackComment[] = [];
+
+        // First pass: create map of all comments
+        transformedComments.forEach(comment => {
+          comment.replies = [];
+          commentsMap.set(comment.id, comment);
+        });
+
+        // Second pass: organize into hierarchy
+        transformedComments.forEach(comment => {
+          if (comment.parent_id) {
+            const parent = commentsMap.get(comment.parent_id);
+            if (parent) {
+              parent.replies!.push(comment);
+            }
+          } else {
+            rootComments.push(comment);
+          }
+        });
+
+        setComments(rootComments);
         console.log('Comments loaded successfully:', transformedComments.length);
       } catch (error) {
         console.error("Error fetching track comments:", error);
@@ -126,7 +152,7 @@ export function useTrackComments(trackId: string | null) {
     };
   }, [trackId]);
 
-  const addComment = async (content: string) => {
+  const addComment = async (content: string, parentId?: string) => {
     if (!trackId) return false;
 
     try {
@@ -144,7 +170,8 @@ export function useTrackComments(trackId: string | null) {
           track_id: trackId,
           user_id: user.id,
           content: content.trim(),
-          status: 'active'
+          status: 'active',
+          parent_id: parentId || null
         });
 
       if (error) {
@@ -172,10 +199,43 @@ export function useTrackComments(trackId: string | null) {
       .slice(0, 5);
   };
 
+  const reportComment = async (commentId: string, reason: string, description?: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to report comments");
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('reports')
+        .insert({
+          reporter_id: user.id,
+          comment_id: commentId,
+          reason,
+          description: description?.trim() || null
+        });
+
+      if (error) {
+        console.error("Error reporting comment:", error);
+        toast.error("Failed to report comment");
+        return false;
+      }
+
+      toast.success("Comment reported successfully");
+      return true;
+    } catch (error) {
+      console.error("Error reporting comment:", error);
+      toast.error("Failed to report comment");
+      return false;
+    }
+  };
+
   return {
     comments,
     loading,
     addComment,
-    getTopComments
+    getTopComments,
+    reportComment
   };
 }
