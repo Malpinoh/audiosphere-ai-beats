@@ -66,9 +66,10 @@ const getValidAudioUrl = async (audioFilePath: string): Promise<string> => {
   }
 };
 
-export const useMusicPlayerState = () => {
+export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudioElement>) => {
   const [state, setState] = useState<MusicPlayerState>(initialState);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const internalAudioRef = useRef<HTMLAudioElement>(null);
+  const audioRef = externalAudioRef || internalAudioRef;
 
   // Enhanced error handling function
   const handleAudioError = useCallback((error: any, context: string = '') => {
@@ -234,12 +235,18 @@ export const useMusicPlayerState = () => {
 
   const playTrack = useCallback(async (track: Track) => {
     console.log('Attempting to play track:', track.title);
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    setState(prev => ({ 
+      ...prev, 
+      isLoading: true, 
+      error: null,
+      // Add track to queue if not already present
+      queue: prev.queue.some(t => t.id === track.id) ? prev.queue : [track, ...prev.queue]
+    }));
     
     try {
       await loadAudio(track);
       
-      if (audioRef.current && !state.error) {
+      if (audioRef.current) {
         console.log('Starting playback...');
         await audioRef.current.play();
         setState(prev => ({ ...prev, isPlaying: true, isLoading: false }));
@@ -249,7 +256,7 @@ export const useMusicPlayerState = () => {
       console.error("Playback failed:", error);
       handleAudioError(error, 'playTrack');
     }
-  }, [loadAudio, handleAudioError, state.error]);
+  }, [loadAudio, handleAudioError]);
 
   const play = useCallback(async () => {
     if (audioRef.current) {
