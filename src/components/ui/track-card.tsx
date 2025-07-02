@@ -1,10 +1,11 @@
 
 import React from "react";
-import { Play, Pause, Heart, AlertCircle } from "lucide-react";
+import { Play, Pause, Heart, AlertCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { Link } from "react-router-dom";
 import { Track } from "@/types/track-types";
+import { toast } from "sonner";
 
 interface TrackCardProps {
   track: Track;
@@ -13,7 +14,7 @@ interface TrackCardProps {
 }
 
 export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackCardProps) {
-  const { playTrack, togglePlay, currentTrack, isPlaying, isTrackLiked, likeTrack, unlikeTrack } = useMusicPlayer();
+  const { playTrack, togglePlay, currentTrack, isPlaying, isTrackLiked, likeTrack, unlikeTrack, addToQueue } = useMusicPlayer();
   const isCurrentTrack = currentTrack?.id === track.id;
   const hasAudioUrl = track.audioUrl || track.audio_file_path;
   const liked = isTrackLiked(track.id);
@@ -38,6 +39,14 @@ export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackC
     } else {
       await likeTrack(track.id);
     }
+  };
+  
+  const handleAddToQueue = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    addToQueue(track);
+    toast.success(`Added "${track.title}" to queue`);
   };
   
   return (
@@ -72,15 +81,25 @@ export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackC
             </div>
           )}
           
-          {/* Like button */}
-          <Button
-            onClick={handleLikeClick}
-            size="icon"
-            variant="ghost"
-            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <Heart className={`h-4 w-4 ${liked ? 'fill-secondary text-secondary' : 'text-white'}`} />
-          </Button>
+          {/* Action buttons */}
+          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              onClick={handleAddToQueue}
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 rounded-full bg-black/50 hover:bg-black/70"
+            >
+              <Plus className="h-4 w-4 text-white" />
+            </Button>
+            <Button
+              onClick={handleLikeClick}
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 rounded-full bg-black/50 hover:bg-black/70"
+            >
+              <Heart className={`h-4 w-4 ${liked ? 'fill-secondary text-secondary' : 'text-white'}`} />
+            </Button>
+          </div>
         </div>
         
         <div className="p-3 space-y-1">

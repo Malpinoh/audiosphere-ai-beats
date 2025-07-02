@@ -13,6 +13,8 @@ interface MusicPlayerState {
   error: string | null;
   queue: Track[];
   isMuted: boolean;
+  isRepeat: boolean;
+  isShuffle: boolean;
   likedTracks: Set<string>;
   savedTracks: Set<string>;
 }
@@ -27,6 +29,8 @@ const initialState: MusicPlayerState = {
   error: null,
   queue: [],
   isMuted: false,
+  isRepeat: false,
+  isShuffle: false,
   likedTracks: new Set(),
   savedTracks: new Set(),
 };
@@ -344,26 +348,60 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   }, []);
 
   const playNext = useCallback(() => {
+    let nextTrack: Track | null = null;
     const currentIndex = state.queue.findIndex(track => track.id === state.currentTrack?.id);
-    if (currentIndex < state.queue.length - 1) {
-      const nextTrack = state.queue[currentIndex + 1];
+    
+    if (state.isShuffle) {
+      // Random track from queue
+      const availableTracks = state.queue.filter(track => track.id !== state.currentTrack?.id);
+      if (availableTracks.length > 0) {
+        const randomIndex = Math.floor(Math.random() * availableTracks.length);
+        nextTrack = availableTracks[randomIndex];
+      }
+    } else if (currentIndex < state.queue.length - 1) {
+      nextTrack = state.queue[currentIndex + 1];
+    } else if (state.isRepeat && state.queue.length > 0) {
+      // If repeat is on and we're at the end, go to first track
+      nextTrack = state.queue[0];
+    }
+    
+    if (nextTrack) {
       console.log('Playing next track:', nextTrack.title);
       playTrack(nextTrack);
     } else {
       console.log('No next track available');
+      if (state.isRepeat && state.currentTrack) {
+        // Repeat current track
+        playTrack(state.currentTrack);
+      }
     }
-  }, [state.queue, state.currentTrack, playTrack]);
+  }, [state.queue, state.currentTrack, state.isShuffle, state.isRepeat, playTrack]);
 
   const playPrevious = useCallback(() => {
     const currentIndex = state.queue.findIndex(track => track.id === state.currentTrack?.id);
-    if (currentIndex > 0) {
+    
+    if (state.isShuffle) {
+      // Random track from queue
+      const availableTracks = state.queue.filter(track => track.id !== state.currentTrack?.id);
+      if (availableTracks.length > 0) {
+        const randomIndex = Math.floor(Math.random() * availableTracks.length);
+        const previousTrack = availableTracks[randomIndex];
+        console.log('Playing random previous track:', previousTrack.title);
+        playTrack(previousTrack);
+      }
+    } else if (currentIndex > 0) {
       const previousTrack = state.queue[currentIndex - 1];
       console.log('Playing previous track:', previousTrack.title);
       playTrack(previousTrack);
+    } else if (state.isRepeat && state.queue.length > 0) {
+      // If repeat is on and we're at the beginning, go to last track
+      const lastTrack = state.queue[state.queue.length - 1];
+      console.log('Playing last track (repeat mode):', lastTrack.title);
+      playTrack(lastTrack);
     } else {
       console.log('No previous track available');
     }
-  }, [state.queue, state.currentTrack, playTrack]);
+  }, [state.queue, state.currentTrack, state.isShuffle, state.isRepeat, playTrack]);
 
   const likeTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
@@ -497,6 +535,21 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     return state.savedTracks.has(trackId);
   }, [state.savedTracks]);
 
+  const clearQueue = useCallback(() => {
+    setState(prev => ({ ...prev, queue: [] }));
+    console.log('Queue cleared');
+  }, []);
+
+  const toggleRepeat = useCallback(() => {
+    setState(prev => ({ ...prev, isRepeat: !prev.isRepeat }));
+    console.log('Repeat toggled:', !state.isRepeat);
+  }, [state.isRepeat]);
+
+  const toggleShuffle = useCallback(() => {
+    setState(prev => ({ ...prev, isShuffle: !prev.isShuffle }));
+    console.log('Shuffle toggled:', !state.isShuffle);
+  }, [state.isShuffle]);
+
   const shareTrack = useCallback((trackId: string) => {
     console.log('Sharing track:', trackId);
   }, []);
@@ -610,14 +663,19 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     volume: state.volume,
     isMuted: state.isMuted,
     isLoading: state.isLoading,
+    isRepeat: state.isRepeat,
+    isShuffle: state.isShuffle,
     playTrack,
     togglePlay,
     setQueue,
+    clearQueue,
     playNext,
     playPrevious,
     seekTo,
     setVolume,
     toggleMute,
+    toggleRepeat,
+    toggleShuffle,
     addToQueue,
     removeFromQueue,
     likedTracks: state.likedTracks,

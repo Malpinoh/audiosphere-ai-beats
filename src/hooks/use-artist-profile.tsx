@@ -34,11 +34,25 @@ export function useArtistProfile(artistId?: string) {
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
+        // Try to find by ID first (UUID), then by username or full_name
+        let { data, error } = await supabase
           .from('profiles')
           .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role, claimable, auto_created')
           .eq('id', targetArtistId)
-          .single();
+          .maybeSingle();
+          
+        // If not found by ID, try by username or full_name
+        if (!data && !error) {
+          const { data: nameData, error: nameError } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role, claimable, auto_created')
+            .or(`username.ilike.${targetArtistId},full_name.ilike.${targetArtistId}`)
+            .limit(1)
+            .maybeSingle();
+            
+          data = nameData;
+          error = nameError;
+        }
           
         if (error) throw error;
         

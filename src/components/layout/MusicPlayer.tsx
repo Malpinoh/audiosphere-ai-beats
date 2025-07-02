@@ -26,6 +26,8 @@ const MusicPlayer = () => {
     volume, 
     isMuted,
     isLoading,
+    isRepeat,
+    isShuffle,
     queue,
     togglePlay,
     playNext,
@@ -33,6 +35,9 @@ const MusicPlayer = () => {
     seekTo,
     setVolume,
     toggleMute,
+    toggleRepeat,
+    toggleShuffle,
+    clearQueue,
     playTrack,
     removeFromQueue,
     likeTrack,
@@ -40,8 +45,6 @@ const MusicPlayer = () => {
     isTrackLiked
   } = useMusicPlayer();
   
-  const [repeat, setRepeat] = useState(false);
-  const [shuffle, setShuffle] = useState(false);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   
   const isMobile = useIsMobile();
@@ -153,8 +156,8 @@ const MusicPlayer = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={`text-gray-400 hover:text-white ${shuffle ? 'text-white' : ''}`}
-                    onClick={() => setShuffle(!shuffle)}
+                    className={`text-gray-400 hover:text-white ${isShuffle ? 'text-white' : ''}`}
+                    onClick={toggleShuffle}
                   >
                     <Shuffle className="h-4 w-4" />
                   </Button>
@@ -192,8 +195,8 @@ const MusicPlayer = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={`text-gray-400 hover:text-white ${repeat ? 'text-white' : ''}`}
-                    onClick={() => setRepeat(!repeat)}
+                    className={`text-gray-400 hover:text-white ${isRepeat ? 'text-white' : ''}`}
+                    onClick={toggleRepeat}
                   >
                     <Repeat className="h-4 w-4" />
                   </Button>
@@ -241,7 +244,19 @@ const MusicPlayer = () => {
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-black/95 border-white/10">
                 <div className="h-full flex flex-col">
-                  <h3 className="text-lg font-semibold mb-2 text-white">Queue</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold text-white">Queue</h3>
+                    {queue.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={clearQueue}
+                        className="text-gray-400 hover:text-white"
+                      >
+                        Clear All
+                      </Button>
+                    )}
+                  </div>
                   <Separator className="mb-4 bg-white/10" />
                   <ScrollArea className="flex-1">
                     {queue.length === 0 ? (

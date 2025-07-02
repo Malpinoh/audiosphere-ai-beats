@@ -10,14 +10,19 @@ export interface MusicPlayerContextType {
   volume: number;
   isMuted: boolean;
   isLoading: boolean;
+  isRepeat: boolean;
+  isShuffle: boolean;
   playTrack: (track: Track) => void;
   togglePlay: () => void;
   setQueue: (tracks: Track[]) => void;
+  clearQueue: () => void;
   playNext: () => void;
   playPrevious: () => void;
   seekTo: (time: number) => void;
   setVolume: (volume: number) => void;
   toggleMute: () => void;
+  toggleRepeat: () => void;
+  toggleShuffle: () => void;
   addToQueue: (track: Track) => void;
   removeFromQueue: (trackId: string) => void;
   likedTracks: Set<string>;
@@ -29,4 +34,5 @@ export interface MusicPlayerContextType {
   isTrackLiked: (trackId: string) => boolean;
   isTrackSaved: (trackId: string) => boolean;
   shareTrack: (trackId: string) => void;
+  audioRef: React.RefObject<HTMLAudioElement>;
 }

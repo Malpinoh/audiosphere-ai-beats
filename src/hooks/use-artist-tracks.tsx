@@ -15,11 +15,30 @@ export function useArtistTracks(artistId: string) {
       try {
         setLoading(true);
         
-        // Fetch tracks where either the user_id matches or artist_profile_id matches
+        // First try to get profile ID if artistId is not a UUID
+        let profileId = artistId;
+        
+        // Check if artistId is a UUID pattern
+        const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidPattern.test(artistId)) {
+          // Try to find the profile by name
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id')
+            .or(`username.ilike.${artistId},full_name.ilike.${artistId}`)
+            .limit(1)
+            .maybeSingle();
+            
+          if (profileData) {
+            profileId = profileData.id;
+          }
+        }
+
+        // Fetch tracks where either the user_id matches, artist_profile_id matches, or artist name matches
         const { data, error } = await supabase
           .from('tracks')
           .select('*')
-          .or(`user_id.eq.${artistId},artist_profile_id.eq.${artistId}`)
+          .or(`user_id.eq.${profileId},artist_profile_id.eq.${profileId},artist.ilike.${artistId}`)
           .order('play_count', { ascending: false });
           
         if (error) throw error;
