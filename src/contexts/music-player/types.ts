@@ -1,6 +1,8 @@
 
 import { Track } from "@/types/track-types";
 
+export type RepeatMode = 'off' | 'all' | 'one';
+
 export interface MusicPlayerContextType {
   currentTrack: Track | null;
   isPlaying: boolean;
@@ -10,7 +12,7 @@ export interface MusicPlayerContextType {
   volume: number;
   isMuted: boolean;
   isLoading: boolean;
-  isRepeat: boolean;
+  repeatMode: RepeatMode;
   isShuffle: boolean;
   playTrack: (track: Track) => void;
   togglePlay: () => void;

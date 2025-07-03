@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Track } from '@/types/track-types';
+import { RepeatMode } from '@/contexts/music-player/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useStreamLogger } from '@/hooks/use-stream-logger';
 import { toast } from 'sonner';
@@ -14,7 +15,7 @@ interface MusicPlayerState {
   error: string | null;
   queue: Track[];
   isMuted: boolean;
-  isRepeat: boolean;
+  repeatMode: RepeatMode;
   isShuffle: boolean;
   likedTracks: Set<string>;
   savedTracks: Set<string>;
@@ -30,7 +31,7 @@ const initialState: MusicPlayerState = {
   error: null,
   queue: [],
   isMuted: false,
-  isRepeat: false,
+  repeatMode: 'off' as RepeatMode,
   isShuffle: false,
   likedTracks: new Set(),
   savedTracks: new Set(),
@@ -363,6 +364,13 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     let nextTrack: Track | null = null;
     const currentIndex = state.queue.findIndex(track => track.id === state.currentTrack?.id);
     
+    // If repeat one is enabled, repeat the current track
+    if (state.repeatMode === 'one' && state.currentTrack) {
+      console.log('Repeating current track');
+      playTrack(state.currentTrack);
+      return;
+    }
+    
     if (state.isShuffle) {
       // Random track from queue
       const availableTracks = state.queue.filter(track => track.id !== state.currentTrack?.id);
@@ -372,8 +380,8 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       }
     } else if (currentIndex < state.queue.length - 1) {
       nextTrack = state.queue[currentIndex + 1];
-    } else if (state.isRepeat && state.queue.length > 0) {
-      // If repeat is on and we're at the end, go to first track
+    } else if (state.repeatMode === 'all' && state.queue.length > 0) {
+      // If repeat all is on and we're at the end, go to first track
       nextTrack = state.queue[0];
     }
     
@@ -382,12 +390,8 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       playTrack(nextTrack);
     } else {
       console.log('No next track available');
-      if (state.isRepeat && state.currentTrack) {
-        // Repeat current track
-        playTrack(state.currentTrack);
-      }
     }
-  }, [state.queue, state.currentTrack, state.isShuffle, state.isRepeat, playTrack]);
+  }, [state.queue, state.currentTrack, state.isShuffle, state.repeatMode, playTrack]);
 
   const playPrevious = useCallback(() => {
     const currentIndex = state.queue.findIndex(track => track.id === state.currentTrack?.id);
@@ -405,15 +409,15 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       const previousTrack = state.queue[currentIndex - 1];
       console.log('Playing previous track:', previousTrack.title);
       playTrack(previousTrack);
-    } else if (state.isRepeat && state.queue.length > 0) {
-      // If repeat is on and we're at the beginning, go to last track
+    } else if (state.repeatMode === 'all' && state.queue.length > 0) {
+      // If repeat all is on and we're at the beginning, go to last track
       const lastTrack = state.queue[state.queue.length - 1];
-      console.log('Playing last track (repeat mode):', lastTrack.title);
+      console.log('Playing last track (repeat all mode):', lastTrack.title);
       playTrack(lastTrack);
     } else {
       console.log('No previous track available');
     }
-  }, [state.queue, state.currentTrack, state.isShuffle, state.isRepeat, playTrack]);
+  }, [state.queue, state.currentTrack, state.isShuffle, state.repeatMode, playTrack]);
 
   const likeTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
@@ -549,9 +553,12 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
 
 
   const toggleRepeat = useCallback(() => {
-    setState(prev => ({ ...prev, isRepeat: !prev.isRepeat }));
-    console.log('Repeat toggled:', !state.isRepeat);
-  }, [state.isRepeat]);
+    setState(prev => {
+      const nextMode = prev.repeatMode === 'off' ? 'all' : prev.repeatMode === 'all' ? 'one' : 'off';
+      console.log('Repeat mode changed:', nextMode);
+      return { ...prev, repeatMode: nextMode };
+    });
+  }, []);
 
   const toggleShuffle = useCallback(() => {
     setState(prev => ({ ...prev, isShuffle: !prev.isShuffle }));
@@ -671,7 +678,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     volume: state.volume,
     isMuted: state.isMuted,
     isLoading: state.isLoading,
-    isRepeat: state.isRepeat,
+    repeatMode: state.repeatMode,
     isShuffle: state.isShuffle,
     playTrack,
     togglePlay,

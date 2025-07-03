@@ -1,7 +1,7 @@
 import { useMusicPlayer } from "@/contexts/music-player";
 import { 
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, 
-  Repeat, Shuffle, Heart, MoreHorizontal, Maximize2, ListMusic,
+  Repeat, Repeat1, Shuffle, Heart, MoreHorizontal, Maximize2, ListMusic,
   MessageSquare
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
@@ -26,7 +26,7 @@ const MusicPlayer = () => {
     volume, 
     isMuted,
     isLoading,
-    isRepeat,
+    repeatMode,
     isShuffle,
     queue,
     togglePlay,
@@ -195,10 +195,16 @@ const MusicPlayer = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={`text-gray-400 hover:text-white ${isRepeat ? 'text-white' : ''}`}
+                    className={`text-gray-400 hover:text-white transition-all duration-200 ${
+                      repeatMode !== 'off' ? 'text-primary bg-primary/10' : ''
+                    }`}
                     onClick={toggleRepeat}
                   >
-                    <Repeat className="h-4 w-4" />
+                    {repeatMode === 'one' ? (
+                      <Repeat1 className="h-4 w-4" />
+                    ) : (
+                      <Repeat className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
                 

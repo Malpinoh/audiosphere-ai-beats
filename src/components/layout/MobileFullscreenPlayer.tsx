@@ -3,7 +3,7 @@ import React from "react";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { 
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, 
-  Repeat, Shuffle, Heart, ChevronDown, ListMusic, MoreHorizontal
+  Repeat, Repeat1, Shuffle, Heart, ChevronDown, ListMusic, MoreHorizontal
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
@@ -23,19 +23,21 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: MobileFullscreenPlay
     volume, 
     isMuted,
     isLoading,
+    repeatMode,
+    isShuffle,
     togglePlay,
     playNext,
     playPrevious,
     seekTo,
     setVolume,
     toggleMute,
+    toggleRepeat,
+    toggleShuffle,
     likeTrack,
     unlikeTrack,
     isTrackLiked
   } = useMusicPlayer();
   
-  const [repeat, setRepeat] = React.useState(false);
-  const [shuffle, setShuffle] = React.useState(false);
   
   const formatTime = (seconds: number) => {
     if (!seconds) return '0:00';
@@ -111,8 +113,10 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: MobileFullscreenPlay
         <Button 
           variant="ghost" 
           size="icon" 
-          className={`text-white/60 hover:text-white ${shuffle ? 'text-white' : ''}`}
-          onClick={() => setShuffle(!shuffle)}
+          className={`text-white/60 hover:text-white transition-all duration-200 ${
+            isShuffle ? 'text-primary bg-primary/10' : ''
+          }`}
+          onClick={toggleShuffle}
         >
           <Shuffle className="h-6 w-6" />
         </Button>
@@ -147,10 +151,16 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: MobileFullscreenPlay
         <Button 
           variant="ghost" 
           size="icon" 
-          className={`text-white/60 hover:text-white ${repeat ? 'text-white' : ''}`}
-          onClick={() => setRepeat(!repeat)}
+          className={`text-white/60 hover:text-white transition-all duration-200 ${
+            repeatMode !== 'off' ? 'text-primary bg-primary/10' : ''
+          }`}
+          onClick={toggleRepeat}
         >
-          <Repeat className="h-6 w-6" />
+          {repeatMode === 'one' ? (
+            <Repeat1 className="h-6 w-6" />
+          ) : (
+            <Repeat className="h-6 w-6" />
+          )}
         </Button>
       </div>
       
