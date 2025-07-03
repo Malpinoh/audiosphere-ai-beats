@@ -26,7 +26,7 @@ const Navbar = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/login');
+    navigate('/');
   };
 
   return (
@@ -158,14 +158,9 @@ const Navbar = () => {
                       </div>
                     ) : (
                       <div className="flex flex-col space-y-2">
-                        <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                          <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white">
-                            Sign In
-                          </Button>
-                        </Link>
-                        <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
                           <Button className="w-full maudio-gradient-bg">
-                            Sign Up
+                            Sign In / Sign Up
                           </Button>
                         </Link>
                       </div>
@@ -235,14 +230,9 @@ const Navbar = () => {
                 </DropdownMenu>
               ) : (
                 <div className="flex items-center space-x-2">
-                  <Link to="/login">
-                    <Button variant="ghost" className="text-gray-300 hover:text-white">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link to="/signup">
+                  <Link to="/auth">
                     <Button className="maudio-gradient-bg">
-                      Sign Up
+                      Sign In
                     </Button>
                   </Link>
                 </div>

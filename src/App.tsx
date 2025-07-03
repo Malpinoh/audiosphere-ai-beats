@@ -10,6 +10,7 @@ import { useCapacitor } from "@/hooks/use-capacitor";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import AuthPage from "./pages/AuthPage";
 import UploadPage from "./pages/UploadPage";
 import RecommendationsPage from "./pages/RecommendationsPage";
 import AdminPanel from "./pages/AdminPanel";
@@ -83,6 +84,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/auth" element={<AuthPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route 

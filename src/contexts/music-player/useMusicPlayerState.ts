@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Track } from '@/types/track-types';
 import { supabase } from '@/integrations/supabase/client';
 import { useStreamLogger } from '@/hooks/use-stream-logger';
+import { toast } from 'sonner';
 
 interface MusicPlayerState {
   currentTrack: Track | null;
@@ -110,6 +111,8 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       isPlaying: false,
       error: errorMessage
     }));
+    
+    toast.error(errorMessage);
   }, []);
 
   // Update media session metadata
