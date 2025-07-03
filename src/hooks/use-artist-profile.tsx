@@ -18,35 +18,38 @@ export interface ArtistProfile {
   auto_created?: boolean;
 }
 
-export function useArtistProfile(artistId?: string) {
+export function useArtistProfile(artistSlugOrId?: string) {
   const { user, profile } = useAuth();
   const [artistProfile, setArtistProfile] = useState<ArtistProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
 
-  const targetArtistId = artistId || user?.id;
+  const targetArtistSlugOrId = artistSlugOrId || user?.id;
 
   useEffect(() => {
     const fetchArtistProfile = async () => {
-      if (!targetArtistId) return;
+      if (!targetArtistSlugOrId) return;
       
       try {
         setLoading(true);
         
-        // Try to find by ID first (UUID), then by username or full_name
+        // Check if it's a UUID (legacy support) or a slug
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetArtistSlugOrId);
+        
         let { data, error } = await supabase
           .from('profiles')
-          .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role, claimable, auto_created')
-          .eq('id', targetArtistId)
+          .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role, claimable, auto_created, slug')
+          .eq(isUUID ? 'id' : 'slug', targetArtistSlugOrId)
           .maybeSingle();
           
-        // If not found by ID, try by username or full_name
-        if (!data && !error) {
+        // If slug search failed, try by username or full_name as fallback
+        if (!data && !error && !isUUID) {
           const { data: nameData, error: nameError } = await supabase
             .from('profiles')
-            .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role, claimable, auto_created')
-            .or(`username.ilike.${targetArtistId},full_name.ilike.${targetArtistId}`)
+            .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role, claimable, auto_created, slug')
+            .or(`username.ilike.${targetArtistSlugOrId},full_name.ilike.${targetArtistSlugOrId}`)
+            .eq('role', 'artist')
             .limit(1)
             .maybeSingle();
             
@@ -75,12 +78,12 @@ export function useArtistProfile(artistId?: string) {
         setArtistProfile(mappedProfile);
         
         // Check if current user is following this artist
-        if (user && targetArtistId !== user.id) {
+        if (user && data && data.id !== user.id) {
           const { data: followData } = await supabase
             .from('followers')
             .select('*')
             .eq('follower_id', user.id)
-            .eq('artist_id', targetArtistId)
+            .eq('artist_id', data.id)
             .maybeSingle();
             
           setIsFollowing(!!followData);
@@ -104,7 +107,7 @@ export function useArtistProfile(artistId?: string) {
           event: 'UPDATE',
           schema: 'public',
           table: 'profiles',
-          filter: `id=eq.${targetArtistId}`
+          filter: `id=eq.${artistProfile?.id}`
         },
         (payload) => {
           const mappedProfile: ArtistProfile = {
@@ -130,7 +133,7 @@ export function useArtistProfile(artistId?: string) {
           event: '*',
           schema: 'public',
           table: 'followers',
-          filter: `artist_id=eq.${targetArtistId}`
+          filter: `artist_id=eq.${artistProfile?.id}`
         },
         () => {
           // Refetch profile to get updated follower count
@@ -142,7 +145,7 @@ export function useArtistProfile(artistId?: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [targetArtistId, user]);
+  }, [targetArtistSlugOrId, user]);
 
   const updateProfile = async (updates: Partial<ArtistProfile>) => {
     if (!user) return;
@@ -173,7 +176,7 @@ export function useArtistProfile(artistId?: string) {
   };
 
   const toggleFollow = async () => {
-    if (!user || !targetArtistId) {
+    if (!user || !artistProfile?.id) {
       toast.error('Please log in to follow artists');
       return;
     }
@@ -186,7 +189,7 @@ export function useArtistProfile(artistId?: string) {
           .from('followers')
           .delete()
           .eq('follower_id', user.id)
-          .eq('artist_id', targetArtistId);
+          .eq('artist_id', artistProfile.id);
           
         if (error) throw error;
         setIsFollowing(false);
@@ -196,7 +199,7 @@ export function useArtistProfile(artistId?: string) {
           .from('followers')
           .insert({
             follower_id: user.id,
-            artist_id: targetArtistId
+            artist_id: artistProfile.id
           });
           
         if (error) throw error;

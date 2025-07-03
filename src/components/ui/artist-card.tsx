@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 
 interface ArtistCardProps {
   id: string;
+  slug?: string;
   name: string;
   image: string;
   followers?: number;
   tracks?: number;
 }
 
-export function ArtistCard({ id, name, image, followers, tracks }: ArtistCardProps) {
+export function ArtistCard({ id, slug, name, image, followers, tracks }: ArtistCardProps) {
   const [isFollowing, setIsFollowing] = useState(false);
   
   const toggleFollow = (e: React.MouseEvent) => {
@@ -31,7 +32,7 @@ export function ArtistCard({ id, name, image, followers, tracks }: ArtistCardPro
   };
   
   return (
-    <Link to={`/artist/${id}`} className="block group">
+    <Link to={`/artist/${slug || id}`} className="block group">
       <div className="maudio-card overflow-hidden text-center">
         <div className="relative pt-5">
           <div className="mx-auto h-28 w-28 rounded-full overflow-hidden border-4 border-maudio-purple/20">

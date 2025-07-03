@@ -437,6 +437,7 @@ export type Database = {
           is_verified: boolean | null
           monthly_listeners: number | null
           role: Database["public"]["Enums"]["app_role"]
+          slug: string | null
           username: string | null
           website: string | null
         }
@@ -452,6 +453,7 @@ export type Database = {
           is_verified?: boolean | null
           monthly_listeners?: number | null
           role?: Database["public"]["Enums"]["app_role"]
+          slug?: string | null
           username?: string | null
           website?: string | null
         }
@@ -467,6 +469,7 @@ export type Database = {
           is_verified?: boolean | null
           monthly_listeners?: number | null
           role?: Database["public"]["Enums"]["app_role"]
+          slug?: string | null
           username?: string | null
           website?: string | null
         }
@@ -802,6 +805,10 @@ export type Database = {
       }
       generate_api_key: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_slug: {
+        Args: { input_text: string }
         Returns: string
       }
       get_chart_data: {

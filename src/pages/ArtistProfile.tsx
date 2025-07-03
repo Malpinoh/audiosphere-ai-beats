@@ -17,7 +17,7 @@ import { Crown } from "lucide-react";
 import { useState } from "react";
 
 const ArtistProfile = () => {
-  const { artistId } = useParams<{ artistId: string }>();
+  const { artistSlug } = useParams<{ artistSlug: string }>();
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const [claimModalOpen, setClaimModalOpen] = useState(false);
@@ -28,9 +28,9 @@ const ArtistProfile = () => {
     isFollowing, 
     followLoading, 
     toggleFollow
-  } = useArtistProfile(artistId);
+  } = useArtistProfile(artistSlug);
   
-  const { tracks, loading: tracksLoading } = useArtistTracks(artistId || '');
+  const { tracks, loading: tracksLoading } = useArtistTracks(artistProfile?.id || '');
 
   const getAvatarImage = () => {
     if (artistProfile?.avatar_url) return artistProfile.avatar_url;

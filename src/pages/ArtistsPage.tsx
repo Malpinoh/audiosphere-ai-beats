@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Artist {
   id: string;
+  slug: string | null;
   full_name: string;
   username: string;
   avatar_url: string | null;
@@ -53,6 +54,7 @@ const ArtistsPage = () => {
         .from('profiles')
         .select(`
           id,
+          slug,
           full_name,
           username,
           avatar_url,
@@ -178,6 +180,7 @@ const ArtistsPage = () => {
               <ArtistCard
                 key={artist.id}
                 id={artist.id}
+                slug={artist.slug}
                 name={artist.full_name || artist.username || 'Unknown Artist'}
                 image={artist.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(artist.full_name || artist.username || "Artist")}&background=random`}
                 followers={artist.follower_count}

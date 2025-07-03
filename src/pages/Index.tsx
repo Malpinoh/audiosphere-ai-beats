@@ -4,6 +4,7 @@ import { HeroSection } from "@/components/sections/HeroSection";
 import { FeaturedTracks } from "@/components/sections/FeaturedSection";
 import { TrendingArtists, FeaturedPlaylists, PersonalizedRecommendations } from "@/components/sections/RecommendedSection";
 import { BrowseByGenre } from "@/components/sections/GenreSection";
+import { TopChartsSection } from "@/components/sections/TopChartsSection";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ShieldCheck, Flag, Upload } from "lucide-react";
@@ -24,6 +25,7 @@ const Index = () => {
           
           {/* Main content sections with Apple Music styling */}
           <div className="space-y-16">
+            <TopChartsSection />
             <FeaturedTracks />
             <TrendingArtists />
             <BrowseByGenre />
