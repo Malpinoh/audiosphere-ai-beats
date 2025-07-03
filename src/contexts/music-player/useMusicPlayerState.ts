@@ -350,6 +350,11 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     console.log('Removed track from queue:', trackId);
   }, []);
 
+  const clearQueue = useCallback(() => {
+    setState(prev => ({ ...prev, queue: [] }));
+    console.log('Queue cleared');
+  }, []);
+
   const playNext = useCallback(() => {
     let nextTrack: Track | null = null;
     const currentIndex = state.queue.findIndex(track => track.id === state.currentTrack?.id);
@@ -538,10 +543,6 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     return state.savedTracks.has(trackId);
   }, [state.savedTracks]);
 
-  const clearQueue = useCallback(() => {
-    setState(prev => ({ ...prev, queue: [] }));
-    console.log('Queue cleared');
-  }, []);
 
   const toggleRepeat = useCallback(() => {
     setState(prev => ({ ...prev, isRepeat: !prev.isRepeat }));
