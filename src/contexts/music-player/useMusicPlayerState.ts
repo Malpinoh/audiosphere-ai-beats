@@ -351,9 +351,13 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   }, []);
 
   const clearQueue = useCallback(() => {
-    setState(prev => ({ ...prev, queue: [] }));
+    setState(prev => ({ 
+      ...prev, 
+      queue: [] 
+    }));
     console.log('Queue cleared');
   }, []);
+
 
   const playNext = useCallback(() => {
     let nextTrack: Track | null = null;
