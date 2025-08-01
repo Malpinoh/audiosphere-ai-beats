@@ -155,11 +155,39 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { ip } = await req.json()
+    // Input validation
+    const body = await req.json().catch(() => null)
     
-    if (!ip) {
+    if (!body || typeof body !== 'object') {
+      console.error('Invalid request body structure')
       return new Response(
-        JSON.stringify({ error: 'IP address is required' }),
+        JSON.stringify({ error: 'Invalid request body structure' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
+    }
+
+    const { ip } = body
+    
+    if (!ip || typeof ip !== 'string') {
+      console.error('IP address is required and must be a string')
+      return new Response(
+        JSON.stringify({ error: 'IP address is required and must be a string' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
+    }
+
+    // Basic IP format validation
+    const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/
+    if (!ipRegex.test(ip) && ip !== 'localhost' && !ip.startsWith('192.168.') && !ip.startsWith('10.') && !ip.startsWith('172.')) {
+      console.error('Invalid IP address format:', ip)
+      return new Response(
+        JSON.stringify({ error: 'Invalid IP address format' }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400,
