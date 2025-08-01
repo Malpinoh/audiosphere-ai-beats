@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MusicPlayerProvider } from "@/contexts/MusicPlayerContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useCapacitor } from "@/hooks/use-capacitor";
+import { useIsMobile } from "@/hooks/use-mobile";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -30,6 +31,7 @@ import ContactUs from "./pages/ContactUs";
 import ArtistDashboard from "./pages/ArtistDashboard";
 import PromotePage from "./pages/PromotePage";
 import ServiceInfoPage from "./pages/ServiceInfoPage";
+import LibraryPage from "./pages/LibraryPage";
 
 const queryClient = new QueryClient();
 
@@ -78,12 +80,33 @@ const ContentCreatorRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Mobile authentication guard
+const MobileAuthGuard = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  const isMobile = useIsMobile();
+  
+  // Show nothing while loading auth state
+  if (loading) return null;
+  
+  // On mobile, require authentication for homepage access
+  if (isMobile && !user) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
 const AppRoutes = () => {
   const { isNative } = useCapacitor();
 
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={
+        <MobileAuthGuard>
+          <Index />
+        </MobileAuthGuard>
+      } />
+      <Route path="/library" element={<LibraryPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />

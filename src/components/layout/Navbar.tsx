@@ -60,6 +60,11 @@ const Navbar = () => {
             <Link to="/playlists" className="text-gray-300 hover:text-white transition-colors">
               Playlists
             </Link>
+            {user && (
+              <Link to="/library" className="text-gray-300 hover:text-white transition-colors">
+                Library
+              </Link>
+            )}
             
             {/* Search Bar */}
             <SearchBar className="w-64" />
@@ -111,6 +116,15 @@ const Navbar = () => {
                   >
                     Playlists
                   </Link>
+                  {user && (
+                    <Link 
+                      to="/library" 
+                      className="text-gray-300 hover:text-white transition-colors py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Library
+                    </Link>
+                  )}
                   
                   {/* Mobile Search */}
                   <div className="pt-4 border-t border-gray-800">

@@ -1,7 +1,7 @@
 
 import MainLayout from "@/components/layout/MainLayout";
-import { HeroSection } from "@/components/sections/HeroSection";
 import { FeaturedTracks } from "@/components/sections/FeaturedSection";
+import { RecentPlaysSection } from "@/components/sections/RecentPlaysSection";
 import { TrendingArtists, FeaturedPlaylists, PersonalizedRecommendations } from "@/components/sections/RecommendedSection";
 import { BrowseByGenre } from "@/components/sections/GenreSection";
 import { TopChartsSection } from "@/components/sections/TopChartsSection";
@@ -16,10 +16,10 @@ const Index = () => {
   
   return (
     <MainLayout>
-      <div className="min-h-screen">
-        <HeroSection />
-        
+      <div className="min-h-screen bg-maudio-dark">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-12">
+          {/* Recent Plays Section */}
+          <RecentPlaysSection />
           {/* Personalized content for authenticated users */}
           <PersonalizedRecommendations />
           

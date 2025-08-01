@@ -51,26 +51,18 @@ const getValidAudioUrl = async (audioFilePath: string): Promise<string> => {
     return audioFilePath;
   }
 
-  // Build the public URL
+  // Clean the file path - remove any leading slashes or extra whitespace
+  const cleanPath = audioFilePath.trim().replace(/^\/+/, '');
+  
+  // Build the public URL with proper encoding
   const baseUrl = 'https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files';
-  const audioUrl = `${baseUrl}/${audioFilePath}`;
+  const audioUrl = `${baseUrl}/${encodeURIComponent(cleanPath)}`;
   
   console.log('Generated audio URL:', audioUrl);
   
-  // Test if the URL is accessible
-  try {
-    const response = await fetch(audioUrl, { method: 'HEAD' });
-    if (!response.ok) {
-      console.error('Audio URL not accessible:', response.status, response.statusText);
-      throw new Error(`Audio file not accessible: ${response.status}`);
-    }
-    console.log('Audio URL validated successfully');
-    return audioUrl;
-  } catch (error) {
-    console.error('Error validating audio URL:', error);
-    // Still return the URL, as the HEAD request might fail due to CORS but audio might still work
-    return audioUrl;
-  }
+  // For development and better reliability, don't validate with HEAD request
+  // as it can fail due to CORS while actual audio playback works
+  return audioUrl;
 };
 
 export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudioElement>) => {
