@@ -729,6 +729,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_track_to_playlist: {
+        Args: { p_playlist_id: string; p_track_id: string; p_position?: number }
+        Returns: string
+      }
       create_artist_profile_if_not_exists: {
         Args: { artist_name: string }
         Returns: string
@@ -761,6 +765,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      reorder_playlist_tracks: {
+        Args: { p_playlist_id: string; p_track_positions: Json }
+        Returns: undefined
       }
       update_monthly_listeners: {
         Args: Record<PropertyKey, never>
