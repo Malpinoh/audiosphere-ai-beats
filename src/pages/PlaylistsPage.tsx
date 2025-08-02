@@ -10,6 +10,7 @@ import { PlaylistCard } from "@/components/ui/playlist-card";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CreatePlaylistModal } from "@/components/playlist/CreatePlaylistModal";
 
 interface Playlist {
   id: string;
@@ -127,46 +128,84 @@ const PlaylistsPage = () => {
     playlist.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const createPlaylist = async () => {
-    if (!user) {
-      toast.error('Please log in to create playlists');
-      return;
-    }
-
+  const refreshPlaylists = async () => {
+    // Refresh both editorial and user playlists
     try {
-      const { data, error } = await supabase
+      setLoading(true);
+      
+      // Fetch editorial playlists
+      const { data: editorialData, error: editorialError } = await supabase
         .from('playlists')
-        .insert({
-          title: 'My New Playlist',
-          description: 'A custom playlist',
-          created_by: user.id,
-          is_editorial: false
-        })
-        .select()
-        .single();
+        .select(`
+          id,
+          title,
+          description,
+          cover_image_path,
+          is_editorial,
+          created_by,
+          profiles!playlists_created_by_fkey(username, full_name)
+        `)
+        .eq('is_editorial', true)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (editorialError) throw editorialError;
 
-      toast.success('Playlist created successfully!');
-      
-      // Add to user playlists
-      const newPlaylist: Playlist = {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        cover: "https://picsum.photos/id/1062/300/300",
-        trackCount: 0,
-        createdBy: {
-          name: profile?.full_name || profile?.username || "You",
-          id: user.id
-        },
-        isEditorial: false
+      // Fetch user playlists if logged in
+      let userData = [];
+      if (user) {
+        const { data: userPlaylistData, error: userError } = await supabase
+          .from('playlists')
+          .select(`
+            id,
+            title,
+            description,
+            cover_image_path,
+            is_editorial,
+            created_by,
+            profiles!playlists_created_by_fkey(username, full_name)
+          `)
+          .eq('created_by', user.id)
+          .order('created_at', { ascending: false });
+
+        if (userError) throw userError;
+        userData = userPlaylistData || [];
+      }
+
+      // Get track counts for all playlists
+      const processPlaylists = async (playlists: any[]) => {
+        return Promise.all(
+          playlists.map(async (playlist) => {
+            const { count } = await supabase
+              .from('playlist_tracks')
+              .select('*', { count: 'exact', head: true })
+              .eq('playlist_id', playlist.id);
+
+            return {
+              id: playlist.id,
+              title: playlist.title,
+              description: playlist.description || "A curated playlist",
+              cover: playlist.cover_image_path || "https://picsum.photos/id/1062/300/300",
+              trackCount: count || 0,
+              createdBy: {
+                name: playlist.profiles?.full_name || playlist.profiles?.username || "MAUDIO Editorial",
+                id: playlist.created_by || "editorial"
+              },
+              isEditorial: playlist.is_editorial
+            };
+          })
+        );
       };
-      
-      setUserPlaylists(prev => [newPlaylist, ...prev]);
+
+      const processedEditorial = await processPlaylists(editorialData || []);
+      const processedUser = await processPlaylists(userData);
+
+      setEditorialPlaylists(processedEditorial);
+      setUserPlaylists(processedUser);
+
     } catch (error) {
-      console.error('Error creating playlist:', error);
-      toast.error('Failed to create playlist');
+      console.error('Error refreshing playlists:', error);
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -181,11 +220,8 @@ const PlaylistsPage = () => {
             </p>
           </div>
           
-          {user && (
-            <Button onClick={createPlaylist} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create Playlist
-            </Button>
+          {user && ['admin', 'editorial'].includes(profile?.role || '') && (
+            <CreatePlaylistModal onPlaylistCreated={refreshPlaylists} />
           )}
         </div>
         
@@ -273,11 +309,8 @@ const PlaylistsPage = () => {
                   <p className="text-muted-foreground mb-4">
                     {searchTerm ? 'No playlists found matching your search.' : "You haven't created any playlists yet"}
                   </p>
-                  {!searchTerm && (
-                    <Button onClick={createPlaylist}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Your First Playlist
-                    </Button>
+                  {!searchTerm && ['admin', 'editorial'].includes(profile?.role || '') && (
+                    <CreatePlaylistModal onPlaylistCreated={refreshPlaylists} />
                   )}
                 </div>
               )}

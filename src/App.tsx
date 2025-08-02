@@ -32,6 +32,7 @@ import ArtistDashboard from "./pages/ArtistDashboard";
 import PromotePage from "./pages/PromotePage";
 import ServiceInfoPage from "./pages/ServiceInfoPage";
 import LibraryPage from "./pages/LibraryPage";
+import PlaylistDetailPage from "./pages/PlaylistDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -135,6 +136,7 @@ const AppRoutes = () => {
       <Route path="/browse" element={<BrowsePage />} /> 
       <Route path="/charts" element={<ChartsPage />} />
       <Route path="/playlists" element={<PlaylistsPage />} />
+      <Route path="/playlist/:playlistId" element={<PlaylistDetailPage />} />
       
       {/* Settings and info pages */}
       <Route path="/account-settings" element={<AccountSettings />} />
