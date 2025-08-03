@@ -319,6 +319,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           description: string | null
+          follower_count: number | null
           id: string
           is_editorial: boolean | null
           title: string
@@ -329,6 +330,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          follower_count?: number | null
           id?: string
           is_editorial?: boolean | null
           title: string
@@ -339,6 +341,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          follower_count?: number | null
           id?: string
           is_editorial?: boolean | null
           title?: string
@@ -487,30 +490,42 @@ export type Database = {
       }
       stream_logs: {
         Row: {
+          browser_name: string | null
+          browser_version: string | null
           created_at: string
+          device_type: string | null
           id: string
           ip_address: string | null
           region_city: string | null
           region_country: string
           track_id: string
+          user_agent: string | null
           user_id: string | null
         }
         Insert: {
+          browser_name?: string | null
+          browser_version?: string | null
           created_at?: string
+          device_type?: string | null
           id?: string
           ip_address?: string | null
           region_city?: string | null
           region_country: string
           track_id: string
+          user_agent?: string | null
           user_id?: string | null
         }
         Update: {
+          browser_name?: string | null
+          browser_version?: string | null
           created_at?: string
+          device_type?: string | null
           id?: string
           ip_address?: string | null
           region_city?: string | null
           region_country?: string
           track_id?: string
+          user_agent?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -745,6 +760,15 @@ export type Database = {
         Args: { input_text: string }
         Returns: string
       }
+      get_african_regional_charts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          track_id: string
+          play_count: number
+          last_played_at: string
+          region_country: string
+        }[]
+      }
       get_chart_data: {
         Args: { view_name: string; region_code?: string }
         Returns: {
@@ -764,6 +788,10 @@ export type Database = {
       }
       is_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_following_playlist: {
+        Args: { p_playlist_id: string; p_user_id: string }
         Returns: boolean
       }
       reorder_playlist_tracks: {

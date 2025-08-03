@@ -98,23 +98,22 @@ async function fetchRegularTracks(filter: TracksFilter) {
 
 async function fetchFromCharts(filter: TracksFilter) {
   try {
-    // Using a raw query approach to access the views
-    const viewName = filter.chartType === 'global' ? 'global_charts' : 'regional_charts';
-    
-    let rpcQuery: Record<string, any> = {
-      view_name: viewName
-    };
-    
-    // For regional charts, filter by region if provided
-    if (filter.chartType === 'regional' && filter.region) {
-      rpcQuery.region_code = filter.region;
+    let chartData: any[] = [];
+    let chartError: any = null;
+
+    if (filter.chartType === 'global') {
+      // Use global charts
+      const { data, error } = await supabase.rpc('get_chart_data', {
+        view_name: 'global_charts'
+      });
+      chartData = data;
+      chartError = error;
+    } else {
+      // Use African regional charts only
+      const { data, error } = await supabase.rpc('get_african_regional_charts');
+      chartData = data;
+      chartError = error;
     }
-    
-    // Get chart data using the updated function with renamed parameter
-    const { data: chartData, error: chartError } = await supabase.rpc(
-      'get_chart_data' as any, 
-      rpcQuery
-    );
     
     if (chartError) {
       console.error('RPC error:', chartError);

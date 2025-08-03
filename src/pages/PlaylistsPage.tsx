@@ -18,6 +18,7 @@ interface Playlist {
   description: string;
   cover: string;
   trackCount: number;
+  followerCount: number;
   createdBy: {
     name: string;
     id: string;
@@ -91,6 +92,7 @@ const PlaylistsPage = () => {
                 description: playlist.description || "A curated playlist",
                 cover: playlist.cover_image_path || "https://picsum.photos/id/1062/300/300",
                 trackCount: count || 0,
+                followerCount: playlist.follower_count || 0,
                 createdBy: {
                   name: playlist.profiles?.full_name || playlist.profiles?.username || "MAUDIO Editorial",
                   id: playlist.created_by || "editorial"
@@ -186,6 +188,7 @@ const PlaylistsPage = () => {
               description: playlist.description || "A curated playlist",
               cover: playlist.cover_image_path || "https://picsum.photos/id/1062/300/300",
               trackCount: count || 0,
+              followerCount: playlist.follower_count || 0,
               createdBy: {
                 name: playlist.profiles?.full_name || playlist.profiles?.username || "MAUDIO Editorial",
                 id: playlist.created_by || "editorial"
@@ -262,6 +265,8 @@ const PlaylistsPage = () => {
                   description={playlist.description}
                   cover={playlist.cover}
                   trackCount={playlist.trackCount}
+                  isEditorial={playlist.isEditorial}
+                  followerCount={playlist.followerCount}
                   createdBy={playlist.createdBy}
                 />
               ))
@@ -294,16 +299,18 @@ const PlaylistsPage = () => {
                 ))
               ) : filteredUserPlaylists.length > 0 ? (
                 filteredUserPlaylists.map(playlist => (
-                  <PlaylistCard
-                    key={playlist.id}
-                    id={playlist.id}
-                    title={playlist.title}
-                    description={playlist.description}
-                    cover={playlist.cover}
-                    trackCount={playlist.trackCount}
-                    createdBy={playlist.createdBy}
-                  />
-                ))
+                <PlaylistCard
+                  key={playlist.id}
+                  id={playlist.id}
+                  title={playlist.title}
+                  description={playlist.description}
+                  cover={playlist.cover}
+                  trackCount={playlist.trackCount}
+                  isEditorial={playlist.isEditorial}
+                  followerCount={playlist.followerCount}
+                  createdBy={playlist.createdBy}
+                />
+              ))
               ) : (
                 <div className="col-span-full bg-maudio-darker rounded-lg p-10 text-center">
                   <p className="text-muted-foreground mb-4">

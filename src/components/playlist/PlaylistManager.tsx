@@ -18,9 +18,10 @@ interface PlaylistTrack {
 interface PlaylistManagerProps {
   playlistId: string;
   isOwner: boolean;
+  showManager?: boolean;
 }
 
-export function PlaylistManager({ playlistId, isOwner }: PlaylistManagerProps) {
+export function PlaylistManager({ playlistId, isOwner, showManager = true }: PlaylistManagerProps) {
   const [tracks, setTracks] = useState<PlaylistTrack[]>([]);
   const [availableTracks, setAvailableTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,10 +185,14 @@ export function PlaylistManager({ playlistId, isOwner }: PlaylistManagerProps) {
     return <div className="text-gray-400">Loading playlist tracks...</div>;
   }
 
+  if (!showManager) {
+    return null;
+  }
+
   return (
     <div className="space-y-6">
       {isOwner && (
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <h3 className="text-lg font-semibold text-white">Manage Tracks</h3>
           <Button
             onClick={() => setShowAddTracks(!showAddTracks)}
@@ -204,7 +209,9 @@ export function PlaylistManager({ playlistId, isOwner }: PlaylistManagerProps) {
         <div className="bg-white/5 rounded-lg p-4 space-y-3">
           <h4 className="font-medium text-white">Available Tracks</h4>
           <div className="max-h-60 overflow-y-auto space-y-2">
-            {availableTracks.map((track) => (
+            {availableTracks.filter(track => 
+              !tracks.some(pt => pt.track_id === track.id)
+            ).map((track) => (
               <div key={track.id} className="flex items-center justify-between p-2 bg-white/5 rounded">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white truncate">{track.title}</p>
@@ -264,9 +271,9 @@ export function PlaylistManager({ playlistId, isOwner }: PlaylistManagerProps) {
                           <div className="flex-1 min-w-0">
                             <button
                               onClick={() => playTrack(playlistTrack.track)}
-                              className="text-left w-full hover:text-primary transition-colors"
+                              className="text-left w-full hover:text-primary transition-colors group"
                             >
-                              <p className="font-medium text-white truncate">
+                              <p className="font-medium text-white truncate group-hover:text-primary">
                                 {playlistTrack.track.title}
                               </p>
                               <p className="text-sm text-gray-400 truncate">

@@ -82,4 +82,38 @@
   .maudio-icon-button {
     @apply p-2 rounded-full hover:bg-maudio-purple/20 transition-colors duration-200;
   }
+
+  /* Mobile responsiveness improvements */
+  .break-words {
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  .mobile-button-stack {
+    @apply flex flex-col sm:flex-row gap-2 sm:gap-3;
+  }
+
+  .mobile-container {
+    @apply px-4 max-w-full overflow-x-hidden;
+  }
+
+  .mobile-image {
+    @apply w-full h-auto object-cover;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .maudio-card {
+    @apply p-2;
+  }
+  
+  .maudio-card h3 {
+    @apply text-xs;
+  }
+  
+  .maudio-card p {
+    @apply text-xs;
+  }
 }

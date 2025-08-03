@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import MAudioLogo from "@/assets/maudio-logo.svg";
 
 interface PlaylistCardProps {
   id: string;
@@ -9,6 +10,8 @@ interface PlaylistCardProps {
   description?: string;
   cover: string;
   trackCount: number;
+  isEditorial?: boolean;
+  followerCount?: number;
   createdBy?: {
     name: string;
     id: string;
@@ -21,6 +24,8 @@ export function PlaylistCard({
   description, 
   cover, 
   trackCount, 
+  isEditorial = false,
+  followerCount = 0,
   createdBy 
 }: PlaylistCardProps) {
   return (
@@ -31,7 +36,20 @@ export function PlaylistCard({
             src={cover}
             alt={title}
             className="w-full aspect-square object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "https://picsum.photos/id/1062/300/300";
+            }}
           />
+          {isEditorial && (
+            <div className="absolute top-2 right-2 bg-black/80 rounded-md p-1">
+              <img 
+                src={MAudioLogo} 
+                alt="MAUDIO" 
+                className="h-3 w-auto text-primary"
+              />
+            </div>
+          )}
           <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
             <Button 
               size="icon"
@@ -46,19 +64,26 @@ export function PlaylistCard({
           {description && (
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{description}</p>
           )}
-          <div className="flex justify-between items-center mt-2">
-            {createdBy ? (
-              <Link 
-                to={`/artist/${createdBy.id}`} 
-                className="text-xs text-muted-foreground hover:text-primary truncate"
-                onClick={(e) => e.stopPropagation()}
-              >
-                By {createdBy.name}
-              </Link>
-            ) : (
-              <span className="text-xs text-muted-foreground">MAUDIO Playlist</span>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              {createdBy ? (
+                <Link 
+                  to={`/artist/${createdBy.id}`} 
+                  className="text-xs text-muted-foreground hover:text-primary truncate"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  By {createdBy.name}
+                </Link>
+              ) : (
+                <span className="text-xs text-muted-foreground">MAUDIO Playlist</span>
+              )}
+              <span className="text-xs text-muted-foreground">{trackCount} tracks</span>
+            </div>
+            {followerCount > 0 && (
+              <div className="text-xs text-muted-foreground">
+                {followerCount} follower{followerCount !== 1 ? 's' : ''}
+              </div>
             )}
-            <span className="text-xs text-muted-foreground">{trackCount} tracks</span>
           </div>
         </div>
       </div>
