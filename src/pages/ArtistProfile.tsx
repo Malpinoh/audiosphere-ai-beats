@@ -121,6 +121,10 @@ const ArtistProfile = () => {
         onClose={() => setClaimModalOpen(false)}
         artistName={artistProfile.username || artistProfile.full_name || 'Unknown Artist'}
         artistProfileId={artistProfile.id}
+        onClaimed={() => {
+          // Refresh artist profile after claim
+          window.location.reload();
+        }}
       />
     </MainLayout>
   );

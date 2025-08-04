@@ -67,13 +67,9 @@ export function PlaylistCard({
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               {createdBy ? (
-                <Link 
-                  to={`/artist/${createdBy.id}`} 
-                  className="text-xs text-muted-foreground hover:text-primary truncate"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <span className="text-xs text-muted-foreground truncate">
                   By {createdBy.name}
-                </Link>
+                </span>
               ) : (
                 <span className="text-xs text-muted-foreground">MAUDIO Playlist</span>
               )}

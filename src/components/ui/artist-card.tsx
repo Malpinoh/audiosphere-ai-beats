@@ -40,6 +40,10 @@ export function ArtistCard({ id, slug, name, image, followers, tracks }: ArtistC
               src={image}
               alt={name}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+              }}
             />
           </div>
         </div>

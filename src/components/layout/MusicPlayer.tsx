@@ -102,9 +102,16 @@ const MusicPlayer = () => {
                   onClick={isMobile ? openFullscreen : undefined}
                 >
                   <img 
-                    src={currentTrack.cover || currentTrack.cover_art_path} 
+                    src={currentTrack.cover_art_path ? 
+                      `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${currentTrack.cover_art_path}` : 
+                      'https://picsum.photos/300/300'
+                    } 
                     alt="Album cover" 
                     className="h-full w-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://picsum.photos/300/300';
+                    }}
                   />
                 </div>
                 <div className="truncate flex-1">
@@ -280,9 +287,16 @@ const MusicPlayer = () => {
                           >
                             <div className="h-10 w-10 flex-shrink-0 rounded overflow-hidden">
                               <img 
-                                src={track.cover || track.cover_art_path} 
+                                src={track.cover_art_path ? 
+                                  `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${track.cover_art_path}` : 
+                                  'https://picsum.photos/300/300'
+                                } 
                                 alt={track.title} 
                                 className="h-full w-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = 'https://picsum.photos/300/300';
+                                }}
                               />
                             </div>
                             <div className="flex-1 min-w-0">

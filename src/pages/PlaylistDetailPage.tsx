@@ -187,7 +187,9 @@ const PlaylistDetailPage = () => {
   };
 
   const coverUrl = playlist.cover_image_path 
-    ? `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${playlist.cover_image_path}`
+    ? (playlist.cover_image_path.startsWith('http') 
+        ? playlist.cover_image_path 
+        : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${playlist.cover_image_path}`)
     : "https://picsum.photos/id/1062/300/300";
 
   return (

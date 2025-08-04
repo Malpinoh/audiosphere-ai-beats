@@ -54,9 +54,16 @@ export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackC
       <Link to={`/track/${track.id}`} className="block">
         <div className="relative aspect-square bg-maudio-darker">
           <img 
-            src={track.cover || track.cover_art_path} 
+            src={track.cover_art_path 
+              ? `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${track.cover_art_path}` 
+              : 'https://picsum.photos/300/300'
+            } 
             alt={track.title} 
             className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = 'https://picsum.photos/300/300';
+            }}
           />
           
           {!hidePlay && (
