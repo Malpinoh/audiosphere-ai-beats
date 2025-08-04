@@ -57,9 +57,11 @@ export type Database = {
       }
       artist_claims: {
         Row: {
+          admin_notes: string | null
           artist_name: string
           artist_profile_id: string | null
           claim_status: string
+          claim_type: string | null
           claimant_user_id: string | null
           created_at: string | null
           evidence_text: string | null
@@ -71,9 +73,11 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          admin_notes?: string | null
           artist_name: string
           artist_profile_id?: string | null
           claim_status?: string
+          claim_type?: string | null
           claimant_user_id?: string | null
           created_at?: string | null
           evidence_text?: string | null
@@ -85,9 +89,11 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          admin_notes?: string | null
           artist_name?: string
           artist_profile_id?: string | null
           claim_status?: string
+          claim_type?: string | null
           claimant_user_id?: string | null
           created_at?: string | null
           evidence_text?: string | null
@@ -748,6 +754,14 @@ export type Database = {
         Args: { p_playlist_id: string; p_track_id: string; p_position?: number }
         Returns: string
       }
+      approve_artist_claim: {
+        Args: { claim_id: string; admin_id: string }
+        Returns: boolean
+      }
+      can_claim_profile: {
+        Args: { profile_id: string; user_id: string }
+        Returns: boolean
+      }
       create_artist_profile_if_not_exists: {
         Args: { artist_name: string }
         Returns: string
@@ -769,6 +783,10 @@ export type Database = {
           region_country: string
         }[]
       }
+      get_avatar_url: {
+        Args: { avatar_path: string; fallback_name: string }
+        Returns: string
+      }
       get_chart_data: {
         Args: { view_name: string; region_code?: string }
         Returns: {
@@ -777,6 +795,10 @@ export type Database = {
           last_played_at: string
           region_country: string
         }[]
+      }
+      get_cover_art_url: {
+        Args: { cover_path: string }
+        Returns: string
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
