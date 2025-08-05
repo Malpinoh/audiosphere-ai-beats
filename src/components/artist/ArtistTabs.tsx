@@ -96,9 +96,98 @@ export const ArtistTabs = ({ artist, tracks, tracksLoading, isMobile = false }: 
       <TabsContent value="albums">
         <h2 className="text-xl font-bold mb-4 text-white">Albums & EPs</h2>
         
-        <div className="text-white/60 text-center p-12">
-          No albums available from this artist yet
-        </div>
+        {tracksLoading ? (
+          <div className="flex justify-center items-center p-12">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="ml-2 text-white">Loading albums...</span>
+          </div>
+        ) : (() => {
+          // Group tracks by album/EP
+          const albumGroups = tracks.reduce((acc, track) => {
+            if (track.track_type === 'single') return acc;
+            
+            const albumKey = track.album_name || track.title;
+            if (!acc[albumKey]) {
+              acc[albumKey] = {
+                name: albumKey,
+                type: track.track_type,
+                cover: track.cover_art_path?.startsWith('http') 
+                  ? track.cover_art_path 
+                  : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${track.cover_art_path}`,
+                tracks: [],
+                totalTracks: track.total_tracks || 0
+              };
+            }
+            acc[albumKey].tracks.push(track);
+            return acc;
+          }, {} as Record<string, any>);
+
+          const albums = Object.values(albumGroups);
+
+          return albums.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {albums.map((album: any) => (
+                <div key={album.name} className="bg-black/20 rounded-lg p-4 hover:bg-black/30 transition-colors">
+                    <div className="flex items-start gap-4 mb-4">
+                      <img 
+                        src={album.cover} 
+                        alt={album.name}
+                        className="w-16 h-16 rounded-lg object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.location.href = `/album/${encodeURIComponent(album.name)}`;
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 
+                          className="font-semibold text-white truncate cursor-pointer hover:text-primary transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.location.href = `/album/${encodeURIComponent(album.name)}`;
+                          }}
+                        >
+                          {album.name}
+                        </h3>
+                        <p className="text-sm text-white/60 capitalize">{album.type}</p>
+                        <p className="text-xs text-white/40">{album.tracks.length} of {album.totalTracks} tracks</p>
+                      </div>
+                    </div>
+                  
+                  <div className="space-y-2">
+                    {album.tracks
+                      .sort((a: any, b: any) => (a.track_number || 0) - (b.track_number || 0))
+                      .map((track: any) => (
+                      <div 
+                        key={track.id}
+                        className="flex items-center gap-3 p-2 rounded hover:bg-black/20 cursor-pointer group"
+                        onClick={() => handleTrackPlay(track)}
+                      >
+                        <span className="text-white/40 text-sm w-6 text-center group-hover:opacity-0 transition-opacity">
+                          {track.track_number || '—'}
+                        </span>
+                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity">
+                          <svg className="h-3 w-3 text-white ml-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white truncate">{track.title}</p>
+                        </div>
+                        <span className="text-xs text-white/40">
+                          {track.duration ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}` : '0:00'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-white/60 text-center p-12">
+              No albums or EPs available from this artist yet
+            </div>
+          );
+        })()}
       </TabsContent>
       
       <TabsContent value="about">

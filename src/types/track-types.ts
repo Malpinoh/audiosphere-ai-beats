@@ -14,6 +14,7 @@ export interface Track {
   description?: string;
   duration?: number;
   user_id: string;
+  uploaded_at?: string;
   // New fields for track types
   track_type?: 'single' | 'ep' | 'album';
   album_name?: string;
@@ -58,4 +59,5 @@ export interface TracksFilter {
   region?: string;
   chartType?: 'global' | 'regional';
   trackType?: 'single' | 'ep' | 'album';
+  albumName?: string;
 }

@@ -1,6 +1,7 @@
 
 import MainLayout from "@/components/layout/MainLayout";
 import { FeaturedTracks } from "@/components/sections/FeaturedSection";
+import { FeaturedAlbums } from "@/components/sections/AlbumsSection";
 import { RecentPlaysSection } from "@/components/sections/RecentPlaysSection";
 import { TrendingArtists, FeaturedPlaylists, PersonalizedRecommendations } from "@/components/sections/RecommendedSection";
 import { BrowseByGenre } from "@/components/sections/GenreSection";
@@ -26,6 +27,7 @@ const Index = () => {
           {/* Main content sections with Apple Music styling */}
           <div className="space-y-16">
             <FeaturedTracks />
+            <FeaturedAlbums />
             <TopChartsSection />
             <TrendingArtists />
             <BrowseByGenre />

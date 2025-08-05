@@ -72,6 +72,10 @@ async function fetchRegularTracks(filter: TracksFilter) {
     query = query.eq('track_type', filter.trackType);
   }
   
+  if (filter.albumName) {
+    query = query.eq('album_name', filter.albumName);
+  }
+  
   if (filter.searchTerm) {
     query = query.or(`title.ilike.%${filter.searchTerm}%,artist.ilike.%${filter.searchTerm}%,description.ilike.%${filter.searchTerm}%`);
   }
