@@ -25,8 +25,8 @@ const Index = () => {
           
           {/* Main content sections with Apple Music styling */}
           <div className="space-y-16">
-            <TopChartsSection />
             <FeaturedTracks />
+            <TopChartsSection />
             <TrendingArtists />
             <BrowseByGenre />
             <FeaturedPlaylists />

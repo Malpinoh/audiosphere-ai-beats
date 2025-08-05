@@ -198,18 +198,20 @@ export const TopChartsSection = () => {
           onViewAll={() => {/* Navigate to full chart */}}
         />
 
-        {/* Regional Top 50 */}
-        <ChartPlaylistCard
-          title={`${userRegion} Top 50`}
-          description={`Most played tracks in ${userRegion}`}
-          tracks={regionalTop50.slice(0, 5)}
-          totalTracks={regionalTop50.length}
-          icon={<MapPin className="h-5 w-5" />}
-          gradientFrom="from-green-500"
-          gradientTo="to-teal-600"
-          onPlay={() => playChartPlaylist(regionalTop50, `${userRegion} Top 50`)}
-          onViewAll={() => {/* Navigate to regional chart */}}
-        />
+        {/* Regional Top 50 - Only show if not US */}
+        {userRegion !== 'US' && (
+          <ChartPlaylistCard
+            title={`${userRegion} Top 50`}
+            description={`Most played tracks in ${userRegion}`}
+            tracks={regionalTop50.slice(0, 5)}
+            totalTracks={regionalTop50.length}
+            icon={<MapPin className="h-5 w-5" />}
+            gradientFrom="from-green-500"
+            gradientTo="to-teal-600"
+            onPlay={() => playChartPlaylist(regionalTop50, `${userRegion} Top 50`)}
+            onViewAll={() => {/* Navigate to regional chart */}}
+          />
+        )}
       </div>
 
       {/* Additional Chart Cards */}

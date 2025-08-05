@@ -188,14 +188,22 @@ const BrowsePage = () => {
           </div>
           
           <TabsContent value="tracks" className="mt-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {loading ? (
                 Array(10).fill(0).map((_, i) => (
-                  <LoadingTrackCard key={i} />
+                  <div key={i} className="w-full">
+                    <div className="maudio-card overflow-hidden">
+                      <Skeleton className="w-full aspect-square" />
+                      <div className="p-3 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    </div>
+                  </div>
                 ))
               ) : tracks.length > 0 ? (
                 tracks.map(track => (
-                  <div key={track.id} className="min-w-[220px] max-w-[220px]">
+                  <div key={track.id} className="w-full">
                     <TrackCard track={track} />
                   </div>
                 ))
@@ -207,8 +215,8 @@ const BrowsePage = () => {
                     className="mt-4"
                     onClick={() => {
                       setSearchTerm('');
-                      setSelectedGenre(null);
-                      setSelectedMood(null);
+                      setSelectedGenre('all-genres');
+                      setSelectedMood('all-moods');
                       setCurrentFilter({ published: true, limit: 20 });
                     }}
                   >
@@ -220,7 +228,7 @@ const BrowsePage = () => {
           </TabsContent>
           
           <TabsContent value="genres" className="mt-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {genres.map(genre => (
                 <div key={genre.id} onClick={() => handleGenreClick(genre.id)} className="cursor-pointer">
                   <GenreCard {...genre} />
@@ -230,7 +238,7 @@ const BrowsePage = () => {
           </TabsContent>
           
           <TabsContent value="moods" className="mt-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {moods.map(mood => (
                 <div 
                   key={mood} 
@@ -254,8 +262,8 @@ const BrowsePage = () => {
                                  mood.toLowerCase() === 'happy' ? 'amber-300' : 
                                  mood.toLowerCase() === 'sad' ? 'purple-600' :
                                  mood.toLowerCase() === 'romantic' ? 'red-400' : 'emerald-400'} 
-                                 h-40 flex items-center justify-center`}>
-                    <h3 className="text-xl font-bold text-white">{mood}</h3>
+                                 h-32 sm:h-40 flex items-center justify-center`}>
+                    <h3 className="text-lg sm:text-xl font-bold text-white">{mood}</h3>
                   </div>
                 </div>
               ))}
