@@ -126,7 +126,7 @@ const LibraryPage = () => {
                 {loading ? (
                   <div className="text-gray-400">Loading...</div>
                 ) : recentTracks.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="space-y-1">
                     {recentTracks.map((track) => (
                       <TrackCard key={track.id} track={track} />
                     ))}
@@ -143,7 +143,7 @@ const LibraryPage = () => {
                 {loading ? (
                   <div className="text-gray-400">Loading...</div>
                 ) : likedTracks.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="space-y-1">
                     {likedTracks.map((track) => (
                       <TrackCard key={track.id} track={track} />
                     ))}
@@ -160,7 +160,7 @@ const LibraryPage = () => {
                 {loading ? (
                   <div className="text-gray-400">Loading...</div>
                 ) : savedTracks.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="space-y-1">
                     {savedTracks.map((track) => (
                       <TrackCard key={track.id} track={track} />
                     ))}
@@ -177,7 +177,7 @@ const LibraryPage = () => {
                 {loading ? (
                   <div className="text-gray-400">Loading...</div>
                 ) : recentTracks.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="space-y-1">
                     {recentTracks.slice(0, 12).map((track) => (
                       <TrackCard key={track.id} track={track} />
                     ))}

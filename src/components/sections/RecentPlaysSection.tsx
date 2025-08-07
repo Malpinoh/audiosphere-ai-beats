@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Track } from "@/types/track-types";
 import { TrackCard } from "@/components/ui/track-card";
-import { Clock } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 
 export function RecentPlaysSection() {
   const { user } = useAuth();
@@ -61,19 +61,22 @@ export function RecentPlaysSection() {
   return (
     <section className="space-y-6">
       <div className="flex items-center gap-3">
-        <Clock className="h-6 w-6 text-primary" />
-        <h2 className="text-2xl font-bold">Recently Played</h2>
+        <TrendingUp className="h-6 w-6 text-primary" />
+        <div>
+          <h2 className="text-2xl font-bold">Your Top Picks</h2>
+          <p className="text-muted-foreground text-sm">Songs you love most</p>
+        </div>
       </div>
       
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="aspect-square bg-white/5 rounded-lg animate-pulse" />
+            <div key={i} className="h-16 bg-white/5 rounded-lg animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {recentTracks.slice(0, 8).map((track) => (
+        <div className="space-y-1">
+          {recentTracks.slice(0, 6).map((track) => (
             <TrackCard key={track.id} track={track} />
           ))}
         </div>

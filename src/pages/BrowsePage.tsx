@@ -188,43 +188,35 @@ const BrowsePage = () => {
           </div>
           
           <TabsContent value="tracks" className="mt-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {loading ? (
-                Array(10).fill(0).map((_, i) => (
-                  <div key={i} className="w-full">
-                    <div className="maudio-card overflow-hidden">
-                      <Skeleton className="w-full aspect-square" />
-                      <div className="p-3 space-y-2">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : tracks.length > 0 ? (
-                tracks.map(track => (
-                  <div key={track.id} className="w-full">
-                    <TrackCard track={track} />
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-full text-center py-10">
-                  <p className="text-muted-foreground">No tracks found matching your filters.</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setSelectedGenre('all-genres');
-                      setSelectedMood('all-moods');
-                      setCurrentFilter({ published: true, limit: 20 });
-                    }}
-                  >
-                    Clear Filters
-                  </Button>
-                </div>
-              )}
-            </div>
+            {loading ? (
+              <div className="space-y-2">
+                {Array(10).fill(0).map((_, i) => (
+                  <div key={i} className="h-16 bg-white/5 rounded-lg animate-pulse" />
+                ))}
+              </div>
+            ) : tracks.length > 0 ? (
+              <div className="space-y-1">
+                {tracks.map(track => (
+                  <TrackCard key={track.id} track={track} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-muted-foreground">No tracks found matching your filters.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedGenre('all-genres');
+                    setSelectedMood('all-moods');
+                    setCurrentFilter({ published: true, limit: 20 });
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="genres" className="mt-6">

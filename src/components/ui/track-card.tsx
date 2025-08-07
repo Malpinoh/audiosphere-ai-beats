@@ -49,17 +49,24 @@ export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackC
     toast.success(`Added "${track.title}" to queue`);
   };
   
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+  
   return (
-    <div className="maudio-card overflow-hidden group">
-      <Link to={`/track/${track.id}`} className="block">
-        <div className="relative aspect-square bg-maudio-darker">
+    <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors group">
+      <Link to={`/track/${track.id}`} className="flex items-center gap-4 flex-1 min-w-0">
+        {/* Small cover art */}
+        <div className="relative flex-shrink-0">
           <img 
             src={track.cover_art_path 
               ? `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${track.cover_art_path}` 
               : 'https://picsum.photos/300/300'
             } 
             alt={track.title} 
-            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            className="w-12 h-12 rounded object-cover"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = 'https://picsum.photos/300/300';
@@ -67,55 +74,61 @@ export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackC
           />
           
           {!hidePlay && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded">
               {!hasAudioUrl ? (
-                <div className="bg-primary/90 h-12 w-12 rounded-full flex items-center justify-center">
-                  <AlertCircle className="h-5 w-5" />
-                </div>
+                <AlertCircle className="h-4 w-4 text-white" />
               ) : (
                 <Button 
                   onClick={handlePlayClick}
-                  className="rounded-full bg-primary/90 hover:bg-primary h-12 w-12 flex items-center justify-center"
+                  className="h-6 w-6 p-0 bg-primary/90 hover:bg-primary rounded-full"
                   size="icon"
                 >
                   {isCurrentTrack && isPlaying ? (
-                    <Pause className="h-5 w-5" />
+                    <Pause className="h-3 w-3" />
                   ) : (
-                    <Play className="h-5 w-5 ml-0.5" />
+                    <Play className="h-3 w-3 ml-0.5" />
                   )}
                 </Button>
               )}
             </div>
           )}
-          
-          {/* Action buttons */}
-          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              onClick={handleAddToQueue}
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 rounded-full bg-black/50 hover:bg-black/70"
-            >
-              <Plus className="h-4 w-4 text-white" />
-            </Button>
-            <Button
-              onClick={handleLikeClick}
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 rounded-full bg-black/50 hover:bg-black/70"
-            >
-              <Heart className={`h-4 w-4 ${liked ? 'fill-secondary text-secondary' : 'text-white'}`} />
-            </Button>
-          </div>
         </div>
         
-        <div className="p-3 space-y-1">
-          <h3 className="font-medium truncate text-sm">{track.title}</h3>
+        {/* Track info */}
+        <div className="flex-1 min-w-0">
+          <h3 className={`font-medium truncate ${isCurrentTrack ? 'text-primary' : 'text-white'}`}>
+            {track.title}
+          </h3>
           {showArtist && (
-            <p className="text-muted-foreground text-xs truncate">{track.artist}</p>
+            <p className="text-muted-foreground text-sm truncate">{track.artist}</p>
           )}
         </div>
       </Link>
+      
+      {/* Duration */}
+      <div className="text-muted-foreground text-sm">
+        {track.duration ? formatDuration(track.duration) : '0:00'}
+      </div>
+      
+      {/* Action buttons */}
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button
+          onClick={handleAddToQueue}
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+        <Button
+          onClick={handleLikeClick}
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8"
+        >
+          <Heart className={`h-4 w-4 ${liked ? 'fill-secondary text-secondary' : ''}`} />
+        </Button>
+      </div>
     </div>
   );
 }
