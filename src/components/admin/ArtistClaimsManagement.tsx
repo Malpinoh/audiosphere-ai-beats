@@ -123,20 +123,50 @@ export function ArtistClaimsManagement() {
         throw claimError;
       }
 
-      // If approved, transfer the artist profile ownership
+      // If approved, transfer the artist profile ownership using the database function
       if (reviewAction === 'approve') {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            id: selectedClaim.claimant_user_id,
-            claimable: false,
-            auto_created: false
-          })
-          .eq('id', selectedClaim.artist_profile_id);
+        try {
+          // Call the database function to handle the complex profile transfer
+          const { data, error: functionError } = await supabase.rpc('approve_artist_claim', {
+            claim_id: selectedClaim.id,
+            admin_id: user.id
+          });
 
-        if (profileError) {
-          console.error('Error updating profile:', profileError);
-          // Don't throw here as the claim was still processed
+          if (functionError) {
+            console.warn('Database function not available, using fallback method:', functionError);
+            
+            // Fallback: Manual profile transfer
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .update({
+                claimable: false,
+                auto_created: false,
+                role: 'artist'
+              })
+              .eq('id', selectedClaim.artist_profile_id);
+
+            if (profileError) {
+              console.error('Error updating profile:', profileError);
+            }
+
+            // Update tracks to point to the claiming user
+            const { error: tracksError } = await supabase
+              .from('tracks')
+              .update({
+                user_id: selectedClaim.claimant_user_id,
+                artist_profile_id: selectedClaim.claimant_user_id
+              })
+              .eq('artist_profile_id', selectedClaim.artist_profile_id);
+
+            if (tracksError) {
+              console.error('Error updating tracks:', tracksError);
+            }
+          } else {
+            console.log('Artist claim approved successfully via database function');
+          }
+        } catch (error) {
+          console.error('Error in approval process:', error);
+          toast.error("Claim approved but there may have been issues with profile transfer");
         }
       }
 

@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -751,11 +751,11 @@ export type Database = {
     }
     Functions: {
       add_track_to_playlist: {
-        Args: { p_playlist_id: string; p_track_id: string; p_position?: number }
+        Args: { p_playlist_id: string; p_position?: number; p_track_id: string }
         Returns: string
       }
       approve_artist_claim: {
-        Args: { claim_id: string; admin_id: string }
+        Args: { admin_id: string; claim_id: string }
         Returns: boolean
       }
       can_claim_profile: {
@@ -777,10 +777,10 @@ export type Database = {
       get_african_regional_charts: {
         Args: Record<PropertyKey, never>
         Returns: {
-          track_id: string
-          play_count: number
           last_played_at: string
+          play_count: number
           region_country: string
+          track_id: string
         }[]
       }
       get_avatar_url: {
@@ -788,12 +788,12 @@ export type Database = {
         Returns: string
       }
       get_chart_data: {
-        Args: { view_name: string; region_code?: string }
+        Args: { region_code?: string; view_name: string }
         Returns: {
-          track_id: string
-          play_count: number
           last_played_at: string
+          play_count: number
           region_country: string
+          track_id: string
         }[]
       }
       get_cover_art_url: {
