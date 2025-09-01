@@ -36,12 +36,37 @@ const AlbumPage = () => {
     try {
       setLoading(true);
       
-      // Fetch tracks by album name or ID
-      const { data: tracks, error } = await supabase
+      // First try to fetch by album name (decoded from URL)
+      const decodedAlbumId = decodeURIComponent(albumId || '');
+      
+      let tracks: any[] | null = null;
+      let error: any = null;
+      
+      // Try fetching by album name first
+      const albumNameQuery = await supabase
         .from('tracks')
         .select('*')
-        .or(`album_name.eq.${albumId},id.eq.${albumId}`)
+        .eq('album_name', decodedAlbumId)
         .eq('published', true);
+      
+      if (albumNameQuery.data && albumNameQuery.data.length > 0) {
+        tracks = albumNameQuery.data;
+      } else {
+        // If no results by album name, try by ID (only if it looks like a UUID)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(decodedAlbumId)) {
+          const idQuery = await supabase
+            .from('tracks')
+            .select('*')
+            .eq('id', decodedAlbumId)
+            .eq('published', true);
+          
+          tracks = idQuery.data;
+          error = idQuery.error;
+        } else {
+          error = albumNameQuery.error;
+        }
+      }
 
       if (error) throw error;
 

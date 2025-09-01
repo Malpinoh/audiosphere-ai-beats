@@ -60,8 +60,18 @@ const getValidAudioUrl = async (audioFilePath: string): Promise<string> => {
   
   console.log('Generated audio URL:', audioUrl);
   
-  // For development and better reliability, don't validate with HEAD request
-  // as it can fail due to CORS while actual audio playback works
+  // Test if the audio URL is accessible
+  try {
+    const response = await fetch(audioUrl, { method: 'HEAD' });
+    if (!response.ok) {
+      console.warn('Audio file may not be accessible:', response.status);
+      // Still return the URL as it might work for playback even if HEAD fails
+    }
+  } catch (fetchError) {
+    console.warn('Could not verify audio file accessibility:', fetchError);
+    // Continue anyway as the file might still be playable
+  }
+  
   return audioUrl;
 };
 
@@ -101,11 +111,13 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     setState(prev => ({
       ...prev,
       isLoading: false,
-      isPlaying: false,
-      error: errorMessage
+      isPlaying: false
     }));
     
-    toast.error(errorMessage);
+    // Only show toast for critical errors, not loading issues
+    if (context !== 'audio element' && !errorMessage.includes('aborted')) {
+      toast.error(errorMessage);
+    }
   }, []);
 
   // Update media session metadata
