@@ -106,7 +106,7 @@ export const ChartPlaylistCard = ({
             </div>
 
             {/* Play Count */}
-            {track.play_count && (
+            {(track.play_count || 0) >= 1000 && (
               <div className="text-xs text-muted-foreground">
                 {formatPlayCount(track.play_count)} plays
               </div>

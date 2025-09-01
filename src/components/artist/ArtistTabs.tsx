@@ -84,14 +84,16 @@ export const ArtistTabs = ({ artist, tracks, tracksLoading, isMobile = false }: 
                     <h3 className="font-medium text-white truncate">{track.title}</h3>
                     <p className="text-sm text-white/60">{track.genre}</p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-white">
-                      {formatNumber(track.play_count || 0)} plays
-                    </div>
-                    <div className="text-xs text-white/60">
-                      {track.duration ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}` : '0:00'}
-                    </div>
-                  </div>
+                   <div className="text-right">
+                     {(track.play_count || 0) >= 1000 && (
+                       <div className="text-sm font-medium text-white">
+                         {formatNumber(track.play_count || 0)} streams
+                       </div>
+                     )}
+                     <div className="text-xs text-white/60">
+                       {track.duration ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}` : '0:00'}
+                     </div>
+                   </div>
                 </div>
               ))}
           </div>

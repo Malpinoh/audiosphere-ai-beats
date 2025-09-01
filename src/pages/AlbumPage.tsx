@@ -221,11 +221,10 @@ const AlbumPage = () => {
 
         {/* Track List */}
         <div className="bg-black/20 rounded-lg p-6">
-          <div className="grid grid-cols-[40px_1fr_100px_60px] gap-4 text-sm text-white/60 mb-4 pb-2 border-b border-white/10">
+          <div className="grid grid-cols-[40px_1fr_100px] gap-4 text-sm text-white/60 mb-4 pb-2 border-b border-white/10">
             <span>#</span>
             <span>Title</span>
             <span>Duration</span>
-            <span>Plays</span>
           </div>
           
           <div className="space-y-2">
@@ -236,7 +235,7 @@ const AlbumPage = () => {
               return (
                 <div 
                   key={track.id}
-                  className="grid grid-cols-[40px_1fr_100px_60px] gap-4 items-center p-2 rounded hover:bg-white/5 cursor-pointer group"
+                  className="grid grid-cols-[40px_1fr_100px] gap-4 items-center p-2 rounded hover:bg-white/5 cursor-pointer group"
                   onClick={() => handleTrackPlay(track)}
                 >
                   <div className="flex items-center justify-center">
@@ -277,10 +276,6 @@ const AlbumPage = () => {
                   
                   <span className="text-white/60 text-sm">
                     {track.duration ? formatDuration(track.duration) : '0:00'}
-                  </span>
-                  
-                  <span className="text-white/60 text-sm">
-                    {track.play_count || 0}
                   </span>
                 </div>
               );

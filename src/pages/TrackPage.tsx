@@ -212,7 +212,9 @@ export default function TrackPage() {
               <div className="pt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Music className="h-4 w-4" />
-                  <span>{track.play_count || 0} plays</span>
+                  {(track.play_count || 0) >= 1000 && (
+                    <span>{track.play_count.toLocaleString()} plays</span>
+                  )}
                   •
                   <Heart className="h-4 w-4" />
                   <span>{track.like_count || 0} likes</span>

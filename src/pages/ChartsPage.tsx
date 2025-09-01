@@ -10,6 +10,7 @@ import { useTracks, TracksFilter } from "@/hooks/use-tracks";
 import { useAvailableRegions } from "@/hooks/use-regions";
 import { Badge } from "@/components/ui/badge";
 import { Globe, MapPin, Trophy, TrendingUp } from "lucide-react";
+import { useUserLocation } from "@/hooks/use-user-location";
 
 const LoadingTrackCard = () => (
   <div className="min-w-[220px] max-w-[220px]">
@@ -44,16 +45,26 @@ const TrackRanking = ({ rank, track }: { rank: number, track: any }) => {
       </div>
       
       <div className="text-right text-sm text-muted-foreground shrink-0">
-        {(track.play_count || 0).toLocaleString()} plays
+        {(track.play_count || 0) >= 1000 && (
+          <span>{(track.play_count || 0).toLocaleString()} streams</span>
+        )}
       </div>
     </div>
   );
 };
 
 const ChartsPage = () => {
-  const [chartType, setChartType] = useState<'global' | 'regional'>('global');
+  const [chartType, setChartType] = useState<'global' | 'regional'>('regional'); // Default to regional
   const [selectedRegion, setSelectedRegion] = useState<string>('');
   const { regions, loading: loadingRegions } = useAvailableRegions();
+  const { location, loading: locationLoading } = useUserLocation();
+  
+  // Set user's region as default when detected
+  useEffect(() => {
+    if (location && location.country && !selectedRegion) {
+      setSelectedRegion(location.country);
+    }
+  }, [location, selectedRegion]);
   
   const filter: TracksFilter = chartType === 'global' 
     ? { chartType: 'global', limit: 100 }
@@ -62,10 +73,10 @@ const ChartsPage = () => {
   const { tracks, loading } = useTracks(filter);
   
   useEffect(() => {
-    if (!loadingRegions && regions.length > 0 && !selectedRegion) {
+    if (!loadingRegions && regions.length > 0 && !selectedRegion && !location) {
       setSelectedRegion(regions[0]);
     }
-  }, [loadingRegions, regions, selectedRegion]);
+  }, [loadingRegions, regions, selectedRegion, location]);
   
   const formatRegionName = (code: string) => {
     if (!code) return 'Global';
@@ -87,11 +98,21 @@ const ChartsPage = () => {
               Music Charts
             </h1>
             <p className="text-muted-foreground">
-              Real-time music ranking based on plays around the world
+              Real-time music ranking based on streams around the world
             </p>
           </div>
           
           <div className="flex items-center gap-2">
+            {locationLoading && (
+              <Badge variant="outline" className="animate-pulse">
+                Detecting location...
+              </Badge>
+            )}
+            {location && (
+              <Badge variant="secondary" className="text-xs">
+                📍 {formatRegionName(location.country)}
+              </Badge>
+            )}
             <Button 
               variant={chartType === 'global' ? 'default' : 'outline'} 
               onClick={() => setChartType('global')}
@@ -173,11 +194,11 @@ const ChartsPage = () => {
         <div className="mt-10 bg-maudio-darker p-6 rounded-lg">
           <h2 className="text-xl font-bold mb-4">About MAUDIO Charts</h2>
           <p className="text-muted-foreground mb-4">
-            Our charts are updated hourly and reflect the most played tracks across our platform. 
-            The Global chart tracks worldwide plays, while Regional charts are based on plays from specific countries.
+            Our charts are updated hourly and reflect the most streamed tracks across our platform. 
+            The Global chart tracks worldwide streams, while Regional charts are based on streams from specific countries.
           </p>
           <p className="text-muted-foreground">
-            Chart positions are determined by the number of plays a track receives over the past 7 days, 
+            Chart positions are determined by the number of streams a track receives over the past 7 days,
             giving you a real-time view of what's trending in the music world.
           </p>
         </div>
