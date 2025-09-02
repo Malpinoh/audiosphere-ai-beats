@@ -163,7 +163,7 @@ export const ArtistTabs = ({ artist, tracks, tracksLoading, isMobile = false }: 
               <p className="text-white/80 mb-4 leading-relaxed">{artist.bio}</p>
             ) : (
               <p className="text-white/60 mb-4">
-                {artist.username ? `@${artist.username}` : artist.full_name} is an artist on MusicAudio.
+                {artist.username ? `@${artist.username}` : artist.full_name} is an artist on MAUDIO.
               </p>
             )}
             

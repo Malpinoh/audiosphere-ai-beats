@@ -130,7 +130,7 @@ const AuthPage = () => {
           <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 mb-4">
             <Music className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">MusicAudio</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">MAUDIO</h1>
           <p className="text-gray-400">Your music streaming platform</p>
         </div>
 

@@ -1,6 +1,6 @@
 
 export const siteConfig = {
-  name: "MusicAudio",
+  name: "MAUDIO",
   url: "https://maudio.online",
   description: "Discover, stream, and share music from independent artists worldwide",
   api: {
