@@ -766,6 +766,10 @@ export type Database = {
         Args: { artist_name: string }
         Returns: string
       }
+      create_regional_chart_playlists: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       generate_api_key: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -802,6 +806,10 @@ export type Database = {
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_region_display_name: {
+        Args: { country_code: string }
         Returns: string
       }
       increment_play_count: {

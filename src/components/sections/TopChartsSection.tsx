@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ChartPlaylistCard } from "@/components/ui/chart-playlist-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Play, TrendingUp, Globe, MapPin } from "lucide-react";
+import { TrendingUp, Globe, MapPin } from "lucide-react";
 import { useMusicPlayer } from "@/contexts/music-player";
+import { useUserLocation } from "@/hooks/use-user-location";
 
 interface ChartTrack {
   id: string;
@@ -25,90 +26,87 @@ interface ChartTrack {
   chart_position?: number;
 }
 
+interface RegionalPlaylist {
+  id: string;
+  title: string;
+  description: string;
+  track_count: number;
+  region_code: string;
+  region_name: string;
+  tracks: ChartTrack[];
+}
+
 export const TopChartsSection = () => {
   const [globalTop50, setGlobalTop50] = useState<ChartTrack[]>([]);
-  const [regionalTop50, setRegionalTop50] = useState<ChartTrack[]>([]);
+  const [regionalPlaylists, setRegionalPlaylists] = useState<RegionalPlaylist[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userRegion, setUserRegion] = useState<string>('US');
   const { setQueue, playTrack } = useMusicPlayer();
+  const { location } = useUserLocation();
 
   useEffect(() => {
     fetchChartData();
-    detectUserRegion();
-  }, []);
-
-  const detectUserRegion = async () => {
-    try {
-      // Try to get user's region from our edge function
-      const response = await supabase.functions.invoke('geo-location');
-      if (response.data && response.data.country) {
-        setUserRegion(response.data.country);
-      }
-    } catch (error) {
-      console.error('Failed to detect region:', error);
-      // Fallback to US
-    }
-  };
+  }, [location]);
 
   const fetchChartData = async () => {
     try {
       setLoading(true);
 
-      // Fetch global top 50
-      const { data: globalCharts } = await supabase
-        .rpc('get_chart_data', { view_name: 'global_charts' })
-        .limit(50);
+      // Fetch auto-generated regional playlists
+      const { data: playlists } = await supabase
+        .from('playlists')
+        .select(`
+          id,
+          title,
+          description,
+          playlist_tracks!inner(
+            position,
+            track:tracks!inner(
+              id,
+              title,
+              artist,
+              play_count,
+              audio_file_path,
+              cover_art_path,
+              genre,
+              mood,
+              duration,
+              user_id,
+              artist_profile_id,
+              like_count,
+              tags,
+              published
+            )
+          )
+        `)
+        .eq('is_editorial', true)
+        .or('title.ilike.%Top%Songs,title.eq.Global Top 50')
+        .order('title');
 
-      if (globalCharts) {
-        // Get track details for global charts
-        const trackIds = globalCharts.map(chart => chart.track_id);
-        const { data: globalTracks } = await supabase
-          .from('tracks')
-          .select('*')
-          .in('id', trackIds)
-          .eq('published', true);
-
-        if (globalTracks) {
-          // Sort tracks by chart position
-          const sortedGlobalTracks = globalTracks
-            .map(track => ({
-              ...track,
-              chart_position: globalCharts.findIndex(chart => chart.track_id === track.id) + 1
+      if (playlists) {
+        const formattedPlaylists: RegionalPlaylist[] = playlists.map(playlist => ({
+          id: playlist.id,
+          title: playlist.title,
+          description: playlist.description || '',
+          track_count: playlist.playlist_tracks?.length || 0,
+          region_code: extractRegionCode(playlist.title),
+          region_name: extractRegionName(playlist.title),
+          tracks: (playlist.playlist_tracks || [])
+            .sort((a, b) => a.position - b.position)
+            .map((pt, index) => ({
+              ...pt.track,
+              chart_position: index + 1
             }))
-            .sort((a, b) => a.chart_position - b.chart_position)
-            .slice(0, 50);
+        }));
 
-          setGlobalTop50(sortedGlobalTracks);
+        // Separate global and regional playlists
+        const globalPlaylist = formattedPlaylists.find(p => p.title === 'Global Top 50');
+        const regionalPlaylistsData = formattedPlaylists.filter(p => p.title !== 'Global Top 50');
+
+        if (globalPlaylist) {
+          setGlobalTop50(globalPlaylist.tracks);
         }
-      }
 
-      // Fetch regional top 50
-      const { data: regionalCharts } = await supabase
-        .rpc('get_chart_data', { 
-          view_name: 'regional_charts', 
-          region_code: userRegion 
-        })
-        .limit(50);
-
-      if (regionalCharts) {
-        const trackIds = regionalCharts.map(chart => chart.track_id);
-        const { data: regionalTracks } = await supabase
-          .from('tracks')
-          .select('*')
-          .in('id', trackIds)
-          .eq('published', true);
-
-        if (regionalTracks) {
-          const sortedRegionalTracks = regionalTracks
-            .map(track => ({
-              ...track,
-              chart_position: regionalCharts.findIndex(chart => chart.track_id === track.id) + 1
-            }))
-            .sort((a, b) => a.chart_position - b.chart_position)
-            .slice(0, 50);
-
-          setRegionalTop50(sortedRegionalTracks);
-        }
+        setRegionalPlaylists(regionalPlaylistsData);
       }
     } catch (error) {
       console.error('Error fetching chart data:', error);
@@ -117,9 +115,21 @@ export const TopChartsSection = () => {
     }
   };
 
+  const extractRegionCode = (title: string): string => {
+    // Extract region code from playlist title
+    if (title === 'Global Top 50') return 'GLOBAL';
+    const match = title.match(/Top \d+ (.+?) Songs/);
+    return match ? match[1].toUpperCase() : '';
+  };
+
+  const extractRegionName = (title: string): string => {
+    if (title === 'Global Top 50') return 'Global';
+    const match = title.match(/Top \d+ (.+?) Songs/);
+    return match ? match[1] : '';
+  };
+
   const playChartPlaylist = (tracks: ChartTrack[], title: string) => {
     console.log(`Playing ${title} playlist with ${tracks.length} tracks`);
-    // Convert to proper Track format
     const properTracks = tracks.map(track => ({
       ...track,
       like_count: track.like_count || 0,
@@ -133,8 +143,8 @@ export const TopChartsSection = () => {
   };
 
   const LoadingSkeleton = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {[1, 2].map((i) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[1, 2, 3].map((i) => (
         <div key={i} className="maudio-card p-6">
           <div className="flex items-center justify-between mb-4">
             <Skeleton className="h-6 w-32" />
@@ -162,7 +172,7 @@ export const TopChartsSection = () => {
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" />
-            Top Charts
+            Regional Charts
           </h2>
         </div>
         <LoadingSkeleton />
@@ -170,12 +180,23 @@ export const TopChartsSection = () => {
     );
   }
 
+  // Get user's regional playlist and other popular regions
+  const userRegionPlaylist = location ? 
+    regionalPlaylists.find(p => p.region_name.toLowerCase() === location.country.toLowerCase() || 
+                              p.region_code === location.country) : null;
+  
+  const popularRegions = ['Nigeria', 'Ghana', 'United Kingdom', 'South Africa', 'Kenya'];
+  const featuredPlaylists = regionalPlaylists.filter(p => 
+    popularRegions.includes(p.region_name) || 
+    (userRegionPlaylist && p.id === userRegionPlaylist.id)
+  ).slice(0, 6);
+
   return (
     <section className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <TrendingUp className="h-6 w-6 text-primary" />
-          Top Charts
+          Regional Charts
         </h2>
         <Link to="/charts">
           <Button variant="outline" size="sm">
@@ -184,86 +205,74 @@ export const TopChartsSection = () => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Global Top 50 */}
-        <ChartPlaylistCard
-          title="Global Top 50"
-          description="The most played tracks worldwide"
-          tracks={globalTop50.slice(0, 5)}
-          totalTracks={globalTop50.length}
-          icon={<Globe className="h-5 w-5" />}
-          gradientFrom="from-blue-500"
-          gradientTo="to-purple-600"
-          onPlay={() => playChartPlaylist(globalTop50, "Global Top 50")}
-          onViewAll={() => {/* Navigate to full chart */}}
-        />
-
-        {/* Regional Top 50 - Only show if not US */}
-        {userRegion !== 'US' && (
+        {globalTop50.length > 0 && (
           <ChartPlaylistCard
-            title={`${userRegion} Top 50`}
-            description={`Most played tracks in ${userRegion}`}
-            tracks={regionalTop50.slice(0, 5)}
-            totalTracks={regionalTop50.length}
-            icon={<MapPin className="h-5 w-5" />}
-            gradientFrom="from-green-500"
-            gradientTo="to-teal-600"
-            onPlay={() => playChartPlaylist(regionalTop50, `${userRegion} Top 50`)}
-            onViewAll={() => {/* Navigate to regional chart */}}
+            title="Global Top 50"
+            description="Most streamed worldwide - Updated daily"
+            tracks={globalTop50.slice(0, 5)}
+            totalTracks={globalTop50.length}
+            icon={<Globe className="h-5 w-5" />}
+            gradientFrom="from-blue-500"
+            gradientTo="to-purple-600"
+            onPlay={() => playChartPlaylist(globalTop50, "Global Top 50")}
+            onViewAll={() => {}}
           />
         )}
+
+        {/* User's Region (if available) */}
+        {userRegionPlaylist && (
+          <ChartPlaylistCard
+            title={userRegionPlaylist.title}
+            description={`Popular in your region - ${userRegionPlaylist.track_count} tracks`}
+            tracks={userRegionPlaylist.tracks.slice(0, 5)}
+            totalTracks={userRegionPlaylist.track_count}
+            icon={<MapPin className="h-5 w-5" />}
+            gradientFrom="from-green-500"
+            gradientTo="to-emerald-600"
+            onPlay={() => playChartPlaylist(userRegionPlaylist.tracks, userRegionPlaylist.title)}
+            onViewAll={() => {}}
+          />
+        )}
+
+        {/* Featured Regional Playlists */}
+        {featuredPlaylists
+          .filter(p => !userRegionPlaylist || p.id !== userRegionPlaylist.id)
+          .slice(0, userRegionPlaylist ? 4 : 5)
+          .map((playlist, index) => {
+            const gradients = [
+              { from: "from-orange-500", to: "to-red-600" },
+              { from: "from-pink-500", to: "to-rose-600" },
+              { from: "from-cyan-500", to: "to-blue-600" },
+              { from: "from-purple-500", to: "to-indigo-600" },
+              { from: "from-yellow-500", to: "to-orange-600" },
+            ];
+            const gradient = gradients[index % gradients.length];
+
+            return (
+              <ChartPlaylistCard
+                key={playlist.id}
+                title={playlist.title}
+                description={`${playlist.track_count} trending tracks`}
+                tracks={playlist.tracks.slice(0, 5)}
+                totalTracks={playlist.track_count}
+                icon={<MapPin className="h-5 w-5" />}
+                gradientFrom={gradient.from}
+                gradientTo={gradient.to}
+                onPlay={() => playChartPlaylist(playlist.tracks, playlist.title)}
+                onViewAll={() => {}}
+              />
+            );
+          })}
       </div>
 
-      {/* Additional Chart Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="maudio-card p-4 bg-gradient-to-br from-orange-500/10 to-red-600/10 border-orange-500/20">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-sm">Global Top 100</h3>
-            <Button 
-              size="sm" 
-              variant="ghost"
-              onClick={() => playChartPlaylist(globalTop50, "Global Top 100")}
-            >
-              <Play className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            Extended global chart with 100 tracks
-          </p>
-          <div className="text-xs text-orange-600 font-medium">
-            Updated hourly
-          </div>
-        </div>
-
-        <div className="maudio-card p-4 bg-gradient-to-br from-pink-500/10 to-rose-600/10 border-pink-500/20">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-sm">Viral Tracks</h3>
-            <Button size="sm" variant="ghost">
-              <Play className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            Tracks gaining momentum fast
-          </p>
-          <div className="text-xs text-pink-600 font-medium">
-            Trending now
-          </div>
-        </div>
-
-        <div className="maudio-card p-4 bg-gradient-to-br from-cyan-500/10 to-blue-600/10 border-cyan-500/20">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-sm">Fresh Discoveries</h3>
-            <Button size="sm" variant="ghost">
-              <Play className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            New releases climbing the charts
-          </p>
-          <div className="text-xs text-cyan-600 font-medium">
-            Last 7 days
-          </div>
-        </div>
+      {/* Additional Info */}
+      <div className="text-center py-4 bg-maudio-darker/50 rounded-lg">
+        <p className="text-sm text-muted-foreground">
+          🌍 Regional charts update daily based on streaming data • 
+          <span className="text-primary"> Powered by MAUDIO</span>
+        </p>
       </div>
     </section>
   );

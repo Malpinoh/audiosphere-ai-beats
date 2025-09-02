@@ -9,6 +9,9 @@ extra_search_path = []
 max_rows = 1000
 
 [functions]
+[functions.update-regional-playlists]
+verify_jwt = false
+
 [functions.geo-location]
 verify_jwt = false
 
