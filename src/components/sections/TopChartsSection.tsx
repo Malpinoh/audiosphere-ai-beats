@@ -270,7 +270,7 @@ export const TopChartsSection = () => {
       {/* Additional Info */}
       <div className="text-center py-4 bg-maudio-darker/50 rounded-lg">
         <p className="text-sm text-muted-foreground">
-          🌍 Regional charts update daily based on streaming data • 
+          🌍 Regional charts update daily • 
           <span className="text-primary"> Powered by MAUDIO</span>
         </p>
       </div>
