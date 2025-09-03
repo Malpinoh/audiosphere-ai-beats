@@ -8,6 +8,7 @@ import { useMusicPlayer } from "@/contexts/music-player";
 import { Button } from "@/components/ui/button";
 import { Play, Heart, MoreHorizontal, Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatTime } from "@/utils/formatTime";
 
 interface Album {
   name: string;
@@ -113,12 +114,6 @@ const AlbumPage = () => {
     }
   };
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const totalDuration = album?.tracks.reduce((acc, track) => acc + (track.duration || 0), 0) || 0;
 
   if (loading) {
@@ -190,7 +185,7 @@ const AlbumPage = () => {
               {totalDuration > 0 && (
                 <>
                   <span>•</span>
-                  <span>{formatDuration(totalDuration)}</span>
+                  <span>{formatTime(totalDuration)}</span>
                 </>
               )}
             </div>
@@ -275,7 +270,7 @@ const AlbumPage = () => {
                   </div>
                   
                   <span className="text-white/60 text-sm">
-                    {track.duration ? formatDuration(track.duration) : '0:00'}
+                    {formatTime(track.duration)}
                   </span>
                 </div>
               );
