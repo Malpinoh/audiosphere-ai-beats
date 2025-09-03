@@ -6,6 +6,7 @@ import { useMusicPlayer } from "@/contexts/music-player";
 import { Link } from "react-router-dom";
 import { Track } from "@/types/track-types";
 import { toast } from "sonner";
+import { formatDuration } from "@/utils/formatTime";
 
 interface TrackCardProps {
   track: Track;
@@ -49,11 +50,6 @@ export function TrackCard({ track, showArtist = true, hidePlay = false }: TrackC
     toast.success(`Added "${track.title}" to queue`);
   };
   
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
   
   return (
     <div className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors group">

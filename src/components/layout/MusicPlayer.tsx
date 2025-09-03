@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileFullscreenPlayer } from "./MobileFullscreenPlayer";
 import { useTrackComments } from "@/hooks/use-track-comments";
+import { formatTime } from "@/utils/formatTime";
 
 import { CommentsSection } from "@/components/player/CommentsSection";
 
@@ -53,13 +54,6 @@ const MusicPlayer = () => {
   const { comments, loading: commentsLoading, addComment, getTopComments } = useTrackComments(currentTrack?.id || null);
   const topComments = getTopComments();
 
-  // Format time in mm:ss
-  const formatTime = (seconds: number) => {
-    if (!seconds) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
   
   const handleLikeToggle = () => {
     if (!currentTrack) return;

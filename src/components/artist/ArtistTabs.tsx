@@ -6,6 +6,7 @@ import type { ArtistProfile } from "@/hooks/use-artist-profile";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { CollapsibleAlbum } from "./CollapsibleAlbum";
+import { formatDuration } from "@/utils/formatTime";
 
 interface ArtistTabsProps {
   artist: ArtistProfile;
@@ -90,9 +91,9 @@ export const ArtistTabs = ({ artist, tracks, tracksLoading, isMobile = false }: 
                          {formatNumber(track.play_count || 0)} streams
                        </div>
                      )}
-                     <div className="text-xs text-white/60">
-                       {track.duration ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}` : '0:00'}
-                     </div>
+                      <div className="text-xs text-white/60">
+                        {formatDuration(track.duration)}
+                      </div>
                    </div>
                 </div>
               ))}

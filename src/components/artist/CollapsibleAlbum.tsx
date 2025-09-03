@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ChevronDown, ChevronRight, Play } from "lucide-react";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { Track } from "@/types/track-types";
+import { formatDuration } from "@/utils/formatTime";
 
 interface CollapsibleAlbumProps {
   album: {
@@ -21,11 +22,6 @@ export function CollapsibleAlbum({ album }: CollapsibleAlbumProps) {
     playTrack(track);
   };
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   return (
     <div className="bg-black/20 rounded-lg overflow-hidden hover:bg-black/30 transition-colors">

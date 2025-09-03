@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { Link } from "react-router-dom";
 import { Track } from "@/types/track-types";
+import { formatDuration } from "@/utils/formatTime";
 
 interface AlbumCardProps {
   albumName: string;
@@ -36,11 +37,6 @@ export function AlbumCard({
     }
   };
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const totalDuration = tracks.reduce((acc, track) => acc + (track.duration || 0), 0);
   const year = releaseDate ? new Date(releaseDate).getFullYear() : new Date().getFullYear();
