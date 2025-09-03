@@ -7,7 +7,22 @@ export const analyzeMusicContent = async (
   genre: string;
   mood: string;
   suggestedTags: string[];
+  duration: number;
 }> => {
+  // Extract audio duration using Web Audio API
+  let duration = 0;
+  try {
+    const audioBuffer = await audioFile.arrayBuffer();
+    const audioContext = new AudioContext();
+    const decodedAudio = await audioContext.decodeAudioData(audioBuffer);
+    duration = Math.floor(decodedAudio.duration); // Duration in seconds
+    audioContext.close();
+  } catch (error) {
+    console.error('Error extracting audio duration:', error);
+    // Fallback: estimate based on file size (rough estimation)
+    duration = Math.floor(audioFile.size / (128000 / 8)); // Assume 128kbps bitrate
+  }
+
   // In a production environment, this would use a real ML model or API
   // For now, we'll implement a simplified version based on filename and lyrics
   
@@ -74,5 +89,6 @@ export const analyzeMusicContent = async (
     genre,
     mood,
     suggestedTags: [...new Set(suggestedTags)].slice(0, 5), // Remove duplicates and limit to 5 tags
+    duration
   };
 };

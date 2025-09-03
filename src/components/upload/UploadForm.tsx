@@ -17,6 +17,8 @@ import { MoodSelector } from "./MoodSelector";
 import { toast } from "sonner";
 import { Loader2, Upload, Music, Album, Disc3, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getAudioDuration, isValidAudioFile } from "@/utils/audioUtils";
+import { formatTime } from "@/utils/formatTime";
 
 const trackTypes = [
   { value: "single", label: "Single Track", icon: Music },
@@ -54,6 +56,8 @@ type FormData = z.infer<typeof formSchema>;
 export function UploadForm() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverArt, setCoverArt] = useState<File | null>(null);
+  const [audioDuration, setAudioDuration] = useState<number | null>(null);
+  const [isCalculatingDuration, setIsCalculatingDuration] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
@@ -138,6 +142,26 @@ export function UploadForm() {
     createApiKey();
   }, []);
 
+  // Calculate audio duration when file is selected
+  const handleAudioFileSelected = async (file: File | null) => {
+    setAudioFile(file);
+    setAudioDuration(null);
+    
+    if (file && isValidAudioFile(file)) {
+      setIsCalculatingDuration(true);
+      try {
+        const duration = await getAudioDuration(file);
+        setAudioDuration(duration);
+        console.log(`Audio duration calculated: ${duration} seconds`);
+      } catch (error) {
+        console.error('Failed to calculate audio duration:', error);
+        toast.error('Could not calculate audio duration');
+      } finally {
+        setIsCalculatingDuration(false);
+      }
+    }
+  };
+
   const watchTrackType = form.watch("trackType");
   const watchUseAiAnalysis = form.watch("useAiAnalysis");
 
@@ -207,6 +231,11 @@ export function UploadForm() {
       formData.append('override_genre', data.overrideGenre.toString());
       formData.append('override_mood', data.overrideMood.toString());
       formData.append('override_tags', data.overrideTags.toString());
+      
+      // Add calculated duration if available
+      if (audioDuration) {
+        formData.append('duration', audioDuration.toString());
+      }
       
       // Add files
       formData.append('audio_file', audioFile);
@@ -539,10 +568,29 @@ export function UploadForm() {
                 <FileUploader
                   accept="audio/*"
                   maxSize={100}
-                  onFileSelected={setAudioFile}
+                  onFileSelected={handleAudioFileSelected}
                   selectedFile={audioFile}
                   fileType="audio"
                 />
+                {/* Show audio duration info */}
+                {audioFile && (
+                  <div className="mt-2 text-sm">
+                    {isCalculatingDuration ? (
+                      <div className="flex items-center text-yellow-400">
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        Calculating duration...
+                      </div>
+                    ) : audioDuration ? (
+                      <div className="text-green-400">
+                        Duration: {formatTime(audioDuration)}
+                      </div>
+                    ) : (
+                      <div className="text-red-400">
+                        Could not calculate duration
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-white mb-2">Cover Art</label>
