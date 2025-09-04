@@ -57,7 +57,7 @@ export interface TracksFilter {
     ascending: boolean;
   };
   region?: string;
-  chartType?: 'global' | 'regional';
+  chartType?: 'global' | 'regional' | 'trending';
   trackType?: 'single' | 'ep' | 'album';
   albumName?: string;
 }

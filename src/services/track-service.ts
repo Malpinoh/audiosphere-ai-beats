@@ -34,7 +34,9 @@ export function formatTracks(data: any[]): Track[] {
 
 // Fetch tracks based on filters
 export async function fetchTracks(filter: TracksFilter) {
-  if (filter.chartType) {
+  if (filter.chartType === 'trending') {
+    return await fetchTrendingTracks(filter);
+  } else if (filter.chartType) {
     return await fetchFromCharts(filter);
   } else {
     return await fetchRegularTracks(filter);
@@ -173,6 +175,84 @@ async function fetchFromCharts(filter: TracksFilter) {
     return formatTracks(tracksWithCounts);
   } catch (err) {
     console.error('Error fetching chart data:', err);
+    throw err;
+  }
+}
+
+// Fetch trending tracks
+async function fetchTrendingTracks(filter: TracksFilter) {
+  try {
+    // Get trending scores from database function
+    const { data: trendingData, error: trendingError } = await supabase.rpc('get_trending_tracks', {
+      limit_count: filter.limit || 50
+    });
+    
+    if (trendingError) {
+      console.error('Error fetching trending data:', trendingError);
+      throw trendingError;
+    }
+    
+    if (!trendingData || trendingData.length === 0) {
+      return [];
+    }
+    
+    // Get track IDs from trending data
+    const trackIds = trendingData.map((item: any) => item.track_id);
+    
+    // Build query with additional filters
+    let query = supabase
+      .from('tracks')
+      .select('*')
+      .in('id', trackIds)
+      .eq('published', true);
+    
+    // Apply additional filters if specified
+    if (filter.genre) {
+      query = query.eq('genre', filter.genre);
+    }
+    
+    if (filter.mood) {
+      query = query.eq('mood', filter.mood);
+    }
+    
+    if (filter.artist) {
+      query = query.eq('artist', filter.artist);
+    }
+    
+    if (filter.searchTerm) {
+      query = query.or(`title.ilike.%${filter.searchTerm}%,artist.ilike.%${filter.searchTerm}%,description.ilike.%${filter.searchTerm}%`);
+    }
+    
+    const { data: tracksData, error: tracksError } = await query;
+    
+    if (tracksError) {
+      throw tracksError;
+    }
+    
+    if (!tracksData) {
+      return [];
+    }
+    
+    // Merge trending scores with track data and sort by trending score
+    const tracksWithScores = tracksData.map(track => {
+      const scoreData = trendingData.find((score: any) => score.track_id === track.id);
+      return {
+        ...track,
+        trending_score: scoreData?.trending_score || 0
+      };
+    });
+    
+    // Sort by trending score descending
+    tracksWithScores.sort((a, b) => (b.trending_score || 0) - (a.trending_score || 0));
+    
+    // Apply limit after sorting
+    const limitedTracks = filter.limit ? tracksWithScores.slice(0, filter.limit) : tracksWithScores;
+    
+    // Format tracks with proper URLs
+    return formatTracks(limitedTracks);
+    
+  } catch (err) {
+    console.error('Error fetching trending tracks:', err);
     throw err;
   }
 }

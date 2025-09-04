@@ -34,6 +34,8 @@ import ServiceInfoPage from "./pages/ServiceInfoPage";
 import LibraryPage from "./pages/LibraryPage";
 import PlaylistDetailPage from "./pages/PlaylistDetailPage";
 import AlbumPage from "./pages/AlbumPage";
+import GenrePage from "./pages/GenrePage";
+import TrendingPage from "./pages/TrendingPage";
 
 const queryClient = new QueryClient();
 
@@ -139,6 +141,9 @@ const AppRoutes = () => {
       <Route path="/charts" element={<ChartsPage />} />
       <Route path="/playlists" element={<PlaylistsPage />} />
       <Route path="/playlist/:playlistId" element={<PlaylistDetailPage />} />
+      <Route path="/genre/:genreId" element={<GenrePage />} />
+      <Route path="/genres" element={<BrowsePage />} />
+      <Route path="/trending" element={<TrendingPage />} />
       
       {/* Settings and info pages */}
       <Route path="/account-settings" element={<AccountSettings />} />

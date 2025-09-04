@@ -649,6 +649,50 @@ export type Database = {
           },
         ]
       }
+      trending_scores: {
+        Row: {
+          created_at: string
+          engagement_score: number
+          id: string
+          last_calculated: string
+          recency_score: number
+          regional_boost: number
+          track_id: string | null
+          trending_score: number
+          velocity_score: number
+        }
+        Insert: {
+          created_at?: string
+          engagement_score?: number
+          id?: string
+          last_calculated?: string
+          recency_score?: number
+          regional_boost?: number
+          track_id?: string | null
+          trending_score?: number
+          velocity_score?: number
+        }
+        Update: {
+          created_at?: string
+          engagement_score?: number
+          id?: string
+          last_calculated?: string
+          recency_score?: number
+          regional_boost?: number
+          track_id?: string | null
+          trending_score?: number
+          velocity_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trending_scores_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       verification_requests: {
         Row: {
           id: string
@@ -758,6 +802,10 @@ export type Database = {
         Args: { admin_id: string; claim_id: string }
         Returns: boolean
       }
+      calculate_trending_scores: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       can_claim_profile: {
         Args: { profile_id: string; user_id: string }
         Returns: boolean
@@ -811,6 +859,17 @@ export type Database = {
       get_region_display_name: {
         Args: { country_code: string }
         Returns: string
+      }
+      get_trending_tracks: {
+        Args: { limit_count?: number }
+        Returns: {
+          engagement_score: number
+          recency_score: number
+          regional_boost: number
+          track_id: string
+          trending_score: number
+          velocity_score: number
+        }[]
       }
       increment_play_count: {
         Args: { track_uuid: string }
