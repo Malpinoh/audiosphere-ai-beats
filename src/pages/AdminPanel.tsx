@@ -10,6 +10,7 @@ import { UploadsManagement } from "@/components/admin/UploadsManagement";
 import { ReportsManagement } from "@/components/admin/ReportsManagement";
 import { CommentsManagement } from "@/components/admin/CommentsManagement";
 import { VerificationManagement } from "@/components/admin/VerificationManagement";
+import { PayoutsManagement } from "@/components/admin/PayoutsManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   BarChart3, 
@@ -18,7 +19,8 @@ import {
   Upload, 
   Flag, 
   MessageSquare,
-  Shield
+  Shield,
+  DollarSign
 } from "lucide-react";
 
 export default function AdminPanel() {
@@ -77,6 +79,10 @@ export default function AdminPanel() {
                 <MessageSquare className="h-4 w-4" />
                 Comments
               </TabsTrigger>
+              <TabsTrigger value="payouts" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Payouts
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="analytics">
@@ -105,6 +111,10 @@ export default function AdminPanel() {
             
             <TabsContent value="comments">
               <CommentsManagement />
+            </TabsContent>
+            
+            <TabsContent value="payouts">
+              <PayoutsManagement />
             </TabsContent>
           </Tabs>
         </div>
