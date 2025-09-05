@@ -50,6 +50,13 @@ export type Database = {
             foreignKeyName: "api_keys_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
+          {
+            foreignKeyName: "api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -105,6 +112,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "artist_claims_artist_profile_id_fkey"
+            columns: ["artist_profile_id"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
           {
             foreignKeyName: "artist_claims_artist_profile_id_fkey"
             columns: ["artist_profile_id"]
@@ -174,7 +188,76 @@ export type Database = {
             foreignKeyName: "comments_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      earnings: {
+        Row: {
+          artist_id: string
+          created_at: string
+          earnings_amount: number
+          id: string
+          rate_per_stream: number
+          region_country: string | null
+          stream_log_id: string
+          track_id: string
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          earnings_amount: number
+          id?: string
+          rate_per_stream: number
+          region_country?: string | null
+          stream_log_id: string
+          track_id: string
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          earnings_amount?: number
+          id?: string
+          rate_per_stream?: number
+          region_country?: string | null
+          stream_log_id?: string
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "earnings_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
+          {
+            foreignKeyName: "earnings_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnings_stream_log_id_fkey"
+            columns: ["stream_log_id"]
+            isOneToOne: false
+            referencedRelation: "stream_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnings_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
         ]
@@ -203,8 +286,22 @@ export type Database = {
             foreignKeyName: "followers_artist_id_fkey"
             columns: ["artist_id"]
             isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
+          {
+            foreignKeyName: "followers_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "followers_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
           },
           {
             foreignKeyName: "followers_follower_id_fkey"
@@ -244,6 +341,77 @@ export type Database = {
           },
         ]
       }
+      payout_requests: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          artist_id: string
+          id: string
+          payment_details: Json | null
+          payment_method: string
+          processed_at: string | null
+          processed_by: string | null
+          requested_at: string
+          status: string
+          transaction_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          artist_id: string
+          id?: string
+          payment_details?: Json | null
+          payment_method?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          artist_id?: string
+          id?: string
+          payment_details?: Json | null
+          payment_method?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_requests_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
+          {
+            foreignKeyName: "payout_requests_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payout_requests_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
+          {
+            foreignKeyName: "payout_requests_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playlist_followers: {
         Row: {
           followed_at: string | null
@@ -270,6 +438,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "playlists"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_followers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
           },
           {
             foreignKeyName: "playlist_followers_profile_id_fkey"
@@ -354,6 +529,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "playlists_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
           {
             foreignKeyName: "playlists_created_by_fkey"
             columns: ["created_by"]
@@ -464,6 +646,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      royalty_rates: {
+        Row: {
+          created_at: string
+          id: string
+          minimum_payout: number
+          rate_per_stream: number
+          tier_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          minimum_payout?: number
+          rate_per_stream: number
+          tier_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          minimum_payout?: number
+          rate_per_stream?: number
+          tier_name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       saved_tracks: {
         Row: {
@@ -637,8 +846,22 @@ export type Database = {
             foreignKeyName: "tracks_artist_profile_id_fkey"
             columns: ["artist_profile_id"]
             isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
+          {
+            foreignKeyName: "tracks_artist_profile_id_fkey"
+            columns: ["artist_profile_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
           },
           {
             foreignKeyName: "tracks_user_id_fkey"
@@ -725,6 +948,19 @@ export type Database = {
       }
     }
     Views: {
+      artist_earnings_summary: {
+        Row: {
+          artist_id: string | null
+          artist_name: string | null
+          available_balance: number | null
+          pending_payouts: number | null
+          total_earnings: number | null
+          total_paid_out: number | null
+          total_streams: number | null
+          total_tracks: number | null
+        }
+        Relationships: []
+      }
       comments_with_details: {
         Row: {
           avatar_url: string | null
@@ -749,6 +985,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
           },
           {
             foreignKeyName: "comments_user_id_fkey"
