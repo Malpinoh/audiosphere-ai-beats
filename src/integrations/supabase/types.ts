@@ -771,6 +771,45 @@ export type Database = {
         }
         Relationships: []
       }
+      track_similarity: {
+        Row: {
+          created_at: string
+          id: string
+          similar_track_id: string
+          similarity_score: number
+          track_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          similar_track_id: string
+          similarity_score?: number
+          track_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          similar_track_id?: string
+          similarity_score?: number
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_similarity_similar_track_id_fkey"
+            columns: ["similar_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_similarity_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tracks: {
         Row: {
           album_name: string | null
@@ -916,6 +955,74 @@ export type Database = {
           },
         ]
       }
+      user_listening_history: {
+        Row: {
+          created_at: string
+          id: string
+          last_listened_at: string
+          listen_count: number
+          total_listen_time: number | null
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_listened_at?: string
+          listen_count?: number
+          total_listen_time?: number | null
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_listened_at?: string
+          listen_count?: number
+          total_listen_time?: number | null
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_listening_history_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_preferences: {
+        Row: {
+          artist_scores: Json | null
+          created_at: string
+          genre_scores: Json | null
+          id: string
+          mood_scores: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          artist_scores?: Json | null
+          created_at?: string
+          genre_scores?: Json | null
+          id?: string
+          mood_scores?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          artist_scores?: Json | null
+          created_at?: string
+          genre_scores?: Json | null
+          id?: string
+          mood_scores?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       verification_requests: {
         Row: {
           id: string
@@ -1045,10 +1152,7 @@ export type Database = {
         Args: { admin_id: string; claim_id: string }
         Returns: boolean
       }
-      calculate_trending_scores: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      calculate_trending_scores: { Args: never; Returns: undefined }
       can_claim_profile: {
         Args: { profile_id: string; user_id: string }
         Returns: boolean
@@ -1057,20 +1161,11 @@ export type Database = {
         Args: { artist_name: string }
         Returns: string
       }
-      create_regional_chart_playlists: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      generate_api_key: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_slug: {
-        Args: { input_text: string }
-        Returns: string
-      }
+      create_regional_chart_playlists: { Args: never; Returns: undefined }
+      generate_api_key: { Args: never; Returns: string }
+      generate_slug: { Args: { input_text: string }; Returns: string }
       get_african_regional_charts: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           last_played_at: string
           play_count: number
@@ -1091,17 +1186,66 @@ export type Database = {
           track_id: string
         }[]
       }
-      get_cover_art_url: {
-        Args: { cover_path: string }
-        Returns: string
+      get_cover_art_url: { Args: { cover_path: string }; Returns: string }
+      get_current_user_role: { Args: never; Returns: string }
+      get_genre_recommendations: {
+        Args: { p_genre: string; p_limit?: number }
+        Returns: {
+          artist: string
+          artist_profile_id: string
+          cover_art_path: string
+          genre: string
+          mood: string
+          play_count: number
+          title: string
+          track_id: string
+        }[]
       }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
+      get_mood_recommendations: {
+        Args: { p_limit?: number; p_mood: string }
+        Returns: {
+          artist: string
+          artist_profile_id: string
+          cover_art_path: string
+          genre: string
+          mood: string
+          play_count: number
+          title: string
+          track_id: string
+        }[]
+      }
+      get_personalized_recommendations: {
+        Args: { p_limit?: number; p_user_id?: string }
+        Returns: {
+          artist: string
+          artist_profile_id: string
+          cover_art_path: string
+          genre: string
+          mood: string
+          play_count: number
+          recommendation_reason: string
+          recommendation_score: number
+          title: string
+          track_id: string
+        }[]
       }
       get_region_display_name: {
         Args: { country_code: string }
         Returns: string
+      }
+      get_similar_tracks: {
+        Args: { p_limit?: number; p_track_id: string }
+        Returns: {
+          artist: string
+          artist_profile_id: string
+          cover_art_path: string
+          genre: string
+          mood: string
+          play_count: number
+          similarity_score: number
+          title: string
+          track_id: string
+        }[]
       }
       get_trending_tracks: {
         Args: { limit_count?: number }
@@ -1114,14 +1258,8 @@ export type Database = {
           velocity_score: number
         }[]
       }
-      increment_play_count: {
-        Args: { track_uuid: string }
-        Returns: undefined
-      }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      increment_play_count: { Args: { track_uuid: string }; Returns: undefined }
+      is_admin: { Args: never; Returns: boolean }
       is_following_playlist: {
         Args: { p_playlist_id: string; p_user_id: string }
         Returns: boolean
@@ -1130,8 +1268,13 @@ export type Database = {
         Args: { p_playlist_id: string; p_track_positions: Json }
         Returns: undefined
       }
-      update_monthly_listeners: {
-        Args: Record<PropertyKey, never>
+      update_listening_history: {
+        Args: { p_listen_time?: number; p_track_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      update_monthly_listeners: { Args: never; Returns: undefined }
+      update_user_preferences: {
+        Args: { p_user_id: string }
         Returns: undefined
       }
     }
