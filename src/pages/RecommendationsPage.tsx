@@ -1,13 +1,13 @@
-
 import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { TrackCard } from "@/components/ui/track-card";
 import { Section } from "@/components/sections/FeaturedSection";
 import { 
-  getRecommendedTracks, 
-  getMoodBasedRecommendations,
-  getGenreBasedRecommendations
-} from "@/utils/recommendationEngine";
+  usePersonalizedRecommendations,
+  useMoodRecommendations,
+  useGenreRecommendations
+} from "@/hooks/use-recommendations";
+import { getAvailableGenres } from "@/utils/recommendationEngine";
 import { MoodSelector } from "@/components/upload/MoodSelector";
 import { 
   Select, 
@@ -16,31 +16,29 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const RecommendationsPage = () => {
-  const [personalizedTracks, setPersonalizedTracks] = useState<any[]>([]);
-  const [moodTracks, setMoodTracks] = useState<any[]>([]);
-  const [genreTracks, setGenreTracks] = useState<any[]>([]);
   const [selectedMood, setSelectedMood] = useState("chill");
-  const [selectedGenre, setSelectedGenre] = useState("electronic");
+  const [selectedGenre, setSelectedGenre] = useState("afrobeats");
+  const [genres, setGenres] = useState<{ value: string; label: string }[]>([]);
 
-  // Fetch personalized recommendations on initial load
+  // Use the new recommendation hooks
+  const { tracks: personalizedTracks, loading: personalizedLoading } = usePersonalizedRecommendations(10);
+  const { tracks: moodTracks, loading: moodLoading } = useMoodRecommendations(selectedMood, 5);
+  const { tracks: genreTracks, loading: genreLoading } = useGenreRecommendations(selectedGenre, 5);
+
+  // Fetch available genres
   useEffect(() => {
-    const recommended = getRecommendedTracks("user1", 5);
-    setPersonalizedTracks(recommended);
+    async function loadGenres() {
+      const availableGenres = await getAvailableGenres();
+      setGenres(availableGenres.map(g => ({
+        value: g,
+        label: g.charAt(0).toUpperCase() + g.slice(1).replace(/-/g, ' ')
+      })));
+    }
+    loadGenres();
   }, []);
-
-  // Fetch mood-based recommendations when mood changes
-  useEffect(() => {
-    const moodBasedTracks = getMoodBasedRecommendations(selectedMood, 5);
-    setMoodTracks(moodBasedTracks);
-  }, [selectedMood]);
-
-  // Fetch genre-based recommendations when genre changes
-  useEffect(() => {
-    const genreBasedTracks = getGenreBasedRecommendations(selectedGenre, 5);
-    setGenreTracks(genreBasedTracks);
-  }, [selectedGenre]);
 
   // Handle mood change
   const handleMoodChange = (mood: string) => {
@@ -52,20 +50,6 @@ const RecommendationsPage = () => {
     setSelectedGenre(genre);
   };
 
-  // Available genres
-  const genres = [
-    { value: "electronic", label: "Electronic" },
-    { value: "hip-hop", label: "Hip Hop" },
-    { value: "rock", label: "Rock" },
-    { value: "pop", label: "Pop" },
-    { value: "jazz", label: "Jazz" },
-    { value: "ambient", label: "Ambient" },
-    { value: "folk", label: "Folk" },
-    { value: "world", label: "World" },
-    { value: "classical", label: "Classical" },
-    { value: "lofi", label: "Lo-Fi" },
-  ];
-
   // Convert track data to match the Track interface
   const formatTrackForCard = (trackData: any) => {
     return {
@@ -74,17 +58,29 @@ const RecommendationsPage = () => {
       artist: trackData.artist,
       cover_art_path: trackData.cover,
       audio_file_path: "",
-      genre: "",
-      mood: "",
+      genre: trackData.genre || "",
+      mood: trackData.mood || "",
       play_count: trackData.plays || 0,
       like_count: 0,
       tags: [],
       published: true,
       cover: trackData.cover,
-      user_id: trackData.user_id || "unknown", // Add missing user_id
-      duration: trackData.duration || 0 // Add missing duration
+      user_id: trackData.artistId || "unknown",
+      duration: 0
     };
   };
+
+  const LoadingSkeleton = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="space-y-3">
+          <Skeleton className="aspect-square w-full rounded-lg" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <MainLayout>
@@ -101,10 +97,25 @@ const RecommendationsPage = () => {
           title="For You" 
           subtitle="Tracks we think you'll love based on your activity"
         >
-          {personalizedTracks.length > 0 ? (
+          {personalizedLoading ? (
+            <div className="flex gap-4 overflow-hidden">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="min-w-[220px] space-y-3">
+                  <Skeleton className="aspect-square w-full rounded-lg" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : personalizedTracks.length > 0 ? (
             personalizedTracks.map(trackData => (
               <div key={trackData.id} className="min-w-[220px] max-w-[220px]">
                 <TrackCard track={formatTrackForCard(trackData)} />
+                {trackData.reason && (
+                  <p className="text-xs text-muted-foreground mt-1 truncate">
+                    {trackData.reason}
+                  </p>
+                )}
               </div>
             ))
           ) : (
@@ -126,20 +137,24 @@ const RecommendationsPage = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {moodTracks.length > 0 ? (
-              moodTracks.map(trackData => (
-                <TrackCard 
-                  key={trackData.id}
-                  track={formatTrackForCard(trackData)}
-                />
-              ))
-            ) : (
-              <div className="col-span-full py-8 text-center text-muted-foreground">
-                No tracks found for this mood
-              </div>
-            )}
-          </div>
+          {moodLoading ? (
+            <LoadingSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {moodTracks.length > 0 ? (
+                moodTracks.map(trackData => (
+                  <TrackCard 
+                    key={trackData.id}
+                    track={formatTrackForCard(trackData)}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full py-8 text-center text-muted-foreground">
+                  No tracks found for this mood
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Genre-based recommendations with selector */}
@@ -165,20 +180,24 @@ const RecommendationsPage = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {genreTracks.length > 0 ? (
-              genreTracks.map(trackData => (
-                <TrackCard 
-                  key={trackData.id}
-                  track={formatTrackForCard(trackData)}
-                />
-              ))
-            ) : (
-              <div className="col-span-full py-8 text-center text-muted-foreground">
-                No tracks found for this genre
-              </div>
-            )}
-          </div>
+          {genreLoading ? (
+            <LoadingSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {genreTracks.length > 0 ? (
+                genreTracks.map(trackData => (
+                  <TrackCard 
+                    key={trackData.id}
+                    track={formatTrackForCard(trackData)}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full py-8 text-center text-muted-foreground">
+                  No tracks found for this genre
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </MainLayout>

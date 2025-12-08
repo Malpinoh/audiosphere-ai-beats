@@ -1,14 +1,13 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArtistCard } from "@/components/ui/artist-card";
 import { PlaylistCard } from "@/components/ui/playlist-card";
+import { TrackCard } from "@/components/ui/track-card";
 import { Section } from "@/components/sections/FeaturedSection";
-import { useTracks } from "@/hooks/use-tracks";
-import { Track } from "@/types/track-types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { usePersonalizedRecommendations } from "@/hooks/use-recommendations";
+import { useAuth } from "@/contexts/AuthContext";
 
 const LoadingCard = () => (
   <div className="min-w-[220px] max-w-[220px]">
@@ -39,7 +38,6 @@ function useRealArtists() {
   useEffect(() => {
     const fetchRealArtists = async () => {
       try {
-        // Get artists with their follower counts and track counts
         const { data: profiles, error } = await supabase
           .from('profiles')
           .select(`
@@ -57,7 +55,6 @@ function useRealArtists() {
 
         if (error) throw error;
 
-        // Get track counts for each artist
         const artistsWithTracks = await Promise.all(
           (profiles || []).map(async (profile) => {
             const { count } = await supabase
@@ -116,7 +113,6 @@ function useRealPlaylists() {
 
         if (error) throw error;
 
-        // Get track counts for each playlist
         const playlistsWithCounts = await Promise.all(
           (playlistsData || []).map(async (playlist) => {
             const { count } = await supabase
@@ -145,7 +141,6 @@ function useRealPlaylists() {
         setPlaylists(playlistsWithCounts);
       } catch (error) {
         console.error('Error fetching real playlists:', error);
-        // Fallback to editorial playlists
         setPlaylists([
           {
             id: "editorial-1",
@@ -232,13 +227,33 @@ export function FeaturedPlaylists() {
 }
 
 export function PersonalizedRecommendations() {
-  const { artists, loading } = useRealArtists();
+  const { user } = useAuth();
+  const { tracks, loading } = usePersonalizedRecommendations(10);
+  const { artists, loading: artistsLoading } = useRealArtists();
   
-  if (loading) {
+  // Format track for TrackCard
+  const formatTrackForCard = (trackData: any) => ({
+    id: trackData.id,
+    title: trackData.title,
+    artist: trackData.artist,
+    cover_art_path: trackData.cover,
+    audio_file_path: "",
+    genre: trackData.genre || "",
+    mood: trackData.mood || "",
+    play_count: trackData.plays || 0,
+    like_count: 0,
+    tags: [],
+    published: true,
+    cover: trackData.cover,
+    user_id: trackData.artistId || "unknown",
+    duration: 0
+  });
+
+  if (loading || artistsLoading) {
     return (
       <Section 
         title="Recommended for You" 
-        subtitle="Based on popular artists"
+        subtitle={user ? "Based on your listening history" : "Popular tracks"}
         seeAllLink="/recommendations"
       >
         {Array(5).fill(0).map((_, i) => (
@@ -248,7 +263,29 @@ export function PersonalizedRecommendations() {
     );
   }
   
-  // Show top artists by follower count
+  // If we have personalized track recommendations, show those
+  if (tracks.length > 0) {
+    return (
+      <Section 
+        title="Recommended for You" 
+        subtitle={user ? "Based on your listening history" : "Popular tracks"}
+        seeAllLink="/recommendations"
+      >
+        {tracks.slice(0, 5).map(track => (
+          <div key={track.id} className="min-w-[220px] max-w-[220px]">
+            <TrackCard track={formatTrackForCard(track)} />
+            {track.reason && (
+              <p className="text-xs text-muted-foreground mt-1 truncate px-1">
+                {track.reason}
+              </p>
+            )}
+          </div>
+        ))}
+      </Section>
+    );
+  }
+  
+  // Fallback to showing popular artists
   const recommendedArtists = artists
     .sort((a, b) => b.followers - a.followers)
     .slice(0, 5);
@@ -256,7 +293,7 @@ export function PersonalizedRecommendations() {
   return (
     <Section 
       title="Recommended for You" 
-      subtitle="Based on popular artists"
+      subtitle="Popular artists"
       seeAllLink="/recommendations"
     >
       {recommendedArtists.map(artist => (

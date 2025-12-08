@@ -1,247 +1,227 @@
+/**
+ * Recommendation Engine Utilities
+ * 
+ * This module provides utility functions for the recommendation system.
+ * The main recommendation logic is now handled by Supabase database functions.
+ * 
+ * @see src/hooks/use-recommendations.tsx for React hooks
+ * @see Database functions: get_personalized_recommendations, get_similar_tracks, etc.
+ */
 
-interface UserPreference {
-  genre: Record<string, number>;
-  artist: Record<string, number>;
-  mood: Record<string, number>;
+import { supabase } from '@/integrations/supabase/client';
+
+export interface TrackData {
+  id: string;
+  title: string;
+  artist: string;
+  artistId: string;
+  cover: string;
+  plays: number;
+  genre: string;
+  mood: string;
+  score?: number;
 }
 
-// Mock user history data - in a real app, this would come from a database
-const mockUserHistory = {
-  "user1": {
-    listens: [
-      { trackId: "1", count: 5 },
-      { trackId: "3", count: 2 },
-      { trackId: "5", count: 7 },
-    ],
-    likes: ["1", "5", "6"],
-    follows: ["1", "4", "5"]
-  }
+// Get cover art URL helper
+const getCoverUrl = (path: string): string => {
+  if (!path) return '/placeholder.svg';
+  if (path.startsWith('http')) return path;
+  const { data } = supabase.storage.from('audio').getPublicUrl(path);
+  return data?.publicUrl || '/placeholder.svg';
 };
 
-// Mock track data - in a real app, this would come from a database
-const mockTracks = [
-  {
-    id: "1",
-    title: "Midnight Dreams",
-    artist: "Luna Echo",
-    artistId: "1",
-    cover: "https://picsum.photos/id/65/300/300",
-    plays: 1248000,
-    genre: "electronic",
-    mood: "chill"
-  },
-  {
-    id: "2",
-    title: "Cosmic Waves",
-    artist: "Stellar Beats",
-    artistId: "2",
-    cover: "https://picsum.photos/id/240/300/300",
-    plays: 876000,
-    genre: "electronic",
-    mood: "energetic"
-  },
-  {
-    id: "3",
-    title: "Urban Flow",
-    artist: "City Sounds",
-    artistId: "3",
-    cover: "https://picsum.photos/id/334/300/300",
-    plays: 2450000,
-    genre: "hip-hop",
-    mood: "energetic"
-  },
-  {
-    id: "4",
-    title: "Desert Wind",
-    artist: "Nomad Soul",
-    artistId: "4",
-    cover: "https://picsum.photos/id/96/300/300",
-    plays: 543000,
-    genre: "world",
-    mood: "calm"
-  },
-  {
-    id: "5",
-    title: "Neon Lights",
-    artist: "Cyber Pulse",
-    artistId: "5",
-    cover: "https://picsum.photos/id/1062/300/300",
-    plays: 1789000,
-    genre: "electronic",
-    mood: "party"
-  },
-  {
-    id: "6",
-    title: "Ocean Breeze",
-    artist: "Wave Collective",
-    artistId: "6",
-    cover: "https://picsum.photos/id/1060/300/300",
-    plays: 930000,
-    genre: "ambient",
-    mood: "relaxing"
-  },
-  {
-    id: "7",
-    title: "Mountain High",
-    artist: "Alpine Echoes",
-    artistId: "7",
-    cover: "https://picsum.photos/id/1018/300/300",
-    plays: 650000,
-    genre: "folk",
-    mood: "inspirational"
-  },
-  {
-    id: "8",
-    title: "City Lights",
-    artist: "Urban Vibes",
-    artistId: "8",
-    cover: "https://picsum.photos/id/1019/300/300",
-    plays: 1200000,
-    genre: "jazz",
-    mood: "chill"
-  },
-  {
-    id: "9",
-    title: "Electric Dreams",
-    artist: "Synth Wave",
-    artistId: "9",
-    cover: "https://picsum.photos/id/1025/300/300",
-    plays: 890000,
-    genre: "electronic",
-    mood: "energetic"
-  },
-  {
-    id: "10",
-    title: "Rainy Day",
-    artist: "Mellow Mood",
-    artistId: "10",
-    cover: "https://picsum.photos/id/1039/300/300",
-    plays: 750000,
-    genre: "lofi",
-    mood: "sad"
-  }
-];
-
 /**
- * Calculate user preferences based on listening history, likes, and follows
+ * Get recommended tracks for a user (uses database hybrid algorithm)
  */
-export const calculateUserPreferences = (userId: string = "user1"): UserPreference => {
-  const userHistory = mockUserHistory[userId] || { listens: [], likes: [], follows: [] };
-  
-  // Initialize preference scores
-  const preferences: UserPreference = {
-    genre: {},
-    artist: {},
-    mood: {}
-  };
-  
-  // Process listening history (strongest signal)
-  userHistory.listens.forEach(listen => {
-    const track = mockTracks.find(t => t.id === listen.trackId);
-    if (track) {
-      // Increase genre preference
-      preferences.genre[track.genre] = (preferences.genre[track.genre] || 0) + listen.count * 2;
-      
-      // Increase artist preference
-      preferences.artist[track.artistId] = (preferences.artist[track.artistId] || 0) + listen.count * 2;
-      
-      // Increase mood preference
-      preferences.mood[track.mood] = (preferences.mood[track.mood] || 0) + listen.count * 2;
-    }
-  });
-  
-  // Process likes (medium signal)
-  userHistory.likes.forEach(likedTrackId => {
-    const track = mockTracks.find(t => t.id === likedTrackId);
-    if (track) {
-      // Increase genre preference
-      preferences.genre[track.genre] = (preferences.genre[track.genre] || 0) + 5;
-      
-      // Increase artist preference
-      preferences.artist[track.artistId] = (preferences.artist[track.artistId] || 0) + 5;
-      
-      // Increase mood preference
-      preferences.mood[track.mood] = (preferences.mood[track.mood] || 0) + 5;
-    }
-  });
-  
-  // Process follows (weaker signal for track preference, but strong for artist)
-  userHistory.follows.forEach(followedArtistId => {
-    // Find all tracks by this artist
-    const artistTracks = mockTracks.filter(t => t.artistId === followedArtistId);
-    
-    artistTracks.forEach(track => {
-      // Increase genre preference
-      preferences.genre[track.genre] = (preferences.genre[track.genre] || 0) + 2;
-      
-      // Increase artist preference (higher weight for follows)
-      preferences.artist[track.artistId] = (preferences.artist[track.artistId] || 0) + 10;
-      
-      // Increase mood preference
-      preferences.mood[track.mood] = (preferences.mood[track.mood] || 0) + 2;
+export const getRecommendedTracks = async (
+  userId: string | null = null, 
+  limit: number = 10
+): Promise<TrackData[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_personalized_recommendations', {
+      p_user_id: userId,
+      p_limit: limit
     });
-  });
-  
-  return preferences;
+
+    if (error) throw error;
+
+    return (data || []).map((track: any) => ({
+      id: track.track_id,
+      title: track.title,
+      artist: track.artist,
+      artistId: track.artist_profile_id || '',
+      cover: getCoverUrl(track.cover_art_path),
+      plays: track.play_count || 0,
+      genre: track.genre,
+      mood: track.mood,
+      score: track.recommendation_score
+    }));
+  } catch (err) {
+    console.error('Error getting recommendations:', err);
+    return getFallbackTracks(limit);
+  }
 };
 
 /**
- * Calculate a score for each track based on user preferences
+ * Get mood-based recommendations
  */
-const calculateTrackScores = (preferences: UserPreference) => {
-  return mockTracks.map(track => {
-    let score = 0;
-    
-    // Add genre score
-    score += preferences.genre[track.genre] || 0;
-    
-    // Add artist score
-    score += preferences.artist[track.artistId] || 0;
-    
-    // Add mood score
-    score += preferences.mood[track.mood] || 0;
-    
-    return {
-      ...track,
-      score
-    };
-  });
-};
+export const getMoodBasedRecommendations = async (
+  mood: string, 
+  limit: number = 10
+): Promise<TrackData[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_mood_recommendations', {
+      p_mood: mood,
+      p_limit: limit
+    });
 
-/**
- * Get recommended tracks based on user preferences
- */
-export const getRecommendedTracks = (userId: string = "user1", limit: number = 5) => {
-  const preferences = calculateUserPreferences(userId);
-  const scoredTracks = calculateTrackScores(preferences);
-  
-  // Sort by score and take the top tracks
-  const recommendedTracks = scoredTracks
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
-  
-  return recommendedTracks;
-};
+    if (error) throw error;
 
-/**
- * Get recommended tracks based on mood
- */
-export const getMoodBasedRecommendations = (mood: string, limit: number = 5) => {
-  // Filter tracks by the specified mood
-  return mockTracks
-    .filter(track => track.mood === mood)
-    .slice(0, limit);
+    return (data || []).map((track: any) => ({
+      id: track.track_id,
+      title: track.title,
+      artist: track.artist,
+      artistId: track.artist_profile_id || '',
+      cover: getCoverUrl(track.cover_art_path),
+      plays: track.play_count || 0,
+      genre: track.genre,
+      mood: track.mood
+    }));
+  } catch (err) {
+    console.error('Error getting mood recommendations:', err);
+    return [];
+  }
 };
 
 /**
  * Get genre-based recommendations
  */
-export const getGenreBasedRecommendations = (genre: string, limit: number = 5) => {
-  // Filter tracks by the specified genre
-  return mockTracks
-    .filter(track => track.genre === genre)
-    .slice(0, limit);
+export const getGenreBasedRecommendations = async (
+  genre: string, 
+  limit: number = 10
+): Promise<TrackData[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_genre_recommendations', {
+      p_genre: genre,
+      p_limit: limit
+    });
+
+    if (error) throw error;
+
+    return (data || []).map((track: any) => ({
+      id: track.track_id,
+      title: track.title,
+      artist: track.artist,
+      artistId: track.artist_profile_id || '',
+      cover: getCoverUrl(track.cover_art_path),
+      plays: track.play_count || 0,
+      genre: track.genre,
+      mood: track.mood
+    }));
+  } catch (err) {
+    console.error('Error getting genre recommendations:', err);
+    return [];
+  }
 };
 
-// Export the mock data for use in components
-export const getAllTracks = () => mockTracks;
+/**
+ * Get similar tracks to a given track (content-based filtering)
+ */
+export const getSimilarTracks = async (
+  trackId: string, 
+  limit: number = 10
+): Promise<TrackData[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_similar_tracks', {
+      p_track_id: trackId,
+      p_limit: limit
+    });
+
+    if (error) throw error;
+
+    return (data || []).map((track: any) => ({
+      id: track.track_id,
+      title: track.title,
+      artist: track.artist,
+      artistId: track.artist_profile_id || '',
+      cover: getCoverUrl(track.cover_art_path),
+      plays: track.play_count || 0,
+      genre: track.genre,
+      mood: track.mood,
+      score: track.similarity_score
+    }));
+  } catch (err) {
+    console.error('Error getting similar tracks:', err);
+    return [];
+  }
+};
+
+/**
+ * Fallback to popular tracks when recommendations fail
+ */
+const getFallbackTracks = async (limit: number): Promise<TrackData[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('tracks')
+      .select('id, title, artist, artist_profile_id, cover_art_path, genre, mood, play_count')
+      .eq('published', true)
+      .order('play_count', { ascending: false, nullsFirst: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return (data || []).map(track => ({
+      id: track.id,
+      title: track.title,
+      artist: track.artist,
+      artistId: track.artist_profile_id || '',
+      cover: getCoverUrl(track.cover_art_path),
+      plays: track.play_count || 0,
+      genre: track.genre,
+      mood: track.mood
+    }));
+  } catch (err) {
+    console.error('Error getting fallback tracks:', err);
+    return [];
+  }
+};
+
+/**
+ * Get all available moods from the database
+ */
+export const getAvailableMoods = async (): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('tracks')
+      .select('mood')
+      .eq('published', true);
+
+    if (error) throw error;
+
+    const moods = [...new Set((data || []).map(t => t.mood).filter(Boolean))];
+    return moods.sort();
+  } catch (err) {
+    console.error('Error getting moods:', err);
+    return ['energetic', 'chill', 'happy', 'sad', 'romantic', 'party', 'calm', 'inspirational'];
+  }
+};
+
+/**
+ * Get all available genres from the database
+ */
+export const getAvailableGenres = async (): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('tracks')
+      .select('genre')
+      .eq('published', true);
+
+    if (error) throw error;
+
+    const genres = [...new Set((data || []).map(t => t.genre).filter(Boolean))];
+    return genres.sort();
+  } catch (err) {
+    console.error('Error getting genres:', err);
+    return ['afrobeats', 'hip-hop', 'r&b', 'pop', 'electronic', 'jazz', 'gospel', 'reggae', 'rock', 'classical'];
+  }
+};

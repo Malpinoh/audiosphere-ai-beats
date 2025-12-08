@@ -5,6 +5,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { useStreamLogger } from '@/hooks/use-stream-logger';
 import { toast } from 'sonner';
 
+// Track listening for recommendation engine
+const trackListeningHistory = async (userId: string, trackId: string, listenTime: number) => {
+  try {
+    await supabase.rpc('update_listening_history', {
+      p_user_id: userId,
+      p_track_id: trackId,
+      p_listen_time: listenTime
+    });
+    
+    // Update user preferences in background after significant listening
+    if (listenTime >= 30) {
+      setTimeout(async () => {
+        await supabase.rpc('update_user_preferences', { p_user_id: userId });
+      }, 2000);
+    }
+  } catch (err) {
+    console.error('Error tracking listening history:', err);
+  }
+};
+
 interface MusicPlayerState {
   currentTrack: Track | null;
   isPlaying: boolean;
@@ -618,15 +638,25 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
         console.log('Audio duration:', audio.duration);
       };
 
-      const handleEnded = () => {
+      const handleEnded = async () => {
         console.log('Track ended, playing next...');
-        setState(prev => ({ ...prev, isPlaying: false }));
         
-        // Clear stream log for ended track
+        // Track listening history for recommendations
         if (state.currentTrack) {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const listenTime = Math.floor(audio.duration || 30);
+              await trackListeningHistory(user.id, state.currentTrack.id, listenTime);
+            }
+          } catch (err) {
+            console.error('Error tracking listen:', err);
+          }
+          
           streamLoggedRef.current.delete(state.currentTrack.id);
         }
         
+        setState(prev => ({ ...prev, isPlaying: false }));
         playNext();
       };
 
