@@ -1,5 +1,5 @@
-
 import MainLayout from "@/components/layout/MainLayout";
+import { HeroSection } from "@/components/sections/HeroSection";
 import { FeaturedTracks } from "@/components/sections/FeaturedSection";
 import { FeaturedAlbums } from "@/components/sections/AlbumsSection";
 import { RecentPlaysSection } from "@/components/sections/RecentPlaysSection";
@@ -17,15 +17,19 @@ const Index = () => {
   
   return (
     <MainLayout>
-      <div className="min-h-screen bg-maudio-dark">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-12">
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-10">
+          {/* Hero Section */}
+          <HeroSection />
+          
           {/* Recent Plays Section */}
           <RecentPlaysSection />
+          
           {/* Personalized content for authenticated users */}
           <PersonalizedRecommendations />
           
-          {/* Main content sections with Apple Music styling */}
-          <div className="space-y-16">
+          {/* Main content sections */}
+          <div className="space-y-12">
             <FeaturedTracks />
             <FeaturedAlbums />
             <TopChartsSection />
@@ -35,17 +39,17 @@ const Index = () => {
           </div>
           
           {/* Admin Panel Link - Only shown to admin users */}
-          <div className="mt-16 border-t border-white/10 pt-8 flex justify-center gap-4">
+          <div className="mt-16 border-t border-border pt-8 flex flex-wrap justify-center gap-3">
             {isAdmin && (
               <>
                 <Link to="/admin">
-                  <Button variant="outline" className="flex items-center gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10">
+                  <Button variant="outline" className="flex items-center gap-2 border-border/50 hover:bg-muted">
                     <ShieldCheck className="h-4 w-4" />
                     Admin Panel
                   </Button>
                 </Link>
                 <Link to="/upload">
-                  <Button variant="outline" className="flex items-center gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10">
+                  <Button variant="outline" className="flex items-center gap-2 border-border/50 hover:bg-muted">
                     <Upload className="h-4 w-4" />
                     Upload Music
                   </Button>
@@ -53,7 +57,7 @@ const Index = () => {
               </>
             )}
             <Link to="/report">
-              <Button variant="outline" className="flex items-center gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10">
+              <Button variant="outline" className="flex items-center gap-2 border-border/50 hover:bg-muted">
                 <Flag className="h-4 w-4" />
                 Report Content
               </Button>
