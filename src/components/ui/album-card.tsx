@@ -1,5 +1,5 @@
 import React from "react";
-import { Play, Calendar } from "lucide-react";
+import { Play, Calendar, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { Link } from "react-router-dom";
@@ -29,7 +29,6 @@ export function AlbumCard({
     e.preventDefault();
     e.stopPropagation();
     
-    // Sort tracks by track number for correct album order
     const sortedTracks = [...tracks].sort((a, b) => (a.track_number || 0) - (b.track_number || 0));
     setQueue(sortedTracks);
     if (sortedTracks.length > 0) {
@@ -37,45 +36,61 @@ export function AlbumCard({
     }
   };
 
-
   const totalDuration = tracks.reduce((acc, track) => acc + (track.duration || 0), 0);
   const year = releaseDate ? new Date(releaseDate).getFullYear() : new Date().getFullYear();
 
+  const getCoverUrl = (path: string) => {
+    if (!path) return 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop';
+    if (path.startsWith('http')) return path;
+    return path;
+  };
+
   return (
     <Link to={`/album/${encodeURIComponent(albumName)}`} className="block group">
-      <div className="maudio-card overflow-hidden">
-        <div className="relative aspect-square bg-maudio-darker">
+      <div className="relative overflow-hidden rounded-xl bg-card transition-all duration-300 hover:bg-card/80 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1">
+        <div className="relative aspect-square overflow-hidden">
           <img 
-            src={coverArt} 
+            src={getCoverUrl(coverArt)}
             alt={albumName} 
-            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
-              target.src = 'https://picsum.photos/300/300';
+              target.src = 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop';
             }}
           />
           
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          {/* Play button */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
             <Button 
               onClick={handlePlayAlbum}
-              className="rounded-full bg-primary/90 hover:bg-primary h-12 w-12 flex items-center justify-center"
+              className="h-14 w-14 rounded-full bg-primary hover:bg-primary/90 hover:scale-110 transition-all duration-200 shadow-lg shadow-primary/30"
               size="icon"
             >
-              <Play className="h-5 w-5 ml-0.5" />
+              <Play className="h-6 w-6 ml-1" />
             </Button>
+          </div>
+
+          {/* Type badge */}
+          <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm text-xs font-medium uppercase">
+            {type}
+          </div>
+
+          {/* Track count badge */}
+          <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm text-xs font-medium">
+            <Music className="h-3 w-3" />
+            {tracks.length}
           </div>
         </div>
         
-        <div className="p-3 space-y-1">
-          <h3 className="font-medium truncate text-sm">{albumName}</h3>
-          <p className="text-muted-foreground text-xs truncate">{artistName}</p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="p-4">
+          <h3 className="font-semibold truncate text-base">{albumName}</h3>
+          <p className="text-muted-foreground text-sm truncate mt-1">{artistName}</p>
+          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3" />
             <span>{year}</span>
-            <span>•</span>
-            <span className="capitalize">{type}</span>
-            <span>•</span>
-            <span>{tracks.length} tracks</span>
             {totalDuration > 0 && (
               <>
                 <span>•</span>
