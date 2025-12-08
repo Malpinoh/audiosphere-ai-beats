@@ -1,11 +1,12 @@
-
 import { useParams } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { useTrack } from "@/hooks/use-track";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { useTrackComments } from "@/hooks/use-track-comments";
+import { useSimilarTracks } from "@/hooks/use-recommendations";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TrackCard } from "@/components/ui/track-card";
 import { Play, Pause, Heart, Share, Music, Bookmark, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CommentsSection } from "@/components/player/CommentsSection";
@@ -14,7 +15,8 @@ export default function TrackPage() {
   const { trackId } = useParams<{ trackId: string }>();
   const { track, loading, error } = useTrack(trackId);
   const { comments, loading: commentsLoading, addComment } = useTrackComments(trackId || null);
-  const { 
+  const { tracks: similarTracks, loading: similarLoading } = useSimilarTracks(trackId || null, 6);
+  const {
     currentTrack, 
     isPlaying, 
     playTrack, 
@@ -220,6 +222,53 @@ export default function TrackPage() {
                   <span>{track.like_count || 0} likes</span>
                 </div>
               </div>
+            </div>
+
+            {/* Similar Tracks Section */}
+            <div className="md:col-span-12 mt-8">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold mb-2">Similar Tracks</h2>
+                <p className="text-muted-foreground text-sm">Based on genre, mood, and artist</p>
+              </div>
+              
+              {similarLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="space-y-3">
+                      <Skeleton className="aspect-square w-full rounded-lg" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  ))}
+                </div>
+              ) : similarTracks.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {similarTracks.map((similarTrack) => (
+                    <TrackCard
+                      key={similarTrack.id}
+                      track={{
+                        id: similarTrack.id,
+                        title: similarTrack.title,
+                        artist: similarTrack.artist,
+                        cover_art_path: similarTrack.cover,
+                        audio_file_path: "",
+                        genre: similarTrack.genre,
+                        mood: similarTrack.mood,
+                        play_count: similarTrack.plays,
+                        like_count: 0,
+                        tags: [],
+                        published: true,
+                        user_id: similarTrack.artistId,
+                        duration: 0
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-8">
+                  No similar tracks found
+                </p>
+              )}
             </div>
 
             {/* Comments Section */}
