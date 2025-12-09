@@ -15,6 +15,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileFullscreenPlayer } from "./MobileFullscreenPlayer";
 import { useTrackComments } from "@/hooks/use-track-comments";
 import { formatTime } from "@/utils/formatTime";
+import { QualitySelector, type AudioQualityTier } from "@/components/player/QualitySelector";
+import { HiResBadge } from "@/components/player/HiResBadge";
+import { useAudioPreferences } from "@/hooks/use-audio-preferences";
 
 import { CommentsSection } from "@/components/player/CommentsSection";
 
@@ -47,12 +50,24 @@ const MusicPlayer = () => {
   } = useMusicPlayer();
   
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
+  const [currentQuality, setCurrentQuality] = useState<AudioQualityTier>('auto');
   
   const isMobile = useIsMobile();
+  const { preferences, updatePreference } = useAudioPreferences();
   
   // Add comments functionality
   const { comments, loading: commentsLoading, addComment, getTopComments } = useTrackComments(currentTrack?.id || null);
   const topComments = getTopComments();
+
+  const handleQualityChange = (quality: AudioQualityTier) => {
+    setCurrentQuality(quality);
+    if (quality !== 'auto') {
+      updatePreference('preferredQuality', quality as 'normal' | 'high' | 'hifi' | 'hires');
+      updatePreference('autoQuality', false);
+    } else {
+      updatePreference('autoQuality', true);
+    }
+  };
 
   
   const handleLikeToggle = () => {
@@ -109,9 +124,17 @@ const MusicPlayer = () => {
                   />
                 </div>
                 <div className="truncate flex-1">
-                  <Link to={`/track/${currentTrack.id}`} className="text-sm font-medium truncate hover:text-white text-gray-100 block">
-                    {currentTrack.title}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link to={`/track/${currentTrack.id}`} className="text-sm font-medium truncate hover:text-white text-gray-100 block">
+                      {currentTrack.title}
+                    </Link>
+                    <HiResBadge 
+                      isHiRes={currentTrack.is_hires} 
+                      isLossless={currentTrack.is_lossless}
+                      maxQuality={currentTrack.max_quality}
+                      size="sm"
+                    />
+                  </div>
                   <Link to={`/artist/${encodeURIComponent(currentTrack.artist)}`} className="text-xs text-gray-400 truncate hover:text-white block">
                     {currentTrack.artist}
                   </Link>
@@ -227,6 +250,14 @@ const MusicPlayer = () => {
           
           {/* Volume & Queue Controls */}
           <div className="flex items-center space-x-3 w-full md:w-1/4 justify-end">
+            {/* Quality Selector */}
+            <QualitySelector
+              currentQuality={currentQuality}
+              availableQualities={['normal', 'high']}
+              onQualityChange={handleQualityChange}
+              isAdaptive={currentQuality === 'auto'}
+            />
+
             {/* Comments Sheet */}
             <Sheet>
               <SheetTrigger asChild>

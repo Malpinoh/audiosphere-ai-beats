@@ -2,6 +2,9 @@
 # This file is used by Supabase CLI
 project_id = "qkpjlfcpncvvjyzfolag"
 
+[functions.audio-processor]
+verify_jwt = false
+
 [api]
 port = 54321
 schemas = []
