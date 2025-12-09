@@ -183,9 +183,9 @@ export function UsersManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Manage Users</h2>
-        <div className="relative w-72">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-xl md:text-2xl font-bold">Manage Users</h2>
+        <div className="relative w-full sm:w-72">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search users..."
@@ -196,64 +196,63 @@ export function UsersManagement() {
         </div>
       </div>
 
-      <Table>
-        <TableCaption>List of all users in the system.</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Username</TableHead>
-            <TableHead>Full Name</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredUsers.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell className="font-medium">{user.username}</TableCell>
-              <TableCell>{user.full_name}</TableCell>
-              <TableCell>{getRoleBadge(user)}</TableCell>
-              <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleUpdateUserRole(user.id, "admin")}
-                  >
-                    <Shield className="h-4 w-4 mr-1" />
-                    Admin
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleUpdateUserRole(user.id, "support")}
-                  >
-                    <HeadphonesIcon className="h-4 w-4 mr-1" />
-                    Support
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleUpdateUserRole(user.id, "artist")}
-                  >
-                    <Crown className="h-4 w-4 mr-1" />
-                    Artist
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleUpdateUserRole(user.id, "user")}
-                  >
-                    <User className="h-4 w-4 mr-1" />
-                    User
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="overflow-x-auto -mx-4 md:mx-0">
+        <div className="inline-block min-w-full align-middle">
+          <Table>
+            <TableCaption>List of all users in the system.</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Username</TableHead>
+                <TableHead className="hidden sm:table-cell">Full Name</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead className="hidden md:table-cell">Created At</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium text-sm">{user.username}</TableCell>
+                  <TableCell className="hidden sm:table-cell text-sm">{user.full_name}</TableCell>
+                  <TableCell>{getRoleBadge(user)}</TableCell>
+                  <TableCell className="hidden md:table-cell text-sm">{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex flex-wrap justify-end gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => handleUpdateUserRole(user.id, "admin")}
+                      >
+                        <Shield className="h-3 w-3 mr-1" />
+                        <span className="hidden lg:inline">Admin</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => handleUpdateUserRole(user.id, "artist")}
+                      >
+                        <Crown className="h-3 w-3 mr-1" />
+                        <span className="hidden lg:inline">Artist</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => handleUpdateUserRole(user.id, "user")}
+                      >
+                        <User className="h-3 w-3 mr-1" />
+                        <span className="hidden lg:inline">User</span>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </div>
   );
 }

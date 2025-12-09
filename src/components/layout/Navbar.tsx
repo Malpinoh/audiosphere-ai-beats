@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, Upload, User, LogOut, BarChart3 } from "lucide-react";
+import { Menu, Upload, User, LogOut, BarChart3, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SearchBar } from "@/components/layout/SearchBar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -16,8 +17,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
+const navLinks = [
+  { to: "/", label: "Home" },
+  { to: "/browse", label: "Browse" },
+  { to: "/artists", label: "Artists" },
+  { to: "/charts", label: "Charts" },
+  { to: "/playlists", label: "Playlists" },
+];
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -30,96 +39,73 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
+            <div className="w-9 h-9 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg shadow-primary/25">
+              <span className="text-primary-foreground font-bold text-sm">M</span>
             </div>
-            <span className="font-bold text-xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="font-bold text-xl maudio-gradient-text hidden sm:inline">
               MAUDIO
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-gray-300 hover:text-white transition-colors">
-              Home
-            </Link>
-            <Link to="/browse" className="text-gray-300 hover:text-white transition-colors">
-              Browse
-            </Link>
-            <Link to="/artists" className="text-gray-300 hover:text-white transition-colors">
-              Artists
-            </Link>
-            <Link to="/charts" className="text-gray-300 hover:text-white transition-colors">
-              Charts
-            </Link>
-            <Link to="/playlists" className="text-gray-300 hover:text-white transition-colors">
-              Playlists
-            </Link>
+          <div className="hidden lg:flex items-center space-x-1">
+            {navLinks.map((link) => (
+              <Link 
+                key={link.to}
+                to={link.to} 
+                className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
+              >
+                {link.label}
+              </Link>
+            ))}
             {user && (
-              <Link to="/library" className="text-gray-300 hover:text-white transition-colors">
+              <Link 
+                to="/library" 
+                className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
+              >
                 Library
               </Link>
             )}
-            
-            {/* Search Bar */}
-            <SearchBar className="w-64" />
           </div>
 
           {/* Right side items */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* Search Bar - Desktop */}
+            <div className="hidden md:block">
+              <SearchBar className="w-56 lg:w-64" />
+            </div>
+            
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
             {/* Mobile menu button */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden text-white">
+                <Button variant="ghost" size="icon" className="lg:hidden">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-black border-gray-800">
-                <div className="flex flex-col space-y-4 mt-8">
-                  <Link 
-                    to="/" 
-                    className="text-gray-300 hover:text-white transition-colors py-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Home
-                  </Link>
-                  <Link 
-                    to="/browse" 
-                    className="text-gray-300 hover:text-white transition-colors py-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Browse
-                  </Link>
-                  <Link 
-                    to="/artists" 
-                    className="text-gray-300 hover:text-white transition-colors py-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Artists
-                  </Link>
-                  <Link 
-                    to="/charts" 
-                    className="text-gray-300 hover:text-white transition-colors py-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Charts
-                  </Link>
-                  <Link 
-                    to="/playlists" 
-                    className="text-gray-300 hover:text-white transition-colors py-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Playlists
-                  </Link>
+              <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-background border-border">
+                <div className="flex flex-col space-y-2 mt-8">
+                  {navLinks.map((link) => (
+                    <Link 
+                      key={link.to}
+                      to={link.to} 
+                      className="text-foreground hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-muted"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
                   {user && (
                     <Link 
                       to="/library" 
-                      className="text-gray-300 hover:text-white transition-colors py-2"
+                      className="text-foreground hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-muted"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Library
@@ -127,37 +113,50 @@ const Navbar = () => {
                   )}
                   
                   {/* Mobile Search */}
-                  <div className="pt-4 border-t border-gray-800">
+                  <div className="pt-4 border-t border-border">
                     <SearchBar className="w-full" />
                   </div>
                   
                   {/* Mobile Auth Section */}
-                  <div className="pt-4 border-t border-gray-800">
+                  <div className="pt-4 border-t border-border">
                     {user ? (
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {(profile?.role === 'artist' || profile?.role === 'distributor' || profile?.role === 'admin') && (
                           <Link 
                             to="/upload" 
-                            className="block text-gray-300 hover:text-white transition-colors py-2"
+                            className="flex items-center gap-3 text-foreground hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-muted"
                             onClick={() => setIsMobileMenuOpen(false)}
                           >
-                            Upload
+                            <Upload className="h-5 w-5" />
+                            Upload Music
                           </Link>
                         )}
                         {profile?.role === 'artist' && (
                           <Link 
                             to="/artist-dashboard" 
-                            className="block text-gray-300 hover:text-white transition-colors py-2"
+                            className="flex items-center gap-3 text-foreground hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-muted"
                             onClick={() => setIsMobileMenuOpen(false)}
                           >
+                            <BarChart3 className="h-5 w-5" />
                             Dashboard
+                          </Link>
+                        )}
+                        {profile?.role === 'admin' && (
+                          <Link 
+                            to="/admin" 
+                            className="flex items-center gap-3 text-foreground hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-muted"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            <Settings className="h-5 w-5" />
+                            Admin Panel
                           </Link>
                         )}
                         <Link 
                           to="/account-settings" 
-                          className="block text-gray-300 hover:text-white transition-colors py-2"
+                          className="flex items-center gap-3 text-foreground hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-muted"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >
+                          <User className="h-5 w-5" />
                           Account
                         </Link>
                         <button
@@ -165,19 +164,18 @@ const Navbar = () => {
                             handleSignOut();
                             setIsMobileMenuOpen(false);
                           }}
-                          className="block text-red-400 hover:text-red-300 transition-colors py-2 text-left w-full"
+                          className="flex items-center gap-3 w-full text-destructive hover:text-destructive/80 transition-colors py-3 px-4 rounded-lg hover:bg-destructive/10 text-left"
                         >
+                          <LogOut className="h-5 w-5" />
                           Sign Out
                         </button>
                       </div>
                     ) : (
-                      <div className="flex flex-col space-y-2">
-                        <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                          <Button className="w-full maudio-gradient-bg">
-                            Sign In / Sign Up
-                          </Button>
-                        </Link>
-                      </div>
+                      <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button className="w-full maudio-gradient-bg">
+                          Sign In / Sign Up
+                        </Button>
+                      </Link>
                     )}
                   </div>
                 </div>
@@ -185,34 +183,34 @@ const Navbar = () => {
             </Sheet>
 
             {/* Desktop Auth */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden lg:flex items-center gap-2">
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                      <Avatar className="h-8 w-8">
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                      <Avatar className="h-9 w-9 border-2 border-primary/20">
                         <AvatarImage src={profile?.avatar_url || ""} alt={profile?.full_name || ""} />
-                        <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground text-sm">
                           {profile?.full_name?.[0] || profile?.username?.[0] || "U"}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 bg-black border-gray-800" align="end" forceMount>
+                  <DropdownMenuContent className="w-56 bg-popover border-border" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none text-white">
+                        <p className="text-sm font-medium leading-none text-foreground">
                           {profile?.full_name || profile?.username}
                         </p>
-                        <p className="text-xs leading-none text-gray-400">
+                        <p className="text-xs leading-none text-muted-foreground">
                           {user.email}
                         </p>
                       </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-gray-800" />
+                    <DropdownMenuSeparator className="bg-border" />
                     {(profile?.role === 'artist' || profile?.role === 'distributor' || profile?.role === 'admin') && (
                       <DropdownMenuItem asChild>
-                        <Link to="/upload" className="cursor-pointer text-gray-300 hover:text-white">
+                        <Link to="/upload" className="cursor-pointer">
                           <Upload className="mr-2 h-4 w-4" />
                           <span>Upload Music</span>
                         </Link>
@@ -220,22 +218,30 @@ const Navbar = () => {
                     )}
                     {profile?.role === 'artist' && (
                       <DropdownMenuItem asChild>
-                        <Link to="/artist-dashboard" className="cursor-pointer text-gray-300 hover:text-white">
+                        <Link to="/artist-dashboard" className="cursor-pointer">
                           <BarChart3 className="mr-2 h-4 w-4" />
                           <span>Dashboard</span>
                         </Link>
                       </DropdownMenuItem>
                     )}
+                    {profile?.role === 'admin' && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="cursor-pointer">
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Admin Panel</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
-                      <Link to="/account-settings" className="cursor-pointer text-gray-300 hover:text-white">
+                      <Link to="/account-settings" className="cursor-pointer">
                         <User className="mr-2 h-4 w-4" />
                         <span>Account</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-gray-800" />
+                    <DropdownMenuSeparator className="bg-border" />
                     <DropdownMenuItem 
                       onClick={handleSignOut}
-                      className="cursor-pointer text-red-400 hover:text-red-300 focus:text-red-300"
+                      className="cursor-pointer text-destructive focus:text-destructive"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Sign Out</span>
@@ -243,13 +249,11 @@ const Navbar = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <div className="flex items-center space-x-2">
-                  <Link to="/auth">
-                    <Button className="maudio-gradient-bg">
-                      Sign In
-                    </Button>
-                  </Link>
-                </div>
+                <Link to="/auth">
+                  <Button className="maudio-gradient-bg shadow-lg shadow-primary/25">
+                    Sign In
+                  </Button>
+                </Link>
               )}
             </div>
           </div>
