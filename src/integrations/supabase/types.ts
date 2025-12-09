@@ -312,6 +312,51 @@ export type Database = {
           },
         ]
       }
+      hls_segments: {
+        Row: {
+          created_at: string
+          id: string
+          segment_duration: number | null
+          segment_index: number
+          segment_path: string
+          track_id: string
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          segment_duration?: number | null
+          segment_index: number
+          segment_path: string
+          track_id: string
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          segment_duration?: number | null
+          segment_index?: number
+          segment_path?: string
+          track_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hls_segments_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hls_segments_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "track_quality_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       likes: {
         Row: {
           created_at: string
@@ -771,6 +816,59 @@ export type Database = {
         }
         Relationships: []
       }
+      track_quality_variants: {
+        Row: {
+          bit_depth: number | null
+          bitrate: number | null
+          created_at: string
+          duration: number | null
+          file_path: string
+          file_size: number | null
+          format: Database["public"]["Enums"]["audio_format"]
+          hls_playlist_path: string | null
+          id: string
+          quality_tier: Database["public"]["Enums"]["audio_quality_tier"]
+          sample_rate: number
+          track_id: string
+        }
+        Insert: {
+          bit_depth?: number | null
+          bitrate?: number | null
+          created_at?: string
+          duration?: number | null
+          file_path: string
+          file_size?: number | null
+          format: Database["public"]["Enums"]["audio_format"]
+          hls_playlist_path?: string | null
+          id?: string
+          quality_tier: Database["public"]["Enums"]["audio_quality_tier"]
+          sample_rate?: number
+          track_id: string
+        }
+        Update: {
+          bit_depth?: number | null
+          bitrate?: number | null
+          created_at?: string
+          duration?: number | null
+          file_path?: string
+          file_size?: number | null
+          format?: Database["public"]["Enums"]["audio_format"]
+          hls_playlist_path?: string | null
+          id?: string
+          quality_tier?: Database["public"]["Enums"]["audio_quality_tier"]
+          sample_rate?: number
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_quality_variants_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       track_similarity: {
         Row: {
           created_at: string
@@ -821,8 +919,11 @@ export type Database = {
           duration: number | null
           genre: string
           id: string
+          is_hires: boolean | null
+          is_lossless: boolean | null
           like_count: number | null
           lyrics: string | null
+          max_quality: Database["public"]["Enums"]["audio_quality_tier"] | null
           mood: string
           play_count: number | null
           published: boolean | null
@@ -844,8 +945,11 @@ export type Database = {
           duration?: number | null
           genre: string
           id?: string
+          is_hires?: boolean | null
+          is_lossless?: boolean | null
           like_count?: number | null
           lyrics?: string | null
+          max_quality?: Database["public"]["Enums"]["audio_quality_tier"] | null
           mood: string
           play_count?: number | null
           published?: boolean | null
@@ -867,8 +971,11 @@ export type Database = {
           duration?: number | null
           genre?: string
           id?: string
+          is_hires?: boolean | null
+          is_lossless?: boolean | null
           like_count?: number | null
           lyrics?: string | null
+          max_quality?: Database["public"]["Enums"]["audio_quality_tier"] | null
           mood?: string
           play_count?: number | null
           published?: boolean | null
@@ -954,6 +1061,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_audio_preferences: {
+        Row: {
+          auto_quality: boolean
+          created_at: string
+          enable_eq: boolean
+          eq_preset: Json | null
+          id: string
+          preferred_quality: Database["public"]["Enums"]["audio_quality_tier"]
+          updated_at: string
+          user_id: string
+          volume_normalization: boolean
+        }
+        Insert: {
+          auto_quality?: boolean
+          created_at?: string
+          enable_eq?: boolean
+          eq_preset?: Json | null
+          id?: string
+          preferred_quality?: Database["public"]["Enums"]["audio_quality_tier"]
+          updated_at?: string
+          user_id: string
+          volume_normalization?: boolean
+        }
+        Update: {
+          auto_quality?: boolean
+          created_at?: string
+          enable_eq?: boolean
+          eq_preset?: Json | null
+          id?: string
+          preferred_quality?: Database["public"]["Enums"]["audio_quality_tier"]
+          updated_at?: string
+          user_id?: string
+          volume_normalization?: boolean
+        }
+        Relationships: []
       }
       user_listening_history: {
         Row: {
@@ -1247,6 +1390,30 @@ export type Database = {
           track_id: string
         }[]
       }
+      get_track_qualities: {
+        Args: { p_track_id: string }
+        Returns: {
+          bit_depth: number
+          bitrate: number
+          display_name: string
+          file_path: string
+          format: Database["public"]["Enums"]["audio_format"]
+          hls_playlist_path: string
+          quality_tier: Database["public"]["Enums"]["audio_quality_tier"]
+          sample_rate: number
+        }[]
+      }
+      get_track_stream_url: {
+        Args: { p_max_bitrate?: number; p_track_id: string; p_user_id?: string }
+        Returns: {
+          bitrate: number
+          file_path: string
+          format: Database["public"]["Enums"]["audio_format"]
+          hls_playlist_path: string
+          quality_tier: Database["public"]["Enums"]["audio_quality_tier"]
+          variant_id: string
+        }[]
+      }
       get_trending_tracks: {
         Args: { limit_count?: number }
         Returns: {
@@ -1286,6 +1453,8 @@ export type Database = {
         | "user"
         | "artist"
         | "support"
+      audio_format: "mp3" | "flac" | "aac" | "wav"
+      audio_quality_tier: "normal" | "high" | "hifi" | "hires"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1421,6 +1590,8 @@ export const Constants = {
         "artist",
         "support",
       ],
+      audio_format: ["mp3", "flac", "aac", "wav"],
+      audio_quality_tier: ["normal", "high", "hifi", "hires"],
     },
   },
 } as const

@@ -22,9 +22,14 @@ export interface Track {
   total_tracks?: number;
   // Optional artist ID field for future use
   artist_id?: string;
+  artist_profile_id?: string;
   // Formatted URLs
   cover?: string;
   audioUrl?: string;
+  // Audio quality fields
+  max_quality?: 'normal' | 'high' | 'hifi' | 'hires';
+  is_hires?: boolean;
+  is_lossless?: boolean;
 }
 
 export interface StreamLog {
