@@ -1,13 +1,15 @@
-
 export interface Report {
   id: string;
-  type: string;
-  entity_type: string;
-  entity_details: string;
+  reporter_id: string;
+  comment_id: string;
   reason: string;
-  profiles: { username: string };
+  description: string | null;
+  status: "pending" | "resolved";
   created_at: string;
-  status: "open" | "investigating" | "resolved";
-  entity_id: string;
-  user_id: string;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  // Joined data
+  reporter_username?: string;
+  comment_content?: string;
+  comment_track_title?: string;
 }

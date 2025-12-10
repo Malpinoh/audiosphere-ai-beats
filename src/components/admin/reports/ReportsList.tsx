@@ -1,4 +1,3 @@
-
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
@@ -17,7 +16,7 @@ import { useState } from "react";
 
 interface ReportsListProps {
   reports: Report[];
-  onUpdateStatus: (reportId: string, status: "open" | "investigating" | "resolved") => void;
+  onUpdateStatus: (reportId: string, status: "pending" | "resolved") => void;
   onDeleteReport: (reportId: string) => void;
 }
 
@@ -30,11 +29,10 @@ export function ReportsList({
   const isMobile = useIsMobile();
   
   const filteredReports = reports.filter(report => 
-    report.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.entity_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.entity_details.toLowerCase().includes(searchTerm.toLowerCase()) ||
     report.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    report.profiles.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (report.comment_content?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (report.comment_track_title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (report.reporter_username?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     report.status.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -55,9 +53,9 @@ export function ReportsList({
           <TableCaption>Manage user-submitted reports.</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead>Type</TableHead>
-              <TableHead>Content</TableHead>
               <TableHead>Reason</TableHead>
+              <TableHead>Content</TableHead>
+              <TableHead>Description</TableHead>
               <TableHead className="hidden md:table-cell">Reported By</TableHead>
               <TableHead className="hidden md:table-cell">Date</TableHead>
               <TableHead>Status</TableHead>

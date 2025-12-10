@@ -1,10 +1,7 @@
-
 import { 
   MoreVertical, 
   CheckCircle, 
-  ClipboardList, 
-  XCircle, 
-  Trash2 
+  AlertCircle
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -14,7 +11,7 @@ import { Report } from "./types";
 
 interface ReportItemProps {
   report: Report;
-  onUpdateStatus: (reportId: string, status: "open" | "investigating" | "resolved") => void;
+  onUpdateStatus: (reportId: string, status: "pending" | "resolved") => void;
   onDeleteReport: (reportId: string) => void;
 }
 
@@ -26,28 +23,22 @@ export function ReportItem({
   return (
     <TableRow key={report.id}>
       <TableCell>
-        <Badge variant="outline">{report.type}</Badge>
+        <Badge variant="outline">{report.reason}</Badge>
       </TableCell>
       <TableCell>
         <div>
-          <span className="font-medium">{report.entity_type}</span>
-          <p className="text-sm text-muted-foreground truncate max-w-xs">{report.entity_details}</p>
+          <span className="font-medium">Comment on: {report.comment_track_title}</span>
+          <p className="text-sm text-muted-foreground truncate max-w-xs">{report.comment_content}</p>
         </div>
       </TableCell>
       <TableCell>
-        <div className="truncate max-w-xs">{report.reason}</div>
+        <div className="truncate max-w-xs">{report.description || 'No additional details'}</div>
       </TableCell>
-      <TableCell className="hidden md:table-cell">{report.profiles.username}</TableCell>
+      <TableCell className="hidden md:table-cell">{report.reporter_username}</TableCell>
       <TableCell className="hidden md:table-cell">{new Date(report.created_at).toLocaleDateString()}</TableCell>
       <TableCell>
         <Badge 
-          variant={
-            report.status === "open" 
-              ? "destructive" 
-              : report.status === "investigating" 
-                ? "secondary" 
-                : "outline"
-          }
+          variant={report.status === "pending" ? "destructive" : "outline"}
           className={
             report.status === "resolved" 
               ? "bg-green-100 text-green-800 hover:bg-green-200" 
@@ -66,18 +57,11 @@ export function ReportItem({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem 
-              onClick={() => onUpdateStatus(report.id, "open")}
-              disabled={report.status === "open"}
+              onClick={() => onUpdateStatus(report.id, "pending")}
+              disabled={report.status === "pending"}
             >
-              <XCircle className="mr-2 h-4 w-4" />
-              Mark as Open
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => onUpdateStatus(report.id, "investigating")}
-              disabled={report.status === "investigating"}
-            >
-              <ClipboardList className="mr-2 h-4 w-4" />
-              Mark as Investigating
+              <AlertCircle className="mr-2 h-4 w-4" />
+              Mark as Pending
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => onUpdateStatus(report.id, "resolved")}
@@ -85,13 +69,6 @@ export function ReportItem({
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               Mark as Resolved
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="text-destructive focus:text-destructive"
-              onClick={() => onDeleteReport(report.id)}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Report
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
