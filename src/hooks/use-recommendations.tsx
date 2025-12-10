@@ -19,7 +19,7 @@ export interface RecommendedTrack {
 const getCoverUrl = (path: string): string => {
   if (!path) return '/placeholder.svg';
   if (path.startsWith('http')) return path;
-  const { data } = supabase.storage.from('audio').getPublicUrl(path);
+  const { data } = supabase.storage.from('cover_art').getPublicUrl(path);
   return data?.publicUrl || '/placeholder.svg';
 };
 
