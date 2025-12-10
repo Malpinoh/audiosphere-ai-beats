@@ -1,4 +1,3 @@
-
 import { Loader2 } from "lucide-react";
 import { ReportsList } from "./reports/ReportsList";
 import { useReports } from "./reports/useReports";
@@ -7,7 +6,6 @@ export function ReportsManagement() {
   const { 
     reports, 
     loading, 
-    tableExists,
     handleUpdateStatus, 
     handleDeleteReport
   } = useReports();
@@ -34,10 +32,10 @@ export function ReportsManagement() {
         onDeleteReport={handleDeleteReport}
       />
 
-      {!tableExists && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
-          <p className="font-medium">Using mock report data</p>
-          <p className="mt-1">The reports table doesn't exist in your database yet. The data shown is mock data for demonstration purposes.</p>
+      {reports.length === 0 && (
+        <div className="p-4 bg-muted/50 border border-border rounded-md text-muted-foreground text-sm">
+          <p className="font-medium">No reports yet</p>
+          <p className="mt-1">Reports will appear here when users report comments.</p>
         </div>
       )}
     </div>
