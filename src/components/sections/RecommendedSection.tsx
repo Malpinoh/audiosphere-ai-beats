@@ -10,12 +10,12 @@ import { usePersonalizedRecommendations } from "@/hooks/use-recommendations";
 import { useAuth } from "@/contexts/AuthContext";
 
 const LoadingCard = () => (
-  <div className="min-w-[200px] max-w-[200px] snap-start">
+  <div className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
     <div className="rounded-xl overflow-hidden bg-card">
       <Skeleton className="w-full aspect-square" />
-      <div className="p-4 space-y-2">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
+      <div className="p-3 space-y-2">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
       </div>
     </div>
   </div>
@@ -186,7 +186,7 @@ export function TrendingArtists() {
       seeAllLink="/artists/trending"
     >
       {artists.slice(0, 6).map(artist => (
-        <div key={artist.id} className="min-w-[200px] max-w-[200px] snap-start">
+        <div key={artist.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
           <ArtistCard {...artist} />
         </div>
       ))}
@@ -218,7 +218,7 @@ export function FeaturedPlaylists() {
       seeAllLink="/playlists"
     >
       {playlists.map(playlist => (
-        <div key={playlist.id} className="min-w-[200px] max-w-[200px] snap-start">
+        <div key={playlist.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
           <PlaylistCard {...playlist} />
         </div>
       ))}
@@ -272,10 +272,10 @@ export function PersonalizedRecommendations() {
         seeAllLink="/recommendations"
       >
         {tracks.slice(0, 6).map(track => (
-          <div key={track.id} className="min-w-[200px] max-w-[200px] snap-start">
+          <div key={track.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
             <TrackCard track={formatTrackForCard(track)} variant="card" />
             {track.reason && (
-              <p className="text-xs text-muted-foreground mt-2 truncate px-1">
+              <p className="text-xs text-muted-foreground mt-1 truncate px-1">
                 {track.reason}
               </p>
             )}
@@ -297,7 +297,7 @@ export function PersonalizedRecommendations() {
       seeAllLink="/recommendations"
     >
       {recommendedArtists.map(artist => (
-        <div key={artist.id} className="min-w-[200px] max-w-[200px] snap-start">
+        <div key={artist.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
           <ArtistCard {...artist} />
         </div>
       ))}

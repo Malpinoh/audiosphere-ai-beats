@@ -38,7 +38,7 @@ export function HeroSection() {
   };
   
   return (
-    <section className="relative h-[400px] md:h-[480px] overflow-hidden rounded-2xl">
+    <section className="relative h-[320px] sm:h-[400px] md:h-[480px] overflow-hidden rounded-2xl">
       {/* Background Images with transition */}
       {backgrounds.map((bg, index) => (
         <div
@@ -60,8 +60,8 @@ export function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       
       {/* Content */}
-      <div className="absolute inset-0 flex items-center p-8 md:p-12">
-        <div className="max-w-xl space-y-6">
+      <div className="absolute inset-0 flex items-center p-4 sm:p-8 md:p-12">
+        <div className="max-w-xl space-y-4 sm:space-y-6">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-primary/20 text-primary border border-primary/30">
               <TrendingUp className="h-3 w-3" />
@@ -74,12 +74,12 @@ export function HeroSection() {
           </div>
           
           <div>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-3">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight mb-2 sm:mb-3">
               <span className="bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-pulse-light">
                 MAUDIO
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-md">
+            <p className="text-sm sm:text-lg md:text-xl text-muted-foreground max-w-md">
               Discover trending sounds that move with your mood. Stream millions of tracks from artists worldwide.
             </p>
           </div>
@@ -107,20 +107,20 @@ export function HeroSection() {
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-8 pt-4">
+          <div className="flex items-center gap-4 sm:gap-8 pt-2 sm:pt-4">
             <div>
-              <p className="text-2xl font-bold text-foreground">10K+</p>
-              <p className="text-sm text-muted-foreground">Active Artists</p>
+              <p className="text-lg sm:text-2xl font-bold text-foreground">10K+</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Active Artists</p>
             </div>
-            <div className="w-px h-10 bg-border/50" />
+            <div className="w-px h-8 sm:h-10 bg-border/50" />
             <div>
-              <p className="text-2xl font-bold text-foreground">50K+</p>
-              <p className="text-sm text-muted-foreground">Tracks</p>
+              <p className="text-lg sm:text-2xl font-bold text-foreground">50K+</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Tracks</p>
             </div>
-            <div className="w-px h-10 bg-border/50" />
+            <div className="w-px h-8 sm:h-10 bg-border/50" />
             <div>
-              <p className="text-2xl font-bold text-foreground">1M+</p>
-              <p className="text-sm text-muted-foreground">Streams</p>
+              <p className="text-lg sm:text-2xl font-bold text-foreground">1M+</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Streams</p>
             </div>
           </div>
         </div>
