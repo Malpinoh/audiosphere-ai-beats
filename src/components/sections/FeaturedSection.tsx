@@ -74,12 +74,12 @@ export function Section({ title, subtitle, children, seeAllLink }: SectionProps)
 
 // Loading card skeleton
 const LoadingTrackCard = () => (
-  <div className="min-w-[200px] max-w-[200px] snap-start">
+  <div className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
     <div className="rounded-xl overflow-hidden bg-card">
       <Skeleton className="w-full aspect-square" />
-      <div className="p-4 space-y-2">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
+      <div className="p-3 space-y-2">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
       </div>
     </div>
   </div>
@@ -124,7 +124,7 @@ export function FeaturedTracks() {
       seeAllLink="/browse/featured"
     >
       {tracks.map(track => (
-        <div key={track.id} className="min-w-[200px] max-w-[200px] snap-start">
+        <div key={track.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
           <TrackCard track={track} variant="card" />
         </div>
       ))}
