@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { ArtistCard } from "@/components/ui/artist-card";
 import { PlaylistCard } from "@/components/ui/playlist-card";
 import { TrackCard } from "@/components/ui/track-card";
@@ -8,21 +7,88 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { usePersonalizedRecommendations } from "@/hooks/use-recommendations";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Link } from "react-router-dom";
+import { BadgeCheck } from "lucide-react";
 
-const LoadingCard = () => (
-  <div className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
-    <div className="rounded-xl overflow-hidden bg-card">
-      <Skeleton className="w-full aspect-square" />
-      <div className="p-3 space-y-2">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
+// Compact mobile artist row
+function ArtistListItem({ id, slug, name, image, followers, isVerified }: { id: string; slug?: string; name: string; image: string; followers?: number; isVerified?: boolean }) {
+  const formatFollowers = (count?: number) => {
+    if (!count) return "";
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return `${count}`;
+  };
+
+  return (
+    <Link to={`/artist/${slug || id}`} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors">
+      <img
+        src={image}
+        alt={name}
+        className="w-12 h-12 rounded-full object-cover bg-muted flex-shrink-0"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=8B5CF6&color=fff&size=200`;
+        }}
+      />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1">
+          <span className="font-medium text-sm truncate text-foreground">{name}</span>
+          {isVerified && <BadgeCheck className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
+        </div>
+        {followers !== undefined && followers > 0 && (
+          <p className="text-xs text-muted-foreground">{formatFollowers(followers)} followers</p>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+// Compact mobile playlist row
+function PlaylistListItem({ id, title, description, cover, trackCount }: { id: string; title: string; description?: string; cover: string; trackCount: number }) {
+  return (
+    <Link to={`/playlist/${id}`} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors">
+      <img
+        src={cover}
+        alt={title}
+        className="w-12 h-12 rounded-lg object-cover bg-muted flex-shrink-0"
+        onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+      />
+      <div className="flex-1 min-w-0">
+        <span className="font-medium text-sm truncate block text-foreground">{title}</span>
+        <p className="text-xs text-muted-foreground truncate">{trackCount} tracks</p>
+      </div>
+    </Link>
+  );
+}
+
+const LoadingCard = ({ isMobile }: { isMobile: boolean }) => {
+  if (isMobile) {
+    return (
+      <div className="flex items-center gap-3 p-2">
+        <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
+        <div className="flex-1 space-y-1.5">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="min-w-[180px] max-w-[180px] snap-start">
+      <div className="rounded-xl overflow-hidden bg-card">
+        <Skeleton className="w-full aspect-square" />
+        <div className="p-3 space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface RealArtist {
   id: string;
+  slug?: string;
   name: string;
   image: string;
   followers: number;
@@ -30,7 +96,6 @@ interface RealArtist {
   isVerified?: boolean;
 }
 
-// Hook to fetch real artists with follower counts
 function useRealArtists() {
   const [artists, setArtists] = useState<RealArtist[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,15 +105,7 @@ function useRealArtists() {
       try {
         const { data: profiles, error } = await supabase
           .from('profiles')
-          .select(`
-            id,
-            username,
-            full_name,
-            avatar_url,
-            follower_count,
-            is_verified,
-            role
-          `)
+          .select('id, username, full_name, avatar_url, follower_count, is_verified, slug, role')
           .eq('role', 'artist')
           .order('follower_count', { ascending: false })
           .limit(10);
@@ -65,6 +122,7 @@ function useRealArtists() {
 
             return {
               id: profile.id,
+              slug: profile.slug || undefined,
               name: profile.full_name || profile.username || 'Unknown Artist',
               image: profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name || profile.username || 'Artist')}&background=random`,
               followers: profile.follower_count || 0,
@@ -88,7 +146,6 @@ function useRealArtists() {
   return { artists, loading };
 }
 
-// Hook to fetch real playlists
 function useRealPlaylists() {
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,15 +155,7 @@ function useRealPlaylists() {
       try {
         const { data: playlistsData, error } = await supabase
           .from('playlists')
-          .select(`
-            id,
-            title,
-            description,
-            cover_image_path,
-            is_editorial,
-            created_by,
-            profiles!playlists_created_by_fkey(username, full_name)
-          `)
+          .select(`id, title, description, cover_image_path, is_editorial, created_by, profiles!playlists_created_by_fkey(username, full_name)`)
           .eq('is_editorial', true)
           .order('created_at', { ascending: false })
           .limit(5);
@@ -141,16 +190,6 @@ function useRealPlaylists() {
         setPlaylists(playlistsWithCounts);
       } catch (error) {
         console.error('Error fetching real playlists:', error);
-        setPlaylists([
-          {
-            id: "editorial-1",
-            title: "Today's Hits",
-            description: "The hottest tracks right now",
-            cover: "https://picsum.photos/id/1062/300/300",
-            trackCount: 25,
-            createdBy: { name: "MAUDIO Editorial", id: "editorial" }
-          }
-        ]);
       } finally {
         setLoading(false);
       }
@@ -164,31 +203,28 @@ function useRealPlaylists() {
 
 export function TrendingArtists() {
   const { artists, loading } = useRealArtists();
+  const isMobile = useIsMobile();
   
   if (loading) {
     return (
-      <Section 
-        title="Trending Artists" 
-        subtitle="Artists with the most followers"
-        seeAllLink="/artists/trending"
-      >
-        {Array(5).fill(0).map((_, i) => (
-          <LoadingCard key={i} />
+      <Section title="Trending Artists" subtitle="Artists with the most followers" seeAllLink="/artists/trending">
+        {Array(isMobile ? 5 : 5).fill(0).map((_, i) => (
+          <LoadingCard key={i} isMobile={isMobile} />
         ))}
       </Section>
     );
   }
   
   return (
-    <Section 
-      title="Trending Artists" 
-      subtitle="Artists with the most followers"
-      seeAllLink="/artists/trending"
-    >
+    <Section title="Trending Artists" subtitle="Artists with the most followers" seeAllLink="/artists/trending">
       {artists.slice(0, 6).map(artist => (
-        <div key={artist.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
-          <ArtistCard {...artist} />
-        </div>
+        isMobile ? (
+          <ArtistListItem key={artist.id} {...artist} />
+        ) : (
+          <div key={artist.id} className="min-w-[180px] max-w-[180px] snap-start">
+            <ArtistCard {...artist} />
+          </div>
+        )
       ))}
     </Section>
   );
@@ -196,31 +232,28 @@ export function TrendingArtists() {
 
 export function FeaturedPlaylists() {
   const { playlists, loading } = useRealPlaylists();
+  const isMobile = useIsMobile();
 
   if (loading) {
     return (
-      <Section 
-        title="Featured Playlists" 
-        subtitle="Curated by MAUDIO Editorial"
-        seeAllLink="/playlists"
-      >
-        {Array(5).fill(0).map((_, i) => (
-          <LoadingCard key={i} />
+      <Section title="Featured Playlists" subtitle="Curated by MAUDIO Editorial" seeAllLink="/playlists">
+        {Array(isMobile ? 4 : 5).fill(0).map((_, i) => (
+          <LoadingCard key={i} isMobile={isMobile} />
         ))}
       </Section>
     );
   }
 
   return (
-    <Section 
-      title="Featured Playlists" 
-      subtitle="Curated by MAUDIO Editorial"
-      seeAllLink="/playlists"
-    >
+    <Section title="Featured Playlists" subtitle="Curated by MAUDIO Editorial" seeAllLink="/playlists">
       {playlists.map(playlist => (
-        <div key={playlist.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
-          <PlaylistCard {...playlist} />
-        </div>
+        isMobile ? (
+          <PlaylistListItem key={playlist.id} id={playlist.id} title={playlist.title} description={playlist.description} cover={playlist.cover} trackCount={playlist.trackCount} />
+        ) : (
+          <div key={playlist.id} className="min-w-[180px] max-w-[180px] snap-start">
+            <PlaylistCard {...playlist} />
+          </div>
+        )
       ))}
     </Section>
   );
@@ -230,8 +263,8 @@ export function PersonalizedRecommendations() {
   const { user } = useAuth();
   const { tracks, loading } = usePersonalizedRecommendations(10);
   const { artists, loading: artistsLoading } = useRealArtists();
+  const isMobile = useIsMobile();
   
-  // Format track for TrackCard
   const formatTrackForCard = (trackData: any) => ({
     id: trackData.id,
     title: trackData.title,
@@ -251,55 +284,42 @@ export function PersonalizedRecommendations() {
 
   if (loading || artistsLoading) {
     return (
-      <Section 
-        title="Recommended for You" 
-        subtitle={user ? "Based on your listening history" : "Popular tracks"}
-        seeAllLink="/recommendations"
-      >
-        {Array(5).fill(0).map((_, i) => (
-          <LoadingCard key={i} />
+      <Section title="Recommended for You" subtitle={user ? "Based on your listening history" : "Popular tracks"} seeAllLink="/recommendations">
+        {Array(isMobile ? 5 : 5).fill(0).map((_, i) => (
+          <LoadingCard key={i} isMobile={isMobile} />
         ))}
       </Section>
     );
   }
   
-  // If we have personalized track recommendations, show those
   if (tracks.length > 0) {
     return (
-      <Section 
-        title="Recommended for You" 
-        subtitle={user ? "Based on your listening history" : "Popular tracks"}
-        seeAllLink="/recommendations"
-      >
-        {tracks.slice(0, 6).map(track => (
-          <div key={track.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
-            <TrackCard track={formatTrackForCard(track)} variant="card" />
-            {track.reason && (
-              <p className="text-xs text-muted-foreground mt-1 truncate px-1">
-                {track.reason}
-              </p>
-            )}
-          </div>
+      <Section title="Recommended for You" subtitle={user ? "Based on your listening history" : "Popular tracks"} seeAllLink="/recommendations">
+        {tracks.slice(0, isMobile ? 6 : 6).map(track => (
+          isMobile ? (
+            <TrackCard key={track.id} track={formatTrackForCard(track)} variant="list" />
+          ) : (
+            <div key={track.id} className="min-w-[180px] max-w-[180px] snap-start">
+              <TrackCard track={formatTrackForCard(track)} variant="card" />
+            </div>
+          )
         ))}
       </Section>
     );
   }
   
-  // Fallback to showing popular artists
-  const recommendedArtists = artists
-    .sort((a, b) => b.followers - a.followers)
-    .slice(0, 5);
+  const recommendedArtists = artists.sort((a, b) => b.followers - a.followers).slice(0, 5);
   
   return (
-    <Section 
-      title="Recommended for You" 
-      subtitle="Popular artists"
-      seeAllLink="/recommendations"
-    >
+    <Section title="Recommended for You" subtitle="Popular artists" seeAllLink="/recommendations">
       {recommendedArtists.map(artist => (
-        <div key={artist.id} className="min-w-[140px] max-w-[140px] sm:min-w-[160px] sm:max-w-[160px] md:min-w-[180px] md:max-w-[180px] snap-start">
-          <ArtistCard {...artist} />
-        </div>
+        isMobile ? (
+          <ArtistListItem key={artist.id} {...artist} />
+        ) : (
+          <div key={artist.id} className="min-w-[180px] max-w-[180px] snap-start">
+            <ArtistCard {...artist} />
+          </div>
+        )
       ))}
     </Section>
   );
