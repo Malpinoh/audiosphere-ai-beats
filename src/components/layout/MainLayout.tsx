@@ -3,6 +3,7 @@ import React, { ReactNode } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import MusicPlayer from "./MusicPlayer";
+import MobileBottomNav from "./MobileBottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MainLayoutProps {
@@ -35,7 +36,12 @@ const MainLayout = ({
         <div className={`${isMobile ? "h-20" : "h-24"} flex-shrink-0`} />
       )}
       {!hidePlayer && <MusicPlayer />}
+      
+      {/* Bottom nav spacing on mobile */}
+      {isMobile && <div className="h-14 flex-shrink-0" />}
+      
       <Footer />
+      {isMobile && <MobileBottomNav />}
     </div>
   );
 };
