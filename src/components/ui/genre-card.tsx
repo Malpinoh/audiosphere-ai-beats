@@ -32,7 +32,7 @@ export function GenreCard({ id, name, image, color = "from-primary to-secondary"
       to={`/genre/${id}`} 
       className="block group"
     >
-      <div className={`relative h-40 rounded-2xl overflow-hidden bg-gradient-to-br ${color} shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:shadow-primary/20`}>
+      <div className={`relative h-28 sm:h-40 rounded-2xl overflow-hidden bg-gradient-to-br ${color} shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:shadow-primary/20`}>
         {/* Background pattern */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(255,255,255,0.3),transparent_50%)]" />

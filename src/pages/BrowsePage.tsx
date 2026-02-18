@@ -1,210 +1,139 @@
-
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
-import { Section } from "@/components/sections/FeaturedSection";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { useTracks, TracksFilter } from "@/hooks/use-tracks";
 import { TrackCard } from "@/components/ui/track-card";
 import { GenreCard } from "@/components/ui/genre-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Globe, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const genres = [
-  {
-    id: "hip-hop",
-    name: "Hip Hop",
-    image: "https://picsum.photos/id/1025/300/300",
-    color: "from-yellow-500 to-orange-600"
-  },
-  {
-    id: "r-and-b",
-    name: "R&B",
-    image: "https://picsum.photos/id/1059/300/300",
-    color: "from-purple-600 to-pink-600"
-  },
-  {
-    id: "pop",
-    name: "Pop",
-    image: "https://picsum.photos/id/325/300/300",
-    color: "from-blue-500 to-cyan-400"
-  },
-  {
-    id: "electronic",
-    name: "Electronic",
-    image: "https://picsum.photos/id/1060/300/300",
-    color: "from-emerald-500 to-lime-500"
-  },
-  {
-    id: "rock",
-    name: "Rock",
-    image: "https://picsum.photos/id/1062/300/300",
-    color: "from-red-600 to-orange-500"
-  },
-  {
-    id: "jazz",
-    name: "Jazz",
-    image: "https://picsum.photos/id/1074/300/300",
-    color: "from-amber-500 to-yellow-400"
-  },
-  {
-    id: "afrobeats",
-    name: "Afrobeats",
-    image: "https://picsum.photos/id/1080/300/300",
-    color: "from-indigo-600 to-blue-500"
-  },
-  {
-    id: "latin",
-    name: "Latin",
-    image: "https://picsum.photos/id/177/300/300",
-    color: "from-orange-500 to-red-500"
-  }
+  { id: "hip-hop", name: "Hip Hop", image: "https://picsum.photos/id/1025/300/300", color: "from-yellow-500 to-orange-600" },
+  { id: "r-and-b", name: "R&B", image: "https://picsum.photos/id/1059/300/300", color: "from-purple-600 to-pink-600" },
+  { id: "pop", name: "Pop", image: "https://picsum.photos/id/325/300/300", color: "from-blue-500 to-cyan-400" },
+  { id: "electronic", name: "Electronic", image: "https://picsum.photos/id/1060/300/300", color: "from-emerald-500 to-lime-500" },
+  { id: "rock", name: "Rock", image: "https://picsum.photos/id/1062/300/300", color: "from-red-600 to-orange-500" },
+  { id: "jazz", name: "Jazz", image: "https://picsum.photos/id/1074/300/300", color: "from-amber-500 to-yellow-400" },
+  { id: "afrobeats", name: "Afrobeats", image: "https://picsum.photos/id/1080/300/300", color: "from-indigo-600 to-blue-500" },
+  { id: "latin", name: "Latin", image: "https://picsum.photos/id/177/300/300", color: "from-orange-500 to-red-500" },
 ];
 
-const LoadingTrackCard = () => (
-  <div className="min-w-[220px] max-w-[220px]">
-    <div className="maudio-card overflow-hidden">
-      <Skeleton className="w-full aspect-square" />
-      <div className="p-3 space-y-2">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
-      </div>
-    </div>
-  </div>
-);
+const moods = ["Energetic", "Relaxed", "Happy", "Sad", "Romantic", "Focused"];
+
+const moodGradients: Record<string, string> = {
+  energetic: "from-red-500 to-orange-400",
+  relaxed: "from-blue-400 to-teal-400",
+  happy: "from-yellow-400 to-amber-300",
+  sad: "from-indigo-600 to-purple-600",
+  romantic: "from-pink-500 to-red-400",
+  focused: "from-green-500 to-emerald-400",
+};
 
 const BrowsePage = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || "");
   const [selectedGenre, setSelectedGenre] = useState<string>("all-genres");
   const [selectedMood, setSelectedMood] = useState<string>("all-moods");
-  const [currentFilter, setCurrentFilter] = useState<TracksFilter>({
-    published: true,
-    limit: 20
-  });
-  
+  const [currentFilter, setCurrentFilter] = useState<TracksFilter>({ published: true, limit: 20 });
   const { tracks, loading } = useTracks(currentFilter);
+  const isMobile = useIsMobile();
 
-  // Handle URL search parameters
   useEffect(() => {
     const searchFromUrl = searchParams.get('search');
     if (searchFromUrl) {
       setSearchTerm(searchFromUrl);
-      const newFilter: TracksFilter = {
-        published: true,
-        limit: 20,
-        searchTerm: searchFromUrl
-      };
-      setCurrentFilter(newFilter);
+      setCurrentFilter({ published: true, limit: 20, searchTerm: searchFromUrl });
     }
   }, [searchParams]);
-  
+
   const handleSearch = () => {
-    const newFilter: TracksFilter = {
-      published: true,
-      limit: 20,
+    setCurrentFilter({
+      published: true, limit: 20,
       searchTerm: searchTerm || undefined,
       genre: selectedGenre === "all-genres" ? undefined : selectedGenre,
-      mood: selectedMood === "all-moods" ? undefined : selectedMood
-    };
-    
-    setCurrentFilter(newFilter);
+      mood: selectedMood === "all-moods" ? undefined : selectedMood,
+    });
   };
-  
+
   const handleGenreClick = (genreId: string) => {
     setSelectedGenre(genreId);
-    
-    const newFilter: TracksFilter = {
-      published: true,
-      limit: 20,
-      genre: genreId
-    };
-    
-    setCurrentFilter(newFilter);
+    setCurrentFilter({ published: true, limit: 20, genre: genreId });
   };
-  
-  const moods = ["Energetic", "Relaxed", "Happy", "Sad", "Romantic", "Focused"];
-  
+
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <h1 className="text-3xl font-bold mb-6">Browse Music</h1>
-        
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+        <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-5`}>Browse</h1>
+
         <Tabs defaultValue="tracks" className="w-full">
-          <TabsList className="mb-6">
+          <TabsList className="mb-4">
             <TabsTrigger value="tracks">Tracks</TabsTrigger>
             <TabsTrigger value="genres">Genres</TabsTrigger>
             <TabsTrigger value="moods">Moods</TabsTrigger>
           </TabsList>
-          
-          <div className="mb-6 flex flex-col md:flex-row gap-4">
+
+          {/* Search & Filters */}
+          <div className={`mb-5 flex ${isMobile ? 'flex-col' : 'flex-row'} gap-3`}>
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by title, artist or description"
+                placeholder="Search tracks..."
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            
             <div className="flex gap-2">
               <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-[140px]'}`}>
                   <SelectValue placeholder="Genre" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all-genres">All Genres</SelectItem>
-                  {genres.map(genre => (
-                    <SelectItem key={genre.id} value={genre.id}>
-                      {genre.name}
-                    </SelectItem>
-                  ))}
+                  {genres.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-              
               <Select value={selectedMood} onValueChange={setSelectedMood}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-[140px]'}`}>
                   <SelectValue placeholder="Mood" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all-moods">All Moods</SelectItem>
-                  {moods.map(mood => (
-                    <SelectItem key={mood.toLowerCase()} value={mood.toLowerCase()}>
-                      {mood}
-                    </SelectItem>
-                  ))}
+                  {moods.map(m => <SelectItem key={m.toLowerCase()} value={m.toLowerCase()}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
-              
-              <Button onClick={handleSearch}>Filter</Button>
+              <Button onClick={handleSearch} size={isMobile ? "default" : "default"}>Filter</Button>
             </div>
           </div>
-          
-          <TabsContent value="tracks" className="mt-6">
+
+          <TabsContent value="tracks" className="mt-0">
             {loading ? (
               <div className="space-y-2">
-                {Array(10).fill(0).map((_, i) => (
-                  <div key={i} className="h-16 bg-white/5 rounded-lg animate-pulse" />
+                {Array(8).fill(0).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-2.5">
+                    <Skeleton className="h-12 w-12 rounded-lg" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : tracks.length > 0 ? (
-              <div className="space-y-1">
-                {tracks.map(track => (
-                  <TrackCard key={track.id} track={track} />
-                ))}
+              <div className="space-y-0.5">
+                {tracks.map(track => <TrackCard key={track.id} track={track} variant="list" />)}
               </div>
             ) : (
               <div className="text-center py-10">
-                <p className="text-muted-foreground">No tracks found matching your filters.</p>
-                <Button 
-                  variant="outline" 
+                <p className="text-muted-foreground">No tracks found.</p>
+                <Button
+                  variant="outline"
                   className="mt-4"
                   onClick={() => {
                     setSearchTerm('');
@@ -218,9 +147,9 @@ const BrowsePage = () => {
               </div>
             )}
           </TabsContent>
-          
-          <TabsContent value="genres" className="mt-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+
+          <TabsContent value="genres" className="mt-0">
+            <div className={`grid ${isMobile ? 'grid-cols-2 gap-3' : 'grid-cols-3 md:grid-cols-4 gap-4'}`}>
               {genres.map(genre => (
                 <div key={genre.id} onClick={() => handleGenreClick(genre.id)} className="cursor-pointer">
                   <GenreCard {...genre} />
@@ -228,34 +157,20 @@ const BrowsePage = () => {
               ))}
             </div>
           </TabsContent>
-          
-          <TabsContent value="moods" className="mt-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+
+          <TabsContent value="moods" className="mt-0">
+            <div className={`grid ${isMobile ? 'grid-cols-2 gap-3' : 'grid-cols-3 md:grid-cols-4 gap-4'}`}>
               {moods.map(mood => (
-                <div 
-                  key={mood} 
-                  className="maudio-card overflow-hidden cursor-pointer"
+                <div
+                  key={mood}
+                  className="cursor-pointer rounded-2xl overflow-hidden"
                   onClick={() => {
                     setSelectedMood(mood.toLowerCase());
-                    setCurrentFilter({
-                      published: true,
-                      limit: 20,
-                      mood: mood.toLowerCase()
-                    });
+                    setCurrentFilter({ published: true, limit: 20, mood: mood.toLowerCase() });
                   }}
                 >
-                  <div className={`bg-gradient-to-br from-${mood.toLowerCase() === 'energetic' ? 'red-500' : 
-                                 mood.toLowerCase() === 'relaxed' ? 'blue-400' : 
-                                 mood.toLowerCase() === 'happy' ? 'yellow-400' : 
-                                 mood.toLowerCase() === 'sad' ? 'indigo-600' :
-                                 mood.toLowerCase() === 'romantic' ? 'pink-500' : 'green-500'} 
-                                 to-${mood.toLowerCase() === 'energetic' ? 'orange-400' : 
-                                 mood.toLowerCase() === 'relaxed' ? 'teal-400' : 
-                                 mood.toLowerCase() === 'happy' ? 'amber-300' : 
-                                 mood.toLowerCase() === 'sad' ? 'purple-600' :
-                                 mood.toLowerCase() === 'romantic' ? 'red-400' : 'emerald-400'} 
-                                 h-32 sm:h-40 flex items-center justify-center`}>
-                    <h3 className="text-lg sm:text-xl font-bold text-white">{mood}</h3>
+                  <div className={`bg-gradient-to-br ${moodGradients[mood.toLowerCase()] || 'from-primary to-secondary'} h-28 sm:h-36 flex items-center justify-center rounded-2xl`}>
+                    <h3 className="text-lg font-bold text-white drop-shadow-md">{mood}</h3>
                   </div>
                 </div>
               ))}
