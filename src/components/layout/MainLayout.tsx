@@ -18,29 +18,24 @@ const MainLayout = ({
   const isMobile = useIsMobile();
   
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
       
-      <div className="flex flex-1 relative">
-        {/* Main content with Apple Music-like styling */}
-        <main className="flex-1 w-full relative">
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
-          <div className="relative z-10">
-            {children}
-          </div>
-        </main>
-      </div>
+      <main className="flex-1 w-full">
+        {children}
+      </main>
       
-      {/* Music player with proper spacing */}
+      {/* Spacer for fixed music player */}
       {!hidePlayer && (
-        <div className={`${isMobile ? "h-20" : "h-24"} flex-shrink-0`} />
+        <div className={`${isMobile ? "h-[120px]" : "h-24"} flex-shrink-0`} />
       )}
       {!hidePlayer && <MusicPlayer />}
       
       {/* Bottom nav spacing on mobile */}
-      {isMobile && <div className="h-14 flex-shrink-0" />}
+      {isMobile && !hidePlayer && <div className="h-14 flex-shrink-0" />}
       
-      <Footer />
+      {/* Footer hidden on mobile - bottom nav replaces it */}
+      {!isMobile && <Footer />}
       {isMobile && <MobileBottomNav />}
     </div>
   );

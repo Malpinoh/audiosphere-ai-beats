@@ -18,46 +18,22 @@ import { formatTime } from "@/utils/formatTime";
 import { QualitySelector, type AudioQualityTier } from "@/components/player/QualitySelector";
 import { HiResBadge } from "@/components/player/HiResBadge";
 import { useAudioPreferences } from "@/hooks/use-audio-preferences";
-
 import { CommentsSection } from "@/components/player/CommentsSection";
 
 const MusicPlayer = () => {
   const { 
-    currentTrack, 
-    isPlaying, 
-    currentTime, 
-    duration, 
-    volume, 
-    isMuted,
-    isLoading,
-    repeatMode,
-    isShuffle,
-    queue,
-    togglePlay,
-    playNext,
-    playPrevious,
-    seekTo,
-    setVolume,
-    toggleMute,
-    toggleRepeat,
-    toggleShuffle,
-    clearQueue,
-    playTrack,
-    removeFromQueue,
-    likeTrack,
-    unlikeTrack,
-    isTrackLiked
+    currentTrack, isPlaying, currentTime, duration, volume, isMuted,
+    isLoading, repeatMode, isShuffle, queue,
+    togglePlay, playNext, playPrevious, seekTo, setVolume,
+    toggleMute, toggleRepeat, toggleShuffle, clearQueue,
+    playTrack, removeFromQueue, likeTrack, unlikeTrack, isTrackLiked
   } = useMusicPlayer();
   
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const [currentQuality, setCurrentQuality] = useState<AudioQualityTier>('auto');
-  
   const isMobile = useIsMobile();
   const { preferences, updatePreference } = useAudioPreferences();
-  
-  // Add comments functionality
   const { comments, loading: commentsLoading, addComment, getTopComments } = useTrackComments(currentTrack?.id || null);
-  const topComments = getTopComments();
 
   const handleQualityChange = (quality: AudioQualityTier) => {
     setCurrentQuality(quality);
@@ -69,10 +45,8 @@ const MusicPlayer = () => {
     }
   };
 
-  
   const handleLikeToggle = () => {
     if (!currentTrack) return;
-    
     if (isTrackLiked(currentTrack.id)) {
       unlikeTrack(currentTrack.id);
     } else {
@@ -80,7 +54,6 @@ const MusicPlayer = () => {
     }
   };
   
-  // Skip 15% of track when clicking on previous/next, unless we're near start/end
   const handleSkipBackward = () => {
     if (currentTime < 5) {
       playPrevious();
@@ -89,26 +62,17 @@ const MusicPlayer = () => {
     }
   };
 
-  const openFullscreen = () => {
-    setFullscreenOpen(true);
-  };
-
-  const closeFullscreen = () => {
-    setFullscreenOpen(false);
-  };
-  
   return (
     <>
-      
-      <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 p-3 z-40">
+      <div className={`fixed ${isMobile ? 'bottom-14' : 'bottom-0'} left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border p-3 z-40`}>
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-4">
-          {/* Track Info - Apple Music style */}
+          {/* Track Info */}
           <div className="flex items-center space-x-3 w-full md:w-1/4">
             {currentTrack ? (
               <>
                 <div 
-                  className="h-12 w-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg overflow-hidden cursor-pointer shadow-lg"
-                  onClick={isMobile ? openFullscreen : undefined}
+                  className="h-12 w-12 maudio-gradient-bg rounded-lg overflow-hidden cursor-pointer shadow-lg flex-shrink-0"
+                  onClick={isMobile ? () => setFullscreenOpen(true) : undefined}
                 >
                   <img 
                     src={currentTrack.cover_art_path ? 
@@ -118,14 +82,13 @@ const MusicPlayer = () => {
                     alt="Album cover" 
                     className="h-full w-full object-cover"
                     onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = 'https://picsum.photos/300/300';
+                      (e.target as HTMLImageElement).src = 'https://picsum.photos/300/300';
                     }}
                   />
                 </div>
-                <div className="truncate flex-1">
+                <div className="truncate flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <Link to={`/track/${currentTrack.id}`} className="text-sm font-medium truncate hover:text-white text-gray-100 block">
+                    <Link to={`/track/${currentTrack.id}`} className="text-sm font-medium truncate hover:text-foreground text-foreground block">
                       {currentTrack.title}
                     </Link>
                     <HiResBadge 
@@ -135,38 +98,37 @@ const MusicPlayer = () => {
                       size="sm"
                     />
                   </div>
-                  <Link to={`/artist/${encodeURIComponent(currentTrack.artist)}`} className="text-xs text-gray-400 truncate hover:text-white block">
+                  <Link to={`/artist/${encodeURIComponent(currentTrack.artist)}`} className="text-xs text-muted-foreground truncate hover:text-foreground block">
                     {currentTrack.artist}
                   </Link>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="text-gray-400 hover:text-white"
+                  className="text-muted-foreground hover:text-foreground flex-shrink-0"
                   onClick={handleLikeToggle}
                 >
-                  <Heart className={`h-4 w-4 ${isTrackLiked(currentTrack.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                  <Heart className={`h-4 w-4 ${isTrackLiked(currentTrack.id) ? 'fill-destructive text-destructive' : ''}`} />
                 </Button>
               </>
             ) : (
-              <div className="flex items-center text-gray-400 text-sm italic">
+              <div className="flex items-center text-muted-foreground text-sm italic">
                 No track selected
               </div>
             )}
           </div>
           
-          {/* Player Controls - Apple Music style */}
+          {/* Player Controls */}
           <div className="flex flex-col space-y-2 w-full md:w-2/4">
-            {/* On mobile, just show play/pause button */}
             {isMobile ? (
               <div className="flex items-center justify-center">
                 <Button 
                   onClick={togglePlay}
-                  className="h-10 w-10 rounded-full bg-white hover:bg-gray-200 text-black"
+                  className="h-10 w-10 rounded-full maudio-gradient-bg hover:opacity-90"
                   disabled={!currentTrack}
                 >
                   {isLoading ? (
-                    <div className="h-5 w-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <div className="h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                   ) : isPlaying ? (
                     <Pause className="h-5 w-5" /> 
                   ) : (
@@ -177,80 +139,47 @@ const MusicPlayer = () => {
             ) : (
               <>
                 <div className="flex items-center justify-center space-x-4">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={`text-gray-400 hover:text-white ${isShuffle ? 'text-white' : ''}`}
-                    onClick={toggleShuffle}
-                  >
+                  <Button variant="ghost" size="icon" className={`text-muted-foreground hover:text-foreground ${isShuffle ? 'text-primary' : ''}`} onClick={toggleShuffle}>
                     <Shuffle className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-gray-400 hover:text-white"
-                    onClick={handleSkipBackward}
-                    disabled={!currentTrack}
-                  >
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={handleSkipBackward} disabled={!currentTrack}>
                     <SkipBack className="h-5 w-5" />
                   </Button>
-                  <Button 
-                    onClick={togglePlay}
-                    className="h-10 w-10 rounded-full bg-white hover:bg-gray-200 text-black"
-                    disabled={!currentTrack}
-                  >
+                  <Button onClick={togglePlay} className="h-10 w-10 rounded-full maudio-gradient-bg hover:opacity-90" disabled={!currentTrack}>
                     {isLoading ? (
-                      <div className="h-5 w-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      <div className="h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                     ) : isPlaying ? (
                       <Pause className="h-5 w-5" /> 
                     ) : (
                       <Play className="h-5 w-5 ml-0.5" />
                     )}
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-gray-400 hover:text-white"
-                    onClick={playNext}
-                    disabled={!currentTrack || queue.length === 0}
-                  >
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={playNext} disabled={!currentTrack || queue.length === 0}>
                     <SkipForward className="h-5 w-5" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className={`text-gray-400 hover:text-white transition-all duration-200 ${
-                      repeatMode !== 'off' ? 'text-primary bg-primary/10' : ''
-                    }`}
-                    onClick={toggleRepeat}
-                  >
-                    {repeatMode === 'one' ? (
-                      <Repeat1 className="h-4 w-4" />
-                    ) : (
-                      <Repeat className="h-4 w-4" />
-                    )}
+                  <Button variant="ghost" size="icon" className={`text-muted-foreground hover:text-foreground transition-all duration-200 ${repeatMode !== 'off' ? 'text-primary' : ''}`} onClick={toggleRepeat}>
+                    {repeatMode === 'one' ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}
                   </Button>
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs text-gray-400">{formatTime(currentTime)}</span>
+                  <span className="text-xs text-muted-foreground">{formatTime(currentTime)}</span>
                   <Slider
                     value={[currentTime]}
                     max={duration || 1}
                     step={1}
-                    className="flex-1 [&_.relative]:bg-white/20 [&_[role=slider]]:bg-white [&_[role=slider]]:border-white"
+                    className="flex-1"
                     onValueChange={(value) => seekTo(value[0])}
                     disabled={!currentTrack}
                   />
-                  <span className="text-xs text-gray-400">{formatTime(duration)}</span>
+                  <span className="text-xs text-muted-foreground">{formatTime(duration)}</span>
                 </div>
               </>
             )}
           </div>
           
           {/* Volume & Queue Controls */}
-          <div className="flex items-center space-x-3 w-full md:w-1/4 justify-end">
-            {/* Quality Selector */}
+          <div className="flex items-center space-x-2 w-full md:w-1/4 justify-end">
             <QualitySelector
               currentQuality={currentQuality}
               availableQualities={['normal', 'high']}
@@ -258,58 +187,43 @@ const MusicPlayer = () => {
               isAdaptive={currentQuality === 'auto'}
             />
 
-            {/* Comments Sheet */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                   <MessageSquare className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-black/95 border-white/10">
-                <CommentsSection
-                  comments={comments}
-                  loading={commentsLoading}
-                  onAddComment={addComment}
-                />
+              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <CommentsSection comments={comments} loading={commentsLoading} onAddComment={addComment} />
               </SheetContent>
             </Sheet>
 
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                   <ListMusic className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-black/95 border-white/10">
+              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                 <div className="h-full flex flex-col">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-white">Queue</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Queue</h3>
                     {queue.length > 0 && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={clearQueue}
-                        className="text-gray-400 hover:text-white"
-                      >
+                      <Button variant="ghost" size="sm" onClick={clearQueue} className="text-muted-foreground hover:text-foreground">
                         Clear All
                       </Button>
                     )}
                   </div>
-                  <Separator className="mb-4 bg-white/10" />
+                  <Separator className="mb-4" />
                   <ScrollArea className="flex-1">
                     {queue.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400">
+                      <div className="text-center py-8 text-muted-foreground">
                         <p>Your queue is empty</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
                         {queue.map((track) => (
-                          <div 
-                            key={track.id}
-                            className={`flex items-center gap-3 p-2 rounded-md hover:bg-white/5 ${
-                              currentTrack?.id === track.id ? 'bg-white/10' : ''
-                            }`}
-                          >
+                          <div key={track.id} className={`flex items-center gap-3 p-2 rounded-md hover:bg-muted ${currentTrack?.id === track.id ? 'bg-muted' : ''}`}>
                             <div className="h-10 w-10 flex-shrink-0 rounded overflow-hidden">
                               <img 
                                 src={track.cover_art_path ? 
@@ -318,34 +232,17 @@ const MusicPlayer = () => {
                                 } 
                                 alt={track.title} 
                                 className="h-full w-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = 'https://picsum.photos/300/300';
-                                }}
+                                onError={(e) => { (e.target as HTMLImageElement).src = 'https://picsum.photos/300/300'; }}
                               />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-medium truncate text-white">{track.title}</h4>
-                              <p className="text-xs text-gray-400 truncate">{track.artist}</p>
+                              <h4 className="text-sm font-medium truncate text-foreground">{track.title}</h4>
+                              <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
                             </div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 flex-shrink-0 text-gray-400 hover:text-white" 
-                              onClick={() => playTrack(track)}
-                            >
-                              {currentTrack?.id === track.id && isPlaying ? (
-                                <Pause className="h-4 w-4" />
-                              ) : (
-                                <Play className="h-4 w-4" />
-                              )}
+                            <Button variant="ghost" size="sm" className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => playTrack(track)}>
+                              {currentTrack?.id === track.id && isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 flex-shrink-0 text-gray-400 hover:text-white" 
-                              onClick={() => removeFromQueue(track.id)}
-                            >
+                            <Button variant="ghost" size="sm" className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => removeFromQueue(track.id)}>
                               <span className="sr-only">Remove</span>
                               <span aria-hidden>×</span>
                             </Button>
@@ -360,47 +257,29 @@ const MusicPlayer = () => {
             
             {!isMobile && (
               <>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-gray-400 hover:text-white"
-                  onClick={toggleMute}
-                >
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={toggleMute}>
                   {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                 </Button>
                 <Slider
                   value={[isMuted ? 0 : volume]}
                   max={100}
                   step={1}
-                  className="w-20 [&_.relative]:bg-white/20 [&_[role=slider]]:bg-white [&_[role=slider]]:border-white"
-                  onValueChange={(value) => {
-                    setVolume(value[0]);
-                  }}
+                  className="w-20"
+                  onValueChange={(value) => setVolume(value[0])}
                 />
               </>
             )}
             
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-gray-400 hover:text-white"
-              onClick={isMobile ? openFullscreen : undefined}
-            >
-              {isMobile ? (
+            {isMobile && (
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={() => setFullscreenOpen(true)}>
                 <Maximize2 className="h-4 w-4" />
-              ) : (
-                <MoreHorizontal className="h-4 w-4" />
-              )}
-            </Button>
+              </Button>
+            )}
           </div>
         </div>
       </div>
       
-      {/* Mobile fullscreen player */}
-      <MobileFullscreenPlayer 
-        isOpen={fullscreenOpen && !!currentTrack} 
-        onClose={closeFullscreen} 
-      />
+      <MobileFullscreenPlayer isOpen={fullscreenOpen && !!currentTrack} onClose={() => setFullscreenOpen(false)} />
     </>
   );
 };
