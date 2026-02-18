@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Eye, EyeOff, Music, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -25,40 +25,30 @@ const AuthPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
   useEffect(() => {
-    if (user) {
-      navigate("/");
-    }
+    if (user) navigate("/");
   }, [user, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          setError("Invalid email or password. Please check your credentials and try again.");
+          setError("Invalid email or password.");
         } else if (error.message.includes("Email not confirmed")) {
-          setError("Please check your email and click the confirmation link before signing in.");
+          setError("Please confirm your email before signing in.");
         } else {
           setError(error.message);
         }
         return;
       }
-
       toast.success("Welcome back!");
       navigate("/");
-    } catch (error: any) {
-      setError("An unexpected error occurred. Please try again.");
-      console.error("Sign in error:", error);
+    } catch {
+      setError("An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -68,247 +58,133 @@ const AuthPage = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    // Validation
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long");
-      setLoading(false);
-      return;
-    }
-
+    if (password !== confirmPassword) { setError("Passwords do not match"); setLoading(false); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters"); setLoading(false); return; }
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
       const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName.trim(),
-            username: fullName.trim().toLowerCase().replace(/\s+/g, '_'),
-          }
+          emailRedirectTo: `${window.location.origin}/`,
+          data: { full_name: fullName.trim(), username: fullName.trim().toLowerCase().replace(/\s+/g, '_') }
         }
       });
-
       if (error) {
         if (error.message.includes("User already registered")) {
-          setError("An account with this email already exists. Please sign in instead.");
-        } else if (error.message.includes("Password should be at least")) {
-          setError("Password should be at least 6 characters long.");
+          setError("Account exists. Please sign in.");
         } else {
           setError(error.message);
         }
         return;
       }
-
-      toast.success("Account created! Please check your email to confirm your account.");
+      toast.success("Account created! Check your email to confirm.");
       setActiveTab("login");
-      setEmail("");
-      setPassword("");
-      setFullName("");
-      setConfirmPassword("");
-    } catch (error: any) {
-      setError("An unexpected error occurred. Please try again.");
-      console.error("Sign up error:", error);
+      setEmail(""); setPassword(""); setFullName(""); setConfirmPassword("");
+    } catch {
+      setError("An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo/Header */}
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      {/* Background decoration */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 -left-32 w-64 h-64 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute bottom-1/4 -right-32 w-64 h-64 rounded-full bg-secondary/10 blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 mb-4">
-            <Music className="h-8 w-8 text-white" />
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl maudio-gradient-bg mb-4 shadow-lg shadow-primary/25">
+            <span className="text-primary-foreground font-bold text-xl">M</span>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">MAUDIO</h1>
-          <p className="text-gray-400">Your music streaming platform</p>
+          <h1 className="text-2xl font-bold maudio-gradient-text">MAUDIO</h1>
+          <p className="text-muted-foreground text-sm mt-1">Stream. Discover. Share.</p>
         </div>
 
-        <Card className="bg-black/40 border-white/10 backdrop-blur-xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center text-white">
+        <Card className="border-border/50 bg-card/80 backdrop-blur-xl">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-xl text-center text-foreground">
               {activeTab === "login" ? "Welcome back" : "Create account"}
             </CardTitle>
-            <CardDescription className="text-center text-gray-400">
-              {activeTab === "login" 
-                ? "Sign in to your account to continue" 
-                : "Sign up to start your music journey"
-              }
+            <CardDescription className="text-center text-muted-foreground text-sm">
+              {activeTab === "login" ? "Sign in to continue" : "Start your music journey"}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 bg-white/5 border-white/10">
-                <TabsTrigger value="login" className="text-white data-[state=active]:bg-white/20">
-                  Sign In
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="text-white data-[state=active]:bg-white/20">
-                  Sign Up
-                </TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="login">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
 
               {error && (
-                <Alert className="mt-4 bg-red-500/10 border-red-500/20 text-red-400">
-                  <AlertDescription>{error}</AlertDescription>
+                <Alert className="mb-4 bg-destructive/10 border-destructive/20 text-destructive">
+                  <AlertDescription className="text-sm">{error}</AlertDescription>
                 </Alert>
               )}
 
-              <TabsContent value="login" className="space-y-4 mt-4">
+              <TabsContent value="login" className="space-y-4 mt-0">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email" className="text-white">Email</Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    />
+                    <Label htmlFor="login-email">Email</Label>
+                    <Input id="login-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="login-password" className="text-white">Password</Label>
+                    <Label htmlFor="login-password">Password</Label>
                     <div className="relative">
-                      <Input
-                        id="login-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 pr-10"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400 hover:text-white"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
+                      <Input id="login-password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required className="pr-10" />
+                      <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground" onClick={() => setShowPassword(!showPassword)}>
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing in...
-                      </>
-                    ) : (
-                      "Sign In"
-                    )}
+                  <Button type="submit" className="w-full maudio-gradient-bg hover:opacity-90" disabled={loading}>
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</> : "Sign In"}
                   </Button>
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup" className="space-y-4 mt-4">
+              <TabsContent value="signup" className="space-y-4 mt-0">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-name" className="text-white">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    />
+                    <Label htmlFor="signup-name">Full Name</Label>
+                    <Input id="signup-name" placeholder="Your name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-white">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
-                    />
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input id="signup-email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-white">Password</Label>
+                    <Label htmlFor="signup-password">Password</Label>
                     <div className="relative">
-                      <Input
-                        id="signup-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Create a password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 pr-10"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400 hover:text-white"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
+                      <Input id="signup-password" type={showPassword ? "text" : "password"} placeholder="Min. 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} required className="pr-10" />
+                      <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground" onClick={() => setShowPassword(!showPassword)}>
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password" className="text-white">Confirm Password</Label>
+                    <Label htmlFor="confirm-password">Confirm Password</Label>
                     <div className="relative">
-                      <Input
-                        id="confirm-password"
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Confirm your password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                        className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 pr-10"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400 hover:text-white"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      >
+                      <Input id="confirm-password" type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="pr-10" />
+                      <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                         {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating account...
-                      </>
-                    ) : (
-                      "Create Account"
-                    )}
+                  <Button type="submit" className="w-full maudio-gradient-bg hover:opacity-90" disabled={loading}>
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating account...</> : "Create Account"}
                   </Button>
                 </form>
               </TabsContent>
             </Tabs>
 
             <div className="mt-6 text-center">
-              <Link to="/" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 ← Back to home
               </Link>
             </div>

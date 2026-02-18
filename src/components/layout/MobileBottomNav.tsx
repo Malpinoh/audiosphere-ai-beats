@@ -17,7 +17,6 @@ const MobileBottomNav = () => {
   ];
 
   const handleTap = (to: string) => {
-    // Trigger haptic feedback if available
     if (navigator.vibrate) {
       navigator.vibrate(10);
     }
@@ -26,7 +25,7 @@ const MobileBottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 lg:hidden safe-area-bottom">
       <div className="flex items-center justify-around h-14">
         {navItems.map(({ to, label, icon: Icon }) => {
           const isActive = to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
@@ -42,11 +41,9 @@ const MobileBottomNav = () => {
                 isActive ? "text-primary" : "text-muted-foreground"
               )}
             >
-              {/* Active indicator dot */}
               {isActive && (
-                <span className="absolute top-1 w-1 h-1 rounded-full bg-primary animate-scale-in" />
+                <span className="absolute top-1 w-1 h-1 rounded-full bg-primary" />
               )}
-
               <Icon
                 className={cn(
                   "h-5 w-5 transition-transform duration-200",

@@ -16,28 +16,12 @@ interface MobileFullscreenPlayerProps {
 
 export const MobileFullscreenPlayer = ({ isOpen, onClose }: MobileFullscreenPlayerProps) => {
   const { 
-    currentTrack, 
-    isPlaying, 
-    currentTime, 
-    duration, 
-    volume, 
-    isMuted,
-    isLoading,
-    repeatMode,
-    isShuffle,
-    togglePlay,
-    playNext,
-    playPrevious,
-    seekTo,
-    setVolume,
-    toggleMute,
-    toggleRepeat,
-    toggleShuffle,
-    likeTrack,
-    unlikeTrack,
-    isTrackLiked
+    currentTrack, isPlaying, currentTime, duration, volume, isMuted,
+    isLoading, repeatMode, isShuffle,
+    togglePlay, playNext, playPrevious, seekTo, setVolume,
+    toggleMute, toggleRepeat, toggleShuffle,
+    likeTrack, unlikeTrack, isTrackLiked
   } = useMusicPlayer();
-  
   
   const formatTime = (seconds: number) => {
     if (!seconds) return '0:00';
@@ -48,7 +32,6 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: MobileFullscreenPlay
   
   const handleLikeToggle = () => {
     if (!currentTrack) return;
-    
     if (isTrackLiked(currentTrack.id)) {
       unlikeTrack(currentTrack.id);
     } else {
@@ -59,23 +42,23 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: MobileFullscreenPlay
   if (!isOpen || !currentTrack) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-br from-purple-900 via-pink-900 to-indigo-900 flex flex-col p-6">
-      {/* Header with close button */}
-      <div className="flex items-center justify-between mb-8">
-        <Button variant="ghost" size="icon" onClick={onClose} className="text-white">
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-primary/30 via-background to-secondary/20 flex flex-col p-6 safe-area-inset">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <Button variant="ghost" size="icon" onClick={onClose} className="text-foreground">
           <ChevronDown className="h-6 w-6" />
         </Button>
         <div className="text-center flex-1">
-          <p className="text-xs text-white/60 uppercase tracking-wider">Playing from</p>
-          <p className="text-sm text-white font-medium">Queue</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Playing from</p>
+          <p className="text-xs text-foreground font-medium">Queue</p>
         </div>
-        <Button variant="ghost" size="icon" className="text-white">
+        <Button variant="ghost" size="icon" className="text-muted-foreground">
           <MoreHorizontal className="h-5 w-5" />
         </Button>
       </div>
       
-      {/* Album cover with Apple Music style shadow */}
-      <div className="aspect-square w-full max-w-xs mx-auto mb-8 rounded-2xl overflow-hidden shadow-2xl">
+      {/* Album cover */}
+      <div className="aspect-square w-full max-w-[280px] mx-auto mb-6 rounded-2xl overflow-hidden shadow-2xl shadow-primary/20">
         <img 
           src={currentTrack.cover || currentTrack.cover_art_path} 
           alt={currentTrack.title}
@@ -84,11 +67,11 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: MobileFullscreenPlay
       </div>
       
       {/* Track info */}
-      <div className="mb-8 text-center px-4">
-        <Link to={`/track/${currentTrack.id}`} className="text-xl font-bold block hover:text-white/80 text-white">
+      <div className="mb-6 text-center px-4">
+        <Link to={`/track/${currentTrack.id}`} className="text-lg font-bold block text-foreground hover:text-primary transition-colors">
           {currentTrack.title}
         </Link>
-        <Link to={`/artist/${encodeURIComponent(currentTrack.artist)}`} className="text-lg text-white/60 hover:text-white">
+        <Link to={`/artist/${encodeURIComponent(currentTrack.artist)}`} className="text-base text-muted-foreground hover:text-foreground transition-colors">
           {currentTrack.artist}
         </Link>
       </div>
@@ -99,102 +82,61 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: MobileFullscreenPlay
           value={[currentTime]}
           max={duration || 1}
           step={1}
-          className="w-full [&_.relative]:bg-white/20 [&_[role=slider]]:bg-white [&_[role=slider]]:border-white [&_[role=slider]]:w-6 [&_[role=slider]]:h-6"
+          className="w-full"
           onValueChange={(value) => seekTo(value[0])}
         />
-        <div className="flex justify-between mt-2 text-sm text-white/60">
+        <div className="flex justify-between mt-2 text-xs text-muted-foreground">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
       </div>
       
       {/* Controls */}
-      <div className="flex items-center justify-center space-x-8 mb-8">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className={`text-white/60 hover:text-white transition-all duration-200 ${
-            isShuffle ? 'text-primary bg-primary/10' : ''
-          }`}
-          onClick={toggleShuffle}
-        >
-          <Shuffle className="h-6 w-6" />
+      <div className="flex items-center justify-center space-x-6 mb-6">
+        <Button variant="ghost" size="icon" className={`text-muted-foreground hover:text-foreground ${isShuffle ? 'text-primary' : ''}`} onClick={toggleShuffle}>
+          <Shuffle className="h-5 w-5" />
         </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-white hover:text-white"
-          onClick={playPrevious}
-        >
-          <SkipBack className="h-8 w-8" />
+        <Button variant="ghost" size="icon" className="text-foreground" onClick={playPrevious}>
+          <SkipBack className="h-7 w-7" />
         </Button>
-        <Button 
-          onClick={togglePlay}
-          className="h-20 w-20 rounded-full bg-white hover:bg-gray-200 text-black shadow-2xl"
-        >
+        <Button onClick={togglePlay} className="h-16 w-16 rounded-full maudio-gradient-bg shadow-xl shadow-primary/30 hover:opacity-90">
           {isLoading ? (
-            <div className="h-8 w-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            <div className="h-7 w-7 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
           ) : isPlaying ? (
-            <Pause className="h-10 w-10" />
+            <Pause className="h-8 w-8" />
           ) : (
-            <Play className="h-10 w-10 ml-1" />
+            <Play className="h-8 w-8 ml-1" />
           )}
         </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-white hover:text-white"
-          onClick={playNext}
-        >
-          <SkipForward className="h-8 w-8" />
+        <Button variant="ghost" size="icon" className="text-foreground" onClick={playNext}>
+          <SkipForward className="h-7 w-7" />
         </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className={`text-white/60 hover:text-white transition-all duration-200 ${
-            repeatMode !== 'off' ? 'text-primary bg-primary/10' : ''
-          }`}
-          onClick={toggleRepeat}
-        >
-          {repeatMode === 'one' ? (
-            <Repeat1 className="h-6 w-6" />
-          ) : (
-            <Repeat className="h-6 w-6" />
-          )}
+        <Button variant="ghost" size="icon" className={`text-muted-foreground hover:text-foreground ${repeatMode !== 'off' ? 'text-primary' : ''}`} onClick={toggleRepeat}>
+          {repeatMode === 'one' ? <Repeat1 className="h-5 w-5" /> : <Repeat className="h-5 w-5" />}
         </Button>
       </div>
       
       {/* Bottom actions */}
       <div className="flex items-center justify-between mt-auto">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-white/60 hover:text-white"
-          onClick={handleLikeToggle}
-        >
-          <Heart className={`h-6 w-6 ${isTrackLiked(currentTrack.id) ? 'fill-red-500 text-red-500' : ''}`} />
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={handleLikeToggle}>
+          <Heart className={`h-5 w-5 ${isTrackLiked(currentTrack.id) ? 'fill-destructive text-destructive' : ''}`} />
         </Button>
         
-        <div className="flex items-center space-x-3">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-white/60 hover:text-white"
-            onClick={toggleMute}
-          >
-            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        <div className="flex items-center space-x-2">
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={toggleMute}>
+            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </Button>
           <Slider
             value={[isMuted ? 0 : volume]}
             max={100}
             step={1}
-            className="w-24 [&_.relative]:bg-white/20 [&_[role=slider]]:bg-white [&_[role=slider]]:border-white"
+            className="w-20"
             onValueChange={(value) => setVolume(value[0])}
           />
         </div>
         
-        <Button variant="ghost" size="icon" className="text-white/60 hover:text-white">
-          <ListMusic className="h-6 w-6" />
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+          <ListMusic className="h-5 w-5" />
         </Button>
       </div>
     </div>
