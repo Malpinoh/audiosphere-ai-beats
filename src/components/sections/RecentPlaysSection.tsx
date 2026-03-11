@@ -71,13 +71,13 @@ export function RecentPlaysSection() {
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-16 bg-white/5 rounded-lg animate-pulse" />
+            <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
           ))}
         </div>
       ) : (
         <div className="space-y-1">
           {recentTracks.slice(0, 6).map((track) => (
-            <TrackCard key={track.id} track={track} />
+            <TrackCard key={track.id} track={track} variant="list" />
           ))}
         </div>
       )}

@@ -319,7 +319,7 @@ export default function AccountSettings() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Follower Count</label>
                     <div className="bg-muted p-3 rounded-md">
-                      <p className="font-medium">{profile?.follower_count.toLocaleString() || 0} followers</p>
+                      <p className="font-medium">{(profile?.follower_count ?? 0).toLocaleString()} followers</p>
                     </div>
                   </div>
                   

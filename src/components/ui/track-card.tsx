@@ -204,8 +204,8 @@ export function TrackCard({ track, showArtist = true, hidePlay = false, variant 
         {track.duration ? formatDuration(track.duration) : '0:00'}
       </div>
       
-      {/* Action buttons */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Action buttons - always visible on mobile (no hover) */}
+      <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <Button
           onClick={handleAddToQueue}
           size="icon"

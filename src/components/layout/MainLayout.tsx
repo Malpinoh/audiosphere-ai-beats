@@ -25,14 +25,13 @@ const MainLayout = ({
         {children}
       </main>
       
-      {/* Spacer for fixed music player */}
+      {/* Single spacer: player (~72px) + bottom nav on mobile (56px) */}
       {!hidePlayer && (
-        <div className={`${isMobile ? "h-[120px]" : "h-24"} flex-shrink-0`} />
+        <div className={`${isMobile ? "h-[132px]" : "h-24"} flex-shrink-0`} />
       )}
-      {!hidePlayer && <MusicPlayer />}
+      {hidePlayer && isMobile && <div className="h-14 flex-shrink-0" />}
       
-      {/* Bottom nav spacing on mobile */}
-      {isMobile && !hidePlayer && <div className="h-14 flex-shrink-0" />}
+      {!hidePlayer && <MusicPlayer />}
       
       {/* Footer hidden on mobile - bottom nav replaces it */}
       {!isMobile && <Footer />}

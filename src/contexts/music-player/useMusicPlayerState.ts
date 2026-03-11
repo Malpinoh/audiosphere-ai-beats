@@ -14,7 +14,6 @@ const trackListeningHistory = async (userId: string, trackId: string, listenTime
       p_listen_time: listenTime
     });
     
-    // Update user preferences in background after significant listening
     if (listenTime >= 30) {
       setTimeout(async () => {
         await supabase.rpc('update_user_preferences', { p_user_id: userId });
@@ -57,39 +56,26 @@ const initialState: MusicPlayerState = {
   savedTracks: new Set(),
 };
 
-// Enhanced audio URL resolution with better error handling and validation
 const getValidAudioUrl = async (audioFilePath: string): Promise<string> => {
   if (!audioFilePath) {
     throw new Error('No audio file path provided');
   }
 
-  console.log('Getting audio URL for path:', audioFilePath);
-
-  // If it's already a full URL, validate and return it
   if (audioFilePath.startsWith('http')) {
-    console.log('Using existing full URL:', audioFilePath);
     return audioFilePath;
   }
 
-  // Clean the file path - remove any leading slashes or extra whitespace
   const cleanPath = audioFilePath.trim().replace(/^\/+/, '');
-  
-  // Build the public URL with proper encoding
   const baseUrl = 'https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files';
   const audioUrl = `${baseUrl}/${encodeURIComponent(cleanPath)}`;
   
-  console.log('Generated audio URL:', audioUrl);
-  
-  // Test if the audio URL is accessible
   try {
     const response = await fetch(audioUrl, { method: 'HEAD' });
     if (!response.ok) {
       console.warn('Audio file may not be accessible:', response.status);
-      // Still return the URL as it might work for playback even if HEAD fails
     }
   } catch (fetchError) {
     console.warn('Could not verify audio file accessibility:', fetchError);
-    // Continue anyway as the file might still be playable
   }
   
   return audioUrl;
@@ -102,7 +88,6 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   const { logStream } = useStreamLogger();
   const streamLoggedRef = useRef<Set<string>>(new Set());
 
-  // Enhanced error handling function
   const handleAudioError = useCallback((error: any, context: string = '') => {
     console.error(`Audio error in ${context}:`, error);
     
@@ -134,13 +119,11 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       isPlaying: false
     }));
     
-    // Only show toast for critical errors, not loading issues
     if (context !== 'audio element' && !errorMessage.includes('aborted')) {
       toast.error(errorMessage);
     }
   }, []);
 
-  // Update media session metadata
   const updateMediaSession = useCallback((track: Track) => {
     if ('mediaSession' in navigator) {
       try {
@@ -156,8 +139,6 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
             { src: coverUrl, sizes: '512x512', type: 'image/jpeg' }
           ]
         });
-        
-        console.log('Media session metadata updated');
       } catch (error) {
         console.error('Error updating media session:', error);
       }
@@ -172,8 +153,6 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     }
 
     try {
-      console.log('Loading audio for track:', track.title, 'Path:', track.audio_file_path);
-      
       setState(prev => ({
         ...prev,
         isLoading: true,
@@ -182,29 +161,22 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       }));
 
       const audioUrl = await getValidAudioUrl(track.audio_file_path);
-      console.log('Using audio URL:', audioUrl);
 
       if (!audioRef.current) {
         throw new Error('Audio element not available');
       }
 
       const audio = audioRef.current;
-      
-      // Reset audio element
       audio.pause();
       audio.currentTime = 0;
-      
-      // Set new source
       audio.src = audioUrl;
       
-      // Wait for audio to load with comprehensive error handling
       await new Promise((resolve, reject) => {
         let resolved = false;
         
         const handleCanPlay = () => {
           if (resolved) return;
           resolved = true;
-          console.log('Audio can play');
           cleanup();
           resolve(true);
         };
@@ -212,42 +184,26 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
         const handleError = (e: Event) => {
           if (resolved) return;
           resolved = true;
-          console.error('Audio load error:', e);
-          console.error('Audio element error:', audio.error);
           cleanup();
           reject(new Error(`Failed to load audio: ${audio.error?.message || 'Unknown error'}`));
-        };
-
-        const handleLoadStart = () => {
-          console.log('Audio load started');
-        };
-
-        const handleProgress = () => {
-          console.log('Audio loading progress...');
         };
 
         const cleanup = () => {
           audio.removeEventListener('canplay', handleCanPlay);
           audio.removeEventListener('error', handleError);
-          audio.removeEventListener('loadstart', handleLoadStart);
-          audio.removeEventListener('progress', handleProgress);
         };
         
         audio.addEventListener('canplay', handleCanPlay);
         audio.addEventListener('error', handleError);
-        audio.addEventListener('loadstart', handleLoadStart);
-        audio.addEventListener('progress', handleProgress);
         
-        // Set a timeout to reject if loading takes too long
         setTimeout(() => {
           if (!resolved) {
             resolved = true;
             cleanup();
             reject(new Error('Audio loading timeout - file may be too large or network is slow'));
           }
-        }, 15000); // Increased timeout to 15 seconds
+        }, 15000);
         
-        // Trigger load
         audio.load();
       });
 
@@ -258,10 +214,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
         error: null
       }));
 
-      // Update media session
       updateMediaSession(track);
-      
-      console.log('Audio loaded successfully');
     } catch (error) {
       console.error('Error loading audio:', error);
       handleAudioError(error, 'loadAudio');
@@ -269,7 +222,6 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   }, [updateMediaSession, handleAudioError]);
 
   const playTrack = useCallback(async (track: Track) => {
-    console.log('Attempting to play track:', track.title);
     setState(prev => ({ 
       ...prev, 
       isLoading: true, 
@@ -281,17 +233,13 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       await loadAudio(track);
       
       if (audioRef.current) {
-        console.log('Starting playback...');
         await audioRef.current.play();
         setState(prev => ({ ...prev, isPlaying: true, isLoading: false }));
         
-        // Log stream play after successful playback start
         if (!streamLoggedRef.current.has(track.id)) {
           streamLoggedRef.current.add(track.id);
           logStream(track.id);
         }
-        
-        console.log('Playback started successfully');
       }
     } catch (error) {
       console.error("Playback failed:", error);
@@ -304,7 +252,6 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       try {
         await audioRef.current.play();
         setState(prev => ({ ...prev, isPlaying: true }));
-        console.log('Resumed playback');
       } catch (error) {
         console.error("Play failed:", error);
         handleAudioError(error, 'play');
@@ -316,7 +263,6 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     if (audioRef.current) {
       audioRef.current.pause();
       setState(prev => ({ ...prev, isPlaying: false }));
-      console.log('Playback paused');
     }
   }, []);
 
@@ -333,7 +279,6 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       const normalizedVolume = volume / 100;
       audioRef.current.volume = normalizedVolume;
       setState(prev => ({ ...prev, volume, isMuted: volume === 0 }));
-      console.log('Volume set to:', volume);
     }
   }, []);
 
@@ -342,7 +287,6 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       const newMuted = !state.isMuted;
       audioRef.current.volume = newMuted ? 0 : state.volume / 100;
       setState(prev => ({ ...prev, isMuted: newMuted }));
-      console.log('Mute toggled:', newMuted);
     }
   }, [state.isMuted, state.volume]);
 
@@ -350,53 +294,35 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     if (audioRef.current) {
       audioRef.current.currentTime = time;
       setState(prev => ({ ...prev, currentTime: time }));
-      console.log('Seeked to:', time);
     }
   }, []);
 
   const setQueue = useCallback((tracks: Track[]) => {
     setState(prev => ({ ...prev, queue: tracks }));
-    console.log('Queue updated with', tracks.length, 'tracks');
   }, []);
 
   const addToQueue = useCallback((track: Track) => {
-    setState(prev => ({ 
-      ...prev, 
-      queue: [...prev.queue, track] 
-    }));
-    console.log('Added track to queue:', track.title);
+    setState(prev => ({ ...prev, queue: [...prev.queue, track] }));
   }, []);
 
   const removeFromQueue = useCallback((trackId: string) => {
-    setState(prev => ({ 
-      ...prev, 
-      queue: prev.queue.filter(track => track.id !== trackId) 
-    }));
-    console.log('Removed track from queue:', trackId);
+    setState(prev => ({ ...prev, queue: prev.queue.filter(track => track.id !== trackId) }));
   }, []);
 
   const clearQueue = useCallback(() => {
-    setState(prev => ({ 
-      ...prev, 
-      queue: [] 
-    }));
-    console.log('Queue cleared');
+    setState(prev => ({ ...prev, queue: [] }));
   }, []);
-
 
   const playNext = useCallback(() => {
     let nextTrack: Track | null = null;
     const currentIndex = state.queue.findIndex(track => track.id === state.currentTrack?.id);
     
-    // If repeat one is enabled, repeat the current track
     if (state.repeatMode === 'one' && state.currentTrack) {
-      console.log('Repeating current track');
       playTrack(state.currentTrack);
       return;
     }
     
     if (state.isShuffle) {
-      // Random track from queue
       const availableTracks = state.queue.filter(track => track.id !== state.currentTrack?.id);
       if (availableTracks.length > 0) {
         const randomIndex = Math.floor(Math.random() * availableTracks.length);
@@ -405,15 +331,11 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     } else if (currentIndex < state.queue.length - 1) {
       nextTrack = state.queue[currentIndex + 1];
     } else if (state.repeatMode === 'all' && state.queue.length > 0) {
-      // If repeat all is on and we're at the end, go to first track
       nextTrack = state.queue[0];
     }
     
     if (nextTrack) {
-      console.log('Playing next track:', nextTrack.title);
       playTrack(nextTrack);
-    } else {
-      console.log('No next track available');
     }
   }, [state.queue, state.currentTrack, state.isShuffle, state.repeatMode, playTrack]);
 
@@ -421,52 +343,27 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     const currentIndex = state.queue.findIndex(track => track.id === state.currentTrack?.id);
     
     if (state.isShuffle) {
-      // Random track from queue
       const availableTracks = state.queue.filter(track => track.id !== state.currentTrack?.id);
       if (availableTracks.length > 0) {
         const randomIndex = Math.floor(Math.random() * availableTracks.length);
-        const previousTrack = availableTracks[randomIndex];
-        console.log('Playing random previous track:', previousTrack.title);
-        playTrack(previousTrack);
+        playTrack(availableTracks[randomIndex]);
       }
     } else if (currentIndex > 0) {
-      const previousTrack = state.queue[currentIndex - 1];
-      console.log('Playing previous track:', previousTrack.title);
-      playTrack(previousTrack);
+      playTrack(state.queue[currentIndex - 1]);
     } else if (state.repeatMode === 'all' && state.queue.length > 0) {
-      // If repeat all is on and we're at the beginning, go to last track
-      const lastTrack = state.queue[state.queue.length - 1];
-      console.log('Playing last track (repeat all mode):', lastTrack.title);
-      playTrack(lastTrack);
-    } else {
-      console.log('No previous track available');
+      playTrack(state.queue[state.queue.length - 1]);
     }
   }, [state.queue, state.currentTrack, state.isShuffle, state.repeatMode, playTrack]);
 
   const likeTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not authenticated');
-        return false;
-      }
+      if (!user) return false;
 
-      const { error } = await supabase
-        .from('likes')
-        .insert({
-          user_id: user.id,
-          track_id: trackId
-        });
+      const { error } = await supabase.from('likes').insert({ user_id: user.id, track_id: trackId });
+      if (error) { console.error('Error liking track:', error); return false; }
 
-      if (error) {
-        console.error('Error liking track:', error);
-        return false;
-      }
-
-      setState(prev => ({ 
-        ...prev, 
-        likedTracks: new Set([...prev.likedTracks, trackId]) 
-      }));
+      setState(prev => ({ ...prev, likedTracks: new Set([...prev.likedTracks, trackId]) }));
       return true;
     } catch (error) {
       console.error('Error liking track:', error);
@@ -477,21 +374,10 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   const unlikeTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not authenticated');
-        return false;
-      }
+      if (!user) return false;
 
-      const { error } = await supabase
-        .from('likes')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('track_id', trackId);
-
-      if (error) {
-        console.error('Error unliking track:', error);
-        return false;
-      }
+      const { error } = await supabase.from('likes').delete().eq('user_id', user.id).eq('track_id', trackId);
+      if (error) { console.error('Error unliking track:', error); return false; }
 
       setState(prev => {
         const newLikedTracks = new Set(prev.likedTracks);
@@ -508,27 +394,12 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   const saveTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not authenticated');
-        return false;
-      }
+      if (!user) return false;
 
-      const { error } = await supabase
-        .from('saved_tracks')
-        .insert({
-          user_id: user.id,
-          track_id: trackId
-        });
+      const { error } = await supabase.from('saved_tracks').insert({ user_id: user.id, track_id: trackId });
+      if (error) { console.error('Error saving track:', error); return false; }
 
-      if (error) {
-        console.error('Error saving track:', error);
-        return false;
-      }
-
-      setState(prev => ({ 
-        ...prev, 
-        savedTracks: new Set([...prev.savedTracks, trackId]) 
-      }));
+      setState(prev => ({ ...prev, savedTracks: new Set([...prev.savedTracks, trackId]) }));
       return true;
     } catch (error) {
       console.error('Error saving track:', error);
@@ -539,21 +410,10 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   const unsaveTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('User not authenticated');
-        return false;
-      }
+      if (!user) return false;
 
-      const { error } = await supabase
-        .from('saved_tracks')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('track_id', trackId);
-
-      if (error) {
-        console.error('Error unsaving track:', error);
-        return false;
-      }
+      const { error } = await supabase.from('saved_tracks').delete().eq('user_id', user.id).eq('track_id', trackId);
+      if (error) { console.error('Error unsaving track:', error); return false; }
 
       setState(prev => {
         const newSavedTracks = new Set(prev.savedTracks);
@@ -575,42 +435,30 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     return state.savedTracks.has(trackId);
   }, [state.savedTracks]);
 
-
   const toggleRepeat = useCallback(() => {
     setState(prev => {
       const nextMode = prev.repeatMode === 'off' ? 'all' : prev.repeatMode === 'all' ? 'one' : 'off';
-      console.log('Repeat mode changed:', nextMode);
       return { ...prev, repeatMode: nextMode };
     });
   }, []);
 
   const toggleShuffle = useCallback(() => {
     setState(prev => ({ ...prev, isShuffle: !prev.isShuffle }));
-    console.log('Shuffle toggled:', !state.isShuffle);
   }, [state.isShuffle]);
 
-  const shareTrack = useCallback((trackId: string) => {
-    console.log('Sharing track:', trackId);
+  const shareTrack = useCallback((_trackId: string) => {
+    // TODO: implement share
   }, []);
 
-  // Load user's existing likes and saved tracks on initialization
+  // Load user's existing likes and saved tracks
   useEffect(() => {
     const loadUserPreferences = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Load liked tracks
-        const { data: likes } = await supabase
-          .from('likes')
-          .select('track_id')
-          .eq('user_id', user.id);
-
-        // Load saved tracks
-        const { data: savedTracks } = await supabase
-          .from('saved_tracks')
-          .select('track_id')
-          .eq('user_id', user.id);
+        const { data: likes } = await supabase.from('likes').select('track_id').eq('user_id', user.id);
+        const { data: savedTracks } = await supabase.from('saved_tracks').select('track_id').eq('user_id', user.id);
 
         setState(prev => ({
           ...prev,
@@ -635,13 +483,9 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
 
       const updateDuration = () => {
         setState(prev => ({ ...prev, duration: audio.duration || 0 }));
-        console.log('Audio duration:', audio.duration);
       };
 
       const handleEnded = async () => {
-        console.log('Track ended, playing next...');
-        
-        // Track listening history for recommendations
         if (state.currentTrack) {
           try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -681,28 +525,15 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
 
   useEffect(() => {
     if ('mediaSession' in navigator) {
-      navigator.mediaSession.setActionHandler('play', () => {
-        play();
-      });
-      navigator.mediaSession.setActionHandler('pause', () => {
-        pause();
-      });
-      navigator.mediaSession.setActionHandler('seekbackward', () => {
-        seekTo(Math.max(0, state.currentTime - 10));
-      });
-      navigator.mediaSession.setActionHandler('seekforward', () => {
-        seekTo(Math.min(state.duration, state.currentTime + 10));
-      });
-      navigator.mediaSession.setActionHandler('nexttrack', () => {
-        playNext();
-      });
-      navigator.mediaSession.setActionHandler('previoustrack', () => {
-        playPrevious();
-      });
+      navigator.mediaSession.setActionHandler('play', () => play());
+      navigator.mediaSession.setActionHandler('pause', () => pause());
+      navigator.mediaSession.setActionHandler('seekbackward', () => seekTo(Math.max(0, state.currentTime - 10)));
+      navigator.mediaSession.setActionHandler('seekforward', () => seekTo(Math.min(state.duration, state.currentTime + 10)));
+      navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
+      navigator.mediaSession.setActionHandler('previoustrack', () => playPrevious());
     }
   }, [play, pause, seekTo, state.currentTime, state.duration, playNext, playPrevious]);
 
-  // Return individual properties to match MusicPlayerContextType
   return {
     currentTrack: state.currentTrack,
     isPlaying: state.isPlaying,
