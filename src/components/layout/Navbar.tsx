@@ -91,8 +91,9 @@ const Navbar = () => {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-background border-border">
-                <div className="flex flex-col space-y-2 mt-8">
-                  {navLinks.map((link) => (
+              <div className="flex flex-col space-y-2 mt-8">
+                  {/* Only show links NOT in bottom nav: Artists, Charts, Playlists */}
+                  {navLinks.filter(l => !["/", "/browse"].includes(l.to)).map((link) => (
                     <Link 
                       key={link.to}
                       to={link.to} 
@@ -102,15 +103,6 @@ const Navbar = () => {
                       {link.label}
                     </Link>
                   ))}
-                  {user && (
-                    <Link 
-                      to="/library" 
-                      className="text-foreground hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-muted"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Library
-                    </Link>
-                  )}
                   
                   {/* Mobile Search */}
                   <div className="pt-4 border-t border-border">

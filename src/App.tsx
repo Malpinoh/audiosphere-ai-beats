@@ -91,11 +91,7 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/" element={
-        <MobileAuthGuard>
-          <Index />
-        </MobileAuthGuard>
-      } />
+      <Route path="/" element={<Index />} />
       <Route path="/library" element={<LibraryPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/login" element={<LoginPage />} />

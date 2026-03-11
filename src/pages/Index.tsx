@@ -6,12 +6,17 @@ import { RecentPlaysSection } from "@/components/sections/RecentPlaysSection";
 import { TrendingArtists, FeaturedPlaylists, PersonalizedRecommendations } from "@/components/sections/RecommendedSection";
 import { BrowseByGenre } from "@/components/sections/GenreSection";
 import { TopChartsSection } from "@/components/sections/TopChartsSection";
+import { SearchBar } from "@/components/layout/SearchBar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
+  const isMobile = useIsMobile();
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6 space-y-8 md:space-y-10">
+          {isMobile && <SearchBar className="w-full" placeholder="Search songs, artists, genres..." />}
           <HeroSection />
           <RecentPlaysSection />
           <PersonalizedRecommendations />

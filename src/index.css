@@ -132,6 +132,15 @@
     max-width: 100%;
   }
 
+  /* Safe area utilities */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
   /* Glass morphism effect */
   .glass {
     @apply bg-background/80 backdrop-blur-xl border border-border/50;
