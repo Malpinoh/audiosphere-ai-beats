@@ -8,7 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { MusicPlayerProvider } from "@/contexts/MusicPlayerContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useCapacitor } from "@/hooks/use-capacitor";
-import { useIsMobile } from "@/hooks/use-mobile";
+
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
