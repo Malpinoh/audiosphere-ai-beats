@@ -65,7 +65,7 @@ const getValidAudioUrl = (audioFilePath: string): string => {
     return audioFilePath;
   }
 
-  const cleanPath = audioFilePath.trim().replace(/^\\/+/, '');
+  const cleanPath = audioFilePath.trim().replace(/^\/+/, '');
   const baseUrl = 'https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files';
   return `${baseUrl}/${encodeURIComponent(cleanPath)}`;
 };
