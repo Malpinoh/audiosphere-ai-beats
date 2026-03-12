@@ -22,16 +22,13 @@ export function ArtistStatsDisplay({ artistId }: ArtistStatsDisplayProps) {
   useEffect(() => {
     const fetchRealTimeStats = async () => {
       try {
-        // Get total plays across all tracks
         const totalPlays = tracks.reduce((sum, track) => sum + (track.play_count || 0), 0);
 
-        // Get real follower count
         const { count: followerCount } = await supabase
           .from('followers')
           .select('*', { count: 'exact', head: true })
           .eq('artist_id', artistId);
 
-        // Calculate monthly listeners from stream logs
         const { data: monthlyStreams } = await supabase
           .from('stream_logs')
           .select('user_id')
@@ -66,47 +63,26 @@ export function ArtistStatsDisplay({ artistId }: ArtistStatsDisplayProps) {
     return num.toString();
   };
 
+  const stats = [
+    { icon: Users, value: realTimeStats.followerCount, label: "Followers", color: "text-primary" },
+    { icon: Play, value: realTimeStats.totalPlays, label: "Total Plays", color: "text-green-500" },
+    { icon: Calendar, value: realTimeStats.monthlyListeners, label: "Monthly Listeners", color: "text-purple-500" },
+    { icon: Music, value: tracks.length, label: "Tracks", color: "text-pink-500" },
+  ];
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <Card className="bg-black/20 border-white/10">
-        <CardContent className="p-4 text-center">
-          <Users className="h-6 w-6 mx-auto mb-2 text-blue-400" />
-          <div className="text-2xl font-bold text-white">
-            {formatNumber(realTimeStats.followerCount)}
-          </div>
-          <div className="text-xs text-white/60">Followers</div>
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-black/20 border-white/10">
-        <CardContent className="p-4 text-center">
-          <Play className="h-6 w-6 mx-auto mb-2 text-green-400" />
-          <div className="text-2xl font-bold text-white">
-            {formatNumber(realTimeStats.totalPlays)}
-          </div>
-          <div className="text-xs text-white/60">Total Plays</div>
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-black/20 border-white/10">
-        <CardContent className="p-4 text-center">
-          <Calendar className="h-6 w-6 mx-auto mb-2 text-purple-400" />
-          <div className="text-2xl font-bold text-white">
-            {formatNumber(realTimeStats.monthlyListeners)}
-          </div>
-          <div className="text-xs text-white/60">Monthly Listeners</div>
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-black/20 border-white/10">
-        <CardContent className="p-4 text-center">
-          <Music className="h-6 w-6 mx-auto mb-2 text-pink-400" />
-          <div className="text-2xl font-bold text-white">
-            {tracks.length}
-          </div>
-          <div className="text-xs text-white/60">Tracks</div>
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+      {stats.map(({ icon: Icon, value, label, color }) => (
+        <Card key={label} className="bg-card border-border">
+          <CardContent className="p-3 md:p-4 text-center">
+            <Icon className={`h-5 w-5 md:h-6 md:w-6 mx-auto mb-1.5 md:mb-2 ${color}`} />
+            <div className="text-xl md:text-2xl font-bold text-foreground">
+              {formatNumber(value)}
+            </div>
+            <div className="text-[10px] md:text-xs text-muted-foreground">{label}</div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
