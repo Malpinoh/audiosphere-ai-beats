@@ -56,7 +56,7 @@ const initialState: MusicPlayerState = {
   savedTracks: new Set(),
 };
 
-const getValidAudioUrl = async (audioFilePath: string): Promise<string> => {
+const getValidAudioUrl = (audioFilePath: string): string => {
   if (!audioFilePath) {
     throw new Error('No audio file path provided');
   }
@@ -67,18 +67,7 @@ const getValidAudioUrl = async (audioFilePath: string): Promise<string> => {
 
   const cleanPath = audioFilePath.trim().replace(/^\/+/, '');
   const baseUrl = 'https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files';
-  const audioUrl = `${baseUrl}/${encodeURIComponent(cleanPath)}`;
-  
-  try {
-    const response = await fetch(audioUrl, { method: 'HEAD' });
-    if (!response.ok) {
-      console.warn('Audio file may not be accessible:', response.status);
-    }
-  } catch (fetchError) {
-    console.warn('Could not verify audio file accessibility:', fetchError);
-  }
-  
-  return audioUrl;
+  return `${baseUrl}/${encodeURIComponent(cleanPath)}`;
 };
 
 export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudioElement>) => {
@@ -87,8 +76,18 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   const audioRef = externalAudioRef || internalAudioRef;
   const { logStream } = useStreamLogger();
   const streamLoggedRef = useRef<Set<string>>(new Set());
+  const playbackLockRef = useRef<number>(0); // Incremented on each playTrack call to abort stale ones
 
   const handleAudioError = useCallback((error: any, context: string = '') => {
+    // Suppress AbortError — harmless race condition from rapid track switching
+    if (error?.name === 'AbortError' || (error instanceof DOMException && error.name === 'AbortError')) {
+      return;
+    }
+    // Suppress "play() interrupted" errors
+    if (error?.message?.includes('interrupted') || error?.message?.includes('aborted')) {
+      return;
+    }
+
     console.error(`Audio error in ${context}:`, error);
     
     let errorMessage = 'Failed to load or play audio.';
@@ -97,8 +96,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       const mediaError = error.target.error;
       switch (mediaError.code) {
         case MediaError.MEDIA_ERR_ABORTED:
-          errorMessage = 'Audio playback was aborted.';
-          break;
+          return; // Suppress aborted errors
         case MediaError.MEDIA_ERR_NETWORK:
           errorMessage = 'Network error while loading audio.';
           break;
@@ -119,7 +117,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       isPlaying: false
     }));
     
-    if (context !== 'audio element' && !errorMessage.includes('aborted')) {
+    if (context !== 'audio element') {
       toast.error(errorMessage);
     }
   }, []);
@@ -145,22 +143,26 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     }
   }, []);
 
-  const loadAudio = useCallback(async (track: Track) => {
+  const playTrack = useCallback(async (track: Track) => {
     if (!track?.audio_file_path) {
       console.error('No audio file path provided for track:', track);
-      handleAudioError(new Error('No audio file path'), 'loadAudio');
+      handleAudioError(new Error('No audio file path'), 'playTrack');
       return;
     }
 
-    try {
-      setState(prev => ({
-        ...prev,
-        isLoading: true,
-        error: null,
-        currentTrack: track
-      }));
+    // Increment lock — any in-flight playTrack with a stale lock will bail out
+    const lockId = ++playbackLockRef.current;
 
-      const audioUrl = await getValidAudioUrl(track.audio_file_path);
+    setState(prev => ({ 
+      ...prev, 
+      isLoading: true, 
+      error: null,
+      currentTrack: track,
+      queue: prev.queue.some(t => t.id === track.id) ? prev.queue : [track, ...prev.queue]
+    }));
+    
+    try {
+      const audioUrl = getValidAudioUrl(track.audio_file_path);
 
       if (!audioRef.current) {
         throw new Error('Audio element not available');
@@ -170,89 +172,87 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       audio.pause();
       audio.currentTime = 0;
       audio.src = audioUrl;
-      
-      await new Promise((resolve, reject) => {
-        let resolved = false;
-        
-        const handleCanPlay = () => {
-          if (resolved) return;
-          resolved = true;
-          cleanup();
-          resolve(true);
-        };
-        
-        const handleError = (e: Event) => {
-          if (resolved) return;
-          resolved = true;
-          cleanup();
-          reject(new Error(`Failed to load audio: ${audio.error?.message || 'Unknown error'}`));
-        };
 
-        const cleanup = () => {
-          audio.removeEventListener('canplay', handleCanPlay);
-          audio.removeEventListener('error', handleError);
-        };
-        
-        audio.addEventListener('canplay', handleCanPlay);
-        audio.addEventListener('error', handleError);
-        
-        setTimeout(() => {
-          if (!resolved) {
+      // Wait for canplay with 45s timeout + retry
+      const waitForCanPlay = (retryCount: number = 0): Promise<void> => {
+        return new Promise((resolve, reject) => {
+          let resolved = false;
+
+          const handleCanPlay = () => {
+            if (resolved) return;
             resolved = true;
             cleanup();
-            reject(new Error('Audio loading timeout - file may be too large or network is slow'));
-          }
-        }, 15000);
-        
-        audio.load();
-      });
+            resolve();
+          };
 
-      setState(prev => ({
-        ...prev,
-        currentTrack: track,
-        isLoading: false,
-        error: null
-      }));
+          const handleError = () => {
+            if (resolved) return;
+            resolved = true;
+            cleanup();
+            reject(new Error(`Failed to load audio: ${audio.error?.message || 'Unknown error'}`));
+          };
 
+          const cleanup = () => {
+            audio.removeEventListener('canplay', handleCanPlay);
+            audio.removeEventListener('error', handleError);
+          };
+
+          audio.addEventListener('canplay', handleCanPlay);
+          audio.addEventListener('error', handleError);
+
+          setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              cleanup();
+              if (retryCount < 1) {
+                // Retry once
+                audio.load();
+                waitForCanPlay(retryCount + 1).then(resolve).catch(reject);
+              } else {
+                reject(new Error('Audio loading timeout - file may be too large or network is slow'));
+              }
+            }
+          }, 45000);
+
+          audio.load();
+        });
+      };
+
+      await waitForCanPlay();
+
+      // Check if this playTrack call is still the current one
+      if (playbackLockRef.current !== lockId) return;
+
+      await audio.play();
+
+      // Check again after play()
+      if (playbackLockRef.current !== lockId) return;
+
+      setState(prev => ({ ...prev, isPlaying: true, isLoading: false, error: null }));
       updateMediaSession(track);
-    } catch (error) {
-      console.error('Error loading audio:', error);
-      handleAudioError(error, 'loadAudio');
-    }
-  }, [updateMediaSession, handleAudioError]);
-
-  const playTrack = useCallback(async (track: Track) => {
-    setState(prev => ({ 
-      ...prev, 
-      isLoading: true, 
-      error: null,
-      queue: prev.queue.some(t => t.id === track.id) ? prev.queue : [track, ...prev.queue]
-    }));
-    
-    try {
-      await loadAudio(track);
       
-      if (audioRef.current) {
-        await audioRef.current.play();
-        setState(prev => ({ ...prev, isPlaying: true, isLoading: false }));
-        
-        if (!streamLoggedRef.current.has(track.id)) {
-          streamLoggedRef.current.add(track.id);
-          logStream(track.id);
-        }
+      if (!streamLoggedRef.current.has(track.id)) {
+        streamLoggedRef.current.add(track.id);
+        logStream(track.id);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // If stale, silently bail
+      if (playbackLockRef.current !== lockId) return;
+      // Suppress AbortError from rapid switching
+      if (error?.name === 'AbortError' || error?.message?.includes('interrupted')) return;
+      
       console.error("Playback failed:", error);
       handleAudioError(error, 'playTrack');
     }
-  }, [loadAudio, handleAudioError, logStream]);
+  }, [handleAudioError, logStream, updateMediaSession]);
 
   const play = useCallback(async () => {
     if (audioRef.current) {
       try {
         await audioRef.current.play();
         setState(prev => ({ ...prev, isPlaying: true }));
-      } catch (error) {
+      } catch (error: any) {
+        if (error?.name === 'AbortError' || error?.message?.includes('interrupted')) return;
         console.error("Play failed:", error);
         handleAudioError(error, 'play');
       }
@@ -444,7 +444,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
 
   const toggleShuffle = useCallback(() => {
     setState(prev => ({ ...prev, isShuffle: !prev.isShuffle }));
-  }, [state.isShuffle]);
+  }, []);
 
   const shareTrack = useCallback((_trackId: string) => {
     // TODO: implement share
@@ -505,7 +505,6 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       };
 
       const handleAudioElementError = (e: Event) => {
-        console.error('Audio element error:', e);
         handleAudioError(e, 'audio element');
       };
 

@@ -71,33 +71,33 @@ const ArtistProfile = () => {
       
       {/* Claim Profile Banner */}
       {canClaimProfile() && (
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 p-4 mx-4 mb-4 rounded-r-md">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Crown className="h-5 w-5 text-yellow-600 mr-2" />
-              <div>
-                <p className="text-sm font-medium text-yellow-800">
+        <div className="bg-accent/20 border-l-4 border-primary p-3 md:p-4 mx-3 md:mx-4 mb-3 md:mb-4 rounded-r-md">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center min-w-0">
+              <Crown className="h-5 w-5 text-primary mr-2 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">
                   Is this your artist profile?
                 </p>
-                <p className="text-xs text-yellow-700">
+                <p className="text-xs text-muted-foreground hidden sm:block">
                   This profile was automatically created. Claim it to manage your music and profile.
                 </p>
               </div>
             </div>
             <Button
               onClick={() => setClaimModalOpen(true)}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0"
               size="sm"
             >
               <Crown className="h-4 w-4 mr-1" />
-              Claim Profile
+              Claim
             </Button>
           </div>
         </div>
       )}
       
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+      <div className="max-w-7xl mx-auto px-3 md:px-6 py-4 md:py-8">
         <ArtistMobileActions 
           isFollowing={isFollowing}
           followLoading={followLoading}
@@ -122,7 +122,6 @@ const ArtistProfile = () => {
         artistName={artistProfile.username || artistProfile.full_name || 'Unknown Artist'}
         artistProfileId={artistProfile.id}
         onClaimed={() => {
-          // Refresh artist profile after claim
           window.location.reload();
         }}
       />
