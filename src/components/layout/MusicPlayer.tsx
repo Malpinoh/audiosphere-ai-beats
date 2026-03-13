@@ -122,46 +122,8 @@ const MusicPlayer = () => {
           </div>
           
           {/* Player Controls */}
-          <div className="flex flex-col space-y-2 w-full md:w-2/4">
-            {isMobile ? (
-              <div className="flex flex-col gap-1.5 w-full">
-                <div className="flex items-center justify-center gap-4">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={handleSkipBackward} disabled={!currentTrack}>
-                    <SkipBack className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    onClick={togglePlay}
-                    className="h-10 w-10 rounded-full maudio-gradient-bg hover:opacity-90"
-                    disabled={!currentTrack}
-                  >
-                    {isLoading ? (
-                      <div className="h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                    ) : isPlaying ? (
-                      <Pause className="h-5 w-5" /> 
-                    ) : (
-                      <Play className="h-5 w-5 ml-0.5" />
-                    )}
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={playNext} disabled={!currentTrack || queue.length === 0}>
-                    <SkipForward className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground tabular-nums w-8 text-right">{formatTime(currentTime)}</span>
-                  <Slider
-                    value={[currentTime]}
-                    max={duration || 1}
-                    step={1}
-                    className="flex-1"
-                    onValueChange={(value) => seekTo(value[0])}
-                    disabled={!currentTrack}
-                  />
-                  <span className="text-[10px] text-muted-foreground tabular-nums w-8">{formatTime(duration)}</span>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-center space-x-4">
+          <div className="flex flex-col space-y-2 w-2/4">
+            <div className="flex items-center justify-center space-x-4">
                   <Button variant="ghost" size="icon" className={`text-muted-foreground hover:text-foreground ${isShuffle ? 'text-primary' : ''}`} onClick={toggleShuffle}>
                     <Shuffle className="h-4 w-4" />
                   </Button>
