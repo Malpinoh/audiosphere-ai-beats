@@ -62,12 +62,15 @@ const MusicPlayer = () => {
     }
   };
 
+  // On mobile, the MobileMiniPlayer handles rendering
+  if (isMobile) return null;
+
   return (
     <>
-      <div className={`fixed ${isMobile ? 'bottom-14' : 'bottom-0'} left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border p-3 z-40`}>
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border p-3 z-40 hidden lg:block">
+        <div className="max-w-7xl mx-auto flex items-center gap-4">
           {/* Track Info */}
-          <div className="flex items-center space-x-3 w-full md:w-1/4">
+          <div className="flex items-center space-x-3 w-1/4">
             {currentTrack ? (
               <>
                 <div 
