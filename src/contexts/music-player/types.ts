@@ -3,6 +3,14 @@ import { Track } from "@/types/track-types";
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
+export interface PlaybackError {
+  type: 'network' | 'decode' | 'source' | 'timeout' | 'unknown';
+  message: string;
+  canRetry: boolean;
+  audioUrl?: string;
+  errorCode?: number;
+}
+
 export interface MusicPlayerContextType {
   currentTrack: Track | null;
   isPlaying: boolean;
@@ -14,6 +22,7 @@ export interface MusicPlayerContextType {
   isLoading: boolean;
   repeatMode: RepeatMode;
   isShuffle: boolean;
+  playbackError: PlaybackError | null;
   playTrack: (track: Track) => void;
   togglePlay: () => void;
   setQueue: (tracks: Track[]) => void;
@@ -27,6 +36,7 @@ export interface MusicPlayerContextType {
   toggleShuffle: () => void;
   addToQueue: (track: Track) => void;
   removeFromQueue: (trackId: string) => void;
+  retryPlayback: () => void;
   likedTracks: Set<string>;
   savedTracks: Set<string>;
   likeTrack: (trackId: string) => Promise<boolean>;

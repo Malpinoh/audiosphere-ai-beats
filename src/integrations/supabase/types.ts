@@ -1066,6 +1066,8 @@ export type Database = {
         Row: {
           auto_quality: boolean
           created_at: string
+          crossfade_duration: number
+          crossfade_enabled: boolean
           enable_eq: boolean
           eq_preset: Json | null
           id: string
@@ -1077,6 +1079,8 @@ export type Database = {
         Insert: {
           auto_quality?: boolean
           created_at?: string
+          crossfade_duration?: number
+          crossfade_enabled?: boolean
           enable_eq?: boolean
           eq_preset?: Json | null
           id?: string
@@ -1088,6 +1092,8 @@ export type Database = {
         Update: {
           auto_quality?: boolean
           created_at?: string
+          crossfade_duration?: number
+          crossfade_enabled?: boolean
           enable_eq?: boolean
           eq_preset?: Json | null
           id?: string
