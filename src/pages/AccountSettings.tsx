@@ -20,6 +20,115 @@ import { useMusicPlayer } from "@/contexts/music-player";
 import { AudioEqualizer } from "@/components/player/AudioEqualizer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+function PlaybackSettingsTab() {
+  const { preferences, updatePreference, resetPreferences } = useAudioPreferences();
+  const { audioRef } = useMusicPlayer();
+  const audioEngine = useAudioEngine(audioRef);
+
+  return (
+    <TabsContent value="playback" className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Audio Quality</CardTitle>
+          <CardDescription>Choose your preferred streaming quality.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">Preferred Quality</h3>
+              <p className="text-sm text-muted-foreground">Higher quality uses more data.</p>
+            </div>
+            <Select value={preferences.preferredQuality} onValueChange={(v) => updatePreference('preferredQuality', v as any)}>
+              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="normal">Normal</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="hifi">Hi-Fi</SelectItem>
+                <SelectItem value="hires">Hi-Res</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">Auto Quality</h3>
+              <p className="text-sm text-muted-foreground">Adjust quality based on network speed.</p>
+            </div>
+            <Switch checked={preferences.autoQuality} onCheckedChange={(v) => updatePreference('autoQuality', v)} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">Volume Normalization</h3>
+              <p className="text-sm text-muted-foreground">Keep volume consistent across tracks.</p>
+            </div>
+            <Switch checked={preferences.volumeNormalization} onCheckedChange={(v) => {
+              updatePreference('volumeNormalization', v);
+              audioEngine.setNormalization(v);
+            }} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Crossfade</CardTitle>
+          <CardDescription>Smoothly transition between tracks.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">Enable Crossfade</h3>
+              <p className="text-sm text-muted-foreground">Blend the end of one track into the next.</p>
+            </div>
+            <Switch checked={preferences.crossfadeEnabled} onCheckedChange={(v) => updatePreference('crossfadeEnabled', v)} />
+          </div>
+          {preferences.crossfadeEnabled && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Duration</span>
+                <span className="text-sm text-muted-foreground tabular-nums">{preferences.crossfadeDuration}s</span>
+              </div>
+              <Slider
+                value={[preferences.crossfadeDuration]}
+                min={1}
+                max={12}
+                step={1}
+                onValueChange={(v) => updatePreference('crossfadeDuration', v[0])}
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>1s</span><span>12s</span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Equalizer</CardTitle>
+          <CardDescription>Fine-tune your audio with a 5-band EQ.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AudioEqualizer
+            bands={audioEngine.bands}
+            eqEnabled={audioEngine.eqEnabled}
+            currentPreset={audioEngine.currentPreset}
+            onBandChange={audioEngine.setEqBand}
+            onPresetChange={audioEngine.applyPreset}
+            onToggleEq={(enabled) => {
+              audioEngine.toggleEq(enabled);
+              updatePreference('enableEq', enabled);
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={resetPreferences}>Reset All to Defaults</Button>
+      </div>
+    </TabsContent>
+  );
+}
+
 export default function AccountSettings() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
