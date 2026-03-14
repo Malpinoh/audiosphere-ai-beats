@@ -161,6 +161,10 @@ export default function AccountSettings() {
                 Artist Info
               </TabsTrigger>
             )}
+            <TabsTrigger value="playback" className="flex items-center gap-2">
+              <Headphones className="h-4 w-4" />
+              Playback
+            </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
               Notifications
