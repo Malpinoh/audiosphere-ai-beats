@@ -11,6 +11,8 @@ interface AudioPreferences {
   enableEq: boolean;
   eqPreset: Record<string, number>;
   volumeNormalization: boolean;
+  crossfadeEnabled: boolean;
+  crossfadeDuration: number;
 }
 
 const DEFAULT_PREFERENCES: AudioPreferences = {
@@ -19,6 +21,8 @@ const DEFAULT_PREFERENCES: AudioPreferences = {
   enableEq: false,
   eqPreset: {},
   volumeNormalization: true,
+  crossfadeEnabled: false,
+  crossfadeDuration: 6,
 };
 
 export function useAudioPreferences() {
@@ -26,13 +30,10 @@ export function useAudioPreferences() {
   const [preferences, setPreferences] = useState<AudioPreferences>(DEFAULT_PREFERENCES);
   const [loading, setLoading] = useState(true);
 
-  // Load preferences from database or localStorage
   const loadPreferences = useCallback(async () => {
     setLoading(true);
-    
     try {
       if (user) {
-        // Load from database for authenticated users
         const { data, error } = await supabase
           .from('user_audio_preferences')
           .select('*')
@@ -50,21 +51,18 @@ export function useAudioPreferences() {
             enableEq: data.enable_eq,
             eqPreset: (data.eq_preset as Record<string, number>) || {},
             volumeNormalization: data.volume_normalization,
+            crossfadeEnabled: (data as any).crossfade_enabled ?? false,
+            crossfadeDuration: (data as any).crossfade_duration ?? 6,
           });
         } else {
-          // Create default preferences for new users
           await savePreferences(DEFAULT_PREFERENCES);
           setPreferences(DEFAULT_PREFERENCES);
         }
       } else {
-        // Load from localStorage for anonymous users
         const stored = localStorage.getItem('audio_preferences');
         if (stored) {
-          try {
-            setPreferences(JSON.parse(stored));
-          } catch {
-            setPreferences(DEFAULT_PREFERENCES);
-          }
+          try { setPreferences({ ...DEFAULT_PREFERENCES, ...JSON.parse(stored) }); }
+          catch { setPreferences(DEFAULT_PREFERENCES); }
         }
       }
     } catch (error) {
@@ -74,14 +72,12 @@ export function useAudioPreferences() {
     }
   }, [user]);
 
-  // Save preferences
   const savePreferences = useCallback(async (newPreferences: Partial<AudioPreferences>) => {
     const updated = { ...preferences, ...newPreferences };
     setPreferences(updated);
 
     try {
       if (user) {
-        // Save to database
         const { error } = await supabase
           .from('user_audio_preferences')
           .upsert({
@@ -91,17 +87,18 @@ export function useAudioPreferences() {
             enable_eq: updated.enableEq,
             eq_preset: updated.eqPreset,
             volume_normalization: updated.volumeNormalization,
+            crossfade_enabled: updated.crossfadeEnabled,
+            crossfade_duration: updated.crossfadeDuration,
             updated_at: new Date().toISOString(),
-          }, {
+          } as any, {
             onConflict: 'user_id'
           });
 
         if (error) {
           console.error('Error saving audio preferences:', error);
-          toast.error('Failed to save preferences');
+          toast.error('Failed to save preferences', { duration: 2500 });
         }
       } else {
-        // Save to localStorage for anonymous users
         localStorage.setItem('audio_preferences', JSON.stringify(updated));
       }
     } catch (error) {
@@ -109,7 +106,6 @@ export function useAudioPreferences() {
     }
   }, [user, preferences]);
 
-  // Update individual preference
   const updatePreference = useCallback(<K extends keyof AudioPreferences>(
     key: K,
     value: AudioPreferences[K]
@@ -117,13 +113,11 @@ export function useAudioPreferences() {
     savePreferences({ [key]: value });
   }, [savePreferences]);
 
-  // Reset to defaults
   const resetPreferences = useCallback(() => {
     savePreferences(DEFAULT_PREFERENCES);
-    toast.success('Audio preferences reset to defaults');
+    toast.success('Audio preferences reset to defaults', { duration: 2500 });
   }, [savePreferences]);
 
-  // Load on mount and user change
   useEffect(() => {
     loadPreferences();
   }, [loadPreferences]);

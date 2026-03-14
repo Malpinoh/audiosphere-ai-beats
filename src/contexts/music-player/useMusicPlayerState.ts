@@ -1,11 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Track } from '@/types/track-types';
-import { RepeatMode } from '@/contexts/music-player/types';
+import { RepeatMode, PlaybackError } from '@/contexts/music-player/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useStreamLogger } from '@/hooks/use-stream-logger';
 import { toast } from 'sonner';
 
-// Track listening for recommendation engine
 const trackListeningHistory = async (userId: string, trackId: string, listenTime: number) => {
   try {
     await supabase.rpc('update_listening_history', {
@@ -13,7 +12,6 @@ const trackListeningHistory = async (userId: string, trackId: string, listenTime
       p_track_id: trackId,
       p_listen_time: listenTime
     });
-    
     if (listenTime >= 30) {
       setTimeout(async () => {
         await supabase.rpc('update_user_preferences', { p_user_id: userId });
@@ -31,7 +29,7 @@ interface MusicPlayerState {
   currentTime: number;
   duration: number;
   isLoading: boolean;
-  error: string | null;
+  playbackError: PlaybackError | null;
   queue: Track[];
   isMuted: boolean;
   repeatMode: RepeatMode;
@@ -43,11 +41,11 @@ interface MusicPlayerState {
 const initialState: MusicPlayerState = {
   currentTrack: null,
   isPlaying: false,
-  volume: 0.5,
+  volume: 50,
   currentTime: 0,
   duration: 0,
   isLoading: false,
-  error: null,
+  playbackError: null,
   queue: [],
   isMuted: false,
   repeatMode: 'off' as RepeatMode,
@@ -60,14 +58,50 @@ const getValidAudioUrl = (audioFilePath: string): string => {
   if (!audioFilePath) {
     throw new Error('No audio file path provided');
   }
-
   if (audioFilePath.startsWith('http')) {
     return audioFilePath;
   }
-
   const cleanPath = audioFilePath.trim().replace(/^\/+/, '');
   const baseUrl = 'https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/audio_files';
-  return `${baseUrl}/${encodeURIComponent(cleanPath)}`;
+  return `${baseUrl}/${cleanPath}`;
+};
+
+const categorizeError = (error: any, audioUrl?: string): PlaybackError => {
+  // Check network status first
+  if (!navigator.onLine) {
+    return {
+      type: 'network',
+      message: 'You are offline. Check your internet connection.',
+      canRetry: true,
+      audioUrl,
+    };
+  }
+
+  // MediaError from audio element
+  if (error?.target?.error || error?.code) {
+    const mediaError = error?.target?.error || error;
+    const code = mediaError.code || mediaError;
+    switch (code) {
+      case MediaError.MEDIA_ERR_ABORTED:
+        return { type: 'unknown', message: 'Playback was aborted.', canRetry: true, audioUrl };
+      case MediaError.MEDIA_ERR_NETWORK:
+        return { type: 'network', message: 'Network error — check your connection and retry.', canRetry: true, audioUrl, errorCode: code };
+      case MediaError.MEDIA_ERR_DECODE:
+        return { type: 'decode', message: 'Audio file could not be decoded.', canRetry: false, audioUrl, errorCode: code };
+      case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+        return { type: 'source', message: 'Audio format is not supported by your browser.', canRetry: false, audioUrl, errorCode: code };
+    }
+  }
+
+  const msg = error?.message || String(error);
+  if (msg.includes('timeout') || msg.includes('Timeout')) {
+    return { type: 'timeout', message: 'Audio took too long to load. Try again.', canRetry: true, audioUrl };
+  }
+  if (msg.includes('network') || msg.includes('Network') || msg.includes('fetch')) {
+    return { type: 'network', message: 'Network error while loading audio.', canRetry: true, audioUrl };
+  }
+
+  return { type: 'unknown', message: msg || 'Failed to play audio.', canRetry: true, audioUrl };
 };
 
 export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudioElement>) => {
@@ -76,66 +110,38 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   const audioRef = externalAudioRef || internalAudioRef;
   const { logStream } = useStreamLogger();
   const streamLoggedRef = useRef<Set<string>>(new Set());
-  const playbackLockRef = useRef<number>(0); // Incremented on each playTrack call to abort stale ones
+  const playbackLockRef = useRef<number>(0);
+  const lastAudioUrlRef = useRef<string>('');
 
-  const handleAudioError = useCallback((error: any, context: string = '') => {
-    // Suppress AbortError — harmless race condition from rapid track switching
-    if (error?.name === 'AbortError' || (error instanceof DOMException && error.name === 'AbortError')) {
-      return;
-    }
-    // Suppress "play() interrupted" errors
-    if (error?.message?.includes('interrupted') || error?.message?.includes('aborted')) {
-      return;
-    }
+  const handleAudioError = useCallback((error: any, context: string = '', audioUrl?: string) => {
+    if (error?.name === 'AbortError' || (error instanceof DOMException && error.name === 'AbortError')) return;
+    if (error?.message?.includes('interrupted') || error?.message?.includes('aborted')) return;
 
     console.error(`Audio error in ${context}:`, error);
     
-    let errorMessage = 'Failed to load or play audio.';
-    
-    if (error?.target?.error) {
-      const mediaError = error.target.error;
-      switch (mediaError.code) {
-        case MediaError.MEDIA_ERR_ABORTED:
-          return; // Suppress aborted errors
-        case MediaError.MEDIA_ERR_NETWORK:
-          errorMessage = 'Network error while loading audio.';
-          break;
-        case MediaError.MEDIA_ERR_DECODE:
-          errorMessage = 'Audio file format is not supported.';
-          break;
-        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          errorMessage = 'Audio file format or source is not supported.';
-          break;
-        default:
-          errorMessage = 'Unknown audio error occurred.';
-      }
-    }
+    const playbackError = categorizeError(error, audioUrl || lastAudioUrlRef.current);
     
     setState(prev => ({
       ...prev,
       isLoading: false,
-      isPlaying: false
+      isPlaying: false,
+      playbackError,
     }));
     
-    if (context !== 'audio element') {
-      toast.error(errorMessage);
-    }
+    toast.error(playbackError.message, { duration: 2500 });
   }, []);
 
   const updateMediaSession = useCallback((track: Track) => {
     if ('mediaSession' in navigator) {
       try {
-        const coverUrl = track.cover_art_path?.startsWith('http') 
-          ? track.cover_art_path 
+        const coverUrl = track.cover_art_path?.startsWith('http')
+          ? track.cover_art_path
           : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${track.cover_art_path}`;
-
         navigator.mediaSession.metadata = new MediaMetadata({
           title: track.title,
           artist: track.artist,
           album: track.album_name || track.genre || 'Unknown Album',
-          artwork: [
-            { src: coverUrl, sizes: '512x512', type: 'image/jpeg' }
-          ]
+          artwork: [{ src: coverUrl, sizes: '512x512', type: 'image/jpeg' }]
         });
       } catch (error) {
         console.error('Error updating media session:', error);
@@ -150,19 +156,19 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       return;
     }
 
-    // Increment lock — any in-flight playTrack with a stale lock will bail out
     const lockId = ++playbackLockRef.current;
 
-    setState(prev => ({ 
-      ...prev, 
-      isLoading: true, 
-      error: null,
+    setState(prev => ({
+      ...prev,
+      isLoading: true,
+      playbackError: null,
       currentTrack: track,
       queue: prev.queue.some(t => t.id === track.id) ? prev.queue : [track, ...prev.queue]
     }));
-    
+
     try {
       const audioUrl = getValidAudioUrl(track.audio_file_path);
+      lastAudioUrlRef.current = audioUrl;
 
       if (!audioRef.current) {
         throw new Error('Audio element not available');
@@ -172,40 +178,23 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       audio.pause();
       audio.currentTime = 0;
       audio.src = audioUrl;
+      
+      // Unlock audio on mobile by calling play() synchronously in user gesture context
+      audio.play().catch(() => {});
 
-      // Wait for canplay with 45s timeout + retry
       const waitForCanPlay = (retryCount: number = 0): Promise<void> => {
         return new Promise((resolve, reject) => {
           let resolved = false;
-
-          const handleCanPlay = () => {
-            if (resolved) return;
-            resolved = true;
-            cleanup();
-            resolve();
-          };
-
-          const handleError = () => {
-            if (resolved) return;
-            resolved = true;
-            cleanup();
-            reject(new Error(`Failed to load audio: ${audio.error?.message || 'Unknown error'}`));
-          };
-
-          const cleanup = () => {
-            audio.removeEventListener('canplay', handleCanPlay);
-            audio.removeEventListener('error', handleError);
-          };
-
+          const handleCanPlay = () => { if (resolved) return; resolved = true; cleanup(); resolve(); };
+          const handleError = () => { if (resolved) return; resolved = true; cleanup(); reject(new Error(`Failed to load audio: ${audio.error?.message || 'Unknown error'}`)); };
+          const cleanup = () => { audio.removeEventListener('canplay', handleCanPlay); audio.removeEventListener('error', handleError); };
           audio.addEventListener('canplay', handleCanPlay);
           audio.addEventListener('error', handleError);
-
           setTimeout(() => {
             if (!resolved) {
               resolved = true;
               cleanup();
               if (retryCount < 1) {
-                // Retry once
                 audio.load();
                 waitForCanPlay(retryCount + 1).then(resolve).catch(reject);
               } else {
@@ -213,47 +202,47 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
               }
             }
           }, 45000);
-
-          audio.load();
+          // If audio is already ready (e.g. cached), resolve immediately
+          if (audio.readyState >= 3) {
+            handleCanPlay();
+          }
         });
       };
 
       await waitForCanPlay();
-
-      // Check if this playTrack call is still the current one
       if (playbackLockRef.current !== lockId) return;
 
       await audio.play();
-
-      // Check again after play()
       if (playbackLockRef.current !== lockId) return;
 
-      setState(prev => ({ ...prev, isPlaying: true, isLoading: false, error: null }));
+      setState(prev => ({ ...prev, isPlaying: true, isLoading: false, playbackError: null }));
       updateMediaSession(track);
-      
+
       if (!streamLoggedRef.current.has(track.id)) {
         streamLoggedRef.current.add(track.id);
         logStream(track.id);
       }
     } catch (error: any) {
-      // If stale, silently bail
       if (playbackLockRef.current !== lockId) return;
-      // Suppress AbortError from rapid switching
       if (error?.name === 'AbortError' || error?.message?.includes('interrupted')) return;
-      
       console.error("Playback failed:", error);
-      handleAudioError(error, 'playTrack');
+      handleAudioError(error, 'playTrack', lastAudioUrlRef.current);
     }
   }, [handleAudioError, logStream, updateMediaSession]);
+
+  const retryPlayback = useCallback(() => {
+    if (state.currentTrack) {
+      playTrack(state.currentTrack);
+    }
+  }, [state.currentTrack, playTrack]);
 
   const play = useCallback(async () => {
     if (audioRef.current) {
       try {
         await audioRef.current.play();
-        setState(prev => ({ ...prev, isPlaying: true }));
+        setState(prev => ({ ...prev, isPlaying: true, playbackError: null }));
       } catch (error: any) {
         if (error?.name === 'AbortError' || error?.message?.includes('interrupted')) return;
-        console.error("Play failed:", error);
         handleAudioError(error, 'play');
       }
     }
@@ -267,11 +256,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   }, []);
 
   const togglePlay = useCallback(() => {
-    if (state.isPlaying) {
-      pause();
-    } else {
-      play();
-    }
+    if (state.isPlaying) { pause(); } else { play(); }
   }, [state.isPlaying, play, pause]);
 
   const setVolume = useCallback((volume: number) => {
@@ -316,38 +301,23 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   const playNext = useCallback(() => {
     let nextTrack: Track | null = null;
     const currentIndex = state.queue.findIndex(track => track.id === state.currentTrack?.id);
-    
-    if (state.repeatMode === 'one' && state.currentTrack) {
-      playTrack(state.currentTrack);
-      return;
-    }
-    
+    if (state.repeatMode === 'one' && state.currentTrack) { playTrack(state.currentTrack); return; }
     if (state.isShuffle) {
       const availableTracks = state.queue.filter(track => track.id !== state.currentTrack?.id);
-      if (availableTracks.length > 0) {
-        const randomIndex = Math.floor(Math.random() * availableTracks.length);
-        nextTrack = availableTracks[randomIndex];
-      }
+      if (availableTracks.length > 0) { nextTrack = availableTracks[Math.floor(Math.random() * availableTracks.length)]; }
     } else if (currentIndex < state.queue.length - 1) {
       nextTrack = state.queue[currentIndex + 1];
     } else if (state.repeatMode === 'all' && state.queue.length > 0) {
       nextTrack = state.queue[0];
     }
-    
-    if (nextTrack) {
-      playTrack(nextTrack);
-    }
+    if (nextTrack) { playTrack(nextTrack); }
   }, [state.queue, state.currentTrack, state.isShuffle, state.repeatMode, playTrack]);
 
   const playPrevious = useCallback(() => {
     const currentIndex = state.queue.findIndex(track => track.id === state.currentTrack?.id);
-    
     if (state.isShuffle) {
       const availableTracks = state.queue.filter(track => track.id !== state.currentTrack?.id);
-      if (availableTracks.length > 0) {
-        const randomIndex = Math.floor(Math.random() * availableTracks.length);
-        playTrack(availableTracks[randomIndex]);
-      }
+      if (availableTracks.length > 0) { playTrack(availableTracks[Math.floor(Math.random() * availableTracks.length)]); }
     } else if (currentIndex > 0) {
       playTrack(state.queue[currentIndex - 1]);
     } else if (state.repeatMode === 'all' && state.queue.length > 0) {
@@ -359,81 +329,56 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-
       const { error } = await supabase.from('likes').insert({ user_id: user.id, track_id: trackId });
       if (error) { console.error('Error liking track:', error); return false; }
-
       setState(prev => ({ ...prev, likedTracks: new Set([...prev.likedTracks, trackId]) }));
       return true;
-    } catch (error) {
-      console.error('Error liking track:', error);
-      return false;
-    }
+    } catch (error) { console.error('Error liking track:', error); return false; }
   }, []);
 
   const unlikeTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-
       const { error } = await supabase.from('likes').delete().eq('user_id', user.id).eq('track_id', trackId);
       if (error) { console.error('Error unliking track:', error); return false; }
-
       setState(prev => {
         const newLikedTracks = new Set(prev.likedTracks);
         newLikedTracks.delete(trackId);
         return { ...prev, likedTracks: newLikedTracks };
       });
       return true;
-    } catch (error) {
-      console.error('Error unliking track:', error);
-      return false;
-    }
+    } catch (error) { console.error('Error unliking track:', error); return false; }
   }, []);
 
   const saveTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-
       const { error } = await supabase.from('saved_tracks').insert({ user_id: user.id, track_id: trackId });
       if (error) { console.error('Error saving track:', error); return false; }
-
       setState(prev => ({ ...prev, savedTracks: new Set([...prev.savedTracks, trackId]) }));
       return true;
-    } catch (error) {
-      console.error('Error saving track:', error);
-      return false;
-    }
+    } catch (error) { console.error('Error saving track:', error); return false; }
   }, []);
 
   const unsaveTrack = useCallback(async (trackId: string): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-
       const { error } = await supabase.from('saved_tracks').delete().eq('user_id', user.id).eq('track_id', trackId);
       if (error) { console.error('Error unsaving track:', error); return false; }
-
       setState(prev => {
         const newSavedTracks = new Set(prev.savedTracks);
         newSavedTracks.delete(trackId);
         return { ...prev, savedTracks: newSavedTracks };
       });
       return true;
-    } catch (error) {
-      console.error('Error unsaving track:', error);
-      return false;
-    }
+    } catch (error) { console.error('Error unsaving track:', error); return false; }
   }, []);
 
-  const isTrackLiked = useCallback((trackId: string): boolean => {
-    return state.likedTracks.has(trackId);
-  }, [state.likedTracks]);
-
-  const isTrackSaved = useCallback((trackId: string): boolean => {
-    return state.savedTracks.has(trackId);
-  }, [state.savedTracks]);
+  const isTrackLiked = useCallback((trackId: string): boolean => state.likedTracks.has(trackId), [state.likedTracks]);
+  const isTrackSaved = useCallback((trackId: string): boolean => state.savedTracks.has(trackId), [state.savedTracks]);
 
   const toggleRepeat = useCallback(() => {
     setState(prev => {
@@ -446,9 +391,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     setState(prev => ({ ...prev, isShuffle: !prev.isShuffle }));
   }, []);
 
-  const shareTrack = useCallback((_trackId: string) => {
-    // TODO: implement share
-  }, []);
+  const shareTrack = useCallback((_trackId: string) => {}, []);
 
   // Load user's existing likes and saved tracks
   useEffect(() => {
@@ -456,35 +399,23 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-
         const { data: likes } = await supabase.from('likes').select('track_id').eq('user_id', user.id);
         const { data: savedTracks } = await supabase.from('saved_tracks').select('track_id').eq('user_id', user.id);
-
         setState(prev => ({
           ...prev,
           likedTracks: new Set(likes?.map(like => like.track_id) || []),
           savedTracks: new Set(savedTracks?.map(saved => saved.track_id) || [])
         }));
-      } catch (error) {
-        console.error('Error loading user preferences:', error);
-      }
+      } catch (error) { console.error('Error loading user preferences:', error); }
     };
-
     loadUserPreferences();
   }, []);
 
   useEffect(() => {
     if (audioRef.current) {
       const audio = audioRef.current;
-      
-      const updateCurrentTime = () => {
-        setState(prev => ({ ...prev, currentTime: audio.currentTime || 0 }));
-      };
-
-      const updateDuration = () => {
-        setState(prev => ({ ...prev, duration: audio.duration || 0 }));
-      };
-
+      const updateCurrentTime = () => { setState(prev => ({ ...prev, currentTime: audio.currentTime || 0 })); };
+      const updateDuration = () => { setState(prev => ({ ...prev, duration: audio.duration || 0 })); };
       const handleEnded = async () => {
         if (state.currentTrack) {
           try {
@@ -493,26 +424,18 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
               const listenTime = Math.floor(audio.duration || 30);
               await trackListeningHistory(user.id, state.currentTrack.id, listenTime);
             }
-          } catch (err) {
-            console.error('Error tracking listen:', err);
-          }
-          
+          } catch (err) { console.error('Error tracking listen:', err); }
           streamLoggedRef.current.delete(state.currentTrack.id);
         }
-        
         setState(prev => ({ ...prev, isPlaying: false }));
         playNext();
       };
-
-      const handleAudioElementError = (e: Event) => {
-        handleAudioError(e, 'audio element');
-      };
+      const handleAudioElementError = (e: Event) => { handleAudioError(e, 'audio element'); };
 
       audio.addEventListener('timeupdate', updateCurrentTime);
       audio.addEventListener('loadedmetadata', updateDuration);
       audio.addEventListener('ended', handleEnded);
       audio.addEventListener('error', handleAudioElementError);
-
       return () => {
         audio.removeEventListener('timeupdate', updateCurrentTime);
         audio.removeEventListener('loadedmetadata', updateDuration);
@@ -544,6 +467,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     isLoading: state.isLoading,
     repeatMode: state.repeatMode,
     isShuffle: state.isShuffle,
+    playbackError: state.playbackError,
     playTrack,
     togglePlay,
     setQueue,
@@ -557,6 +481,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     toggleShuffle,
     addToQueue,
     removeFromQueue,
+    retryPlayback,
     likedTracks: state.likedTracks,
     savedTracks: state.savedTracks,
     likeTrack,
