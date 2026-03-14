@@ -1,13 +1,13 @@
 import { useState, useRef, useCallback } from "react";
 import { useMusicPlayer } from "@/contexts/music-player";
-import { Play, Pause } from "lucide-react";
+import { Play, Pause, RotateCcw, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MobileFullscreenPlayer } from "./MobileFullscreenPlayer";
 
 const MobileMiniPlayer = () => {
   const {
     currentTrack, isPlaying, isLoading, currentTime, duration,
-    togglePlay
+    togglePlay, playbackError, retryPlayback
   } = useMusicPlayer();
 
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
@@ -21,9 +21,8 @@ const MobileMiniPlayer = () => {
     : '/placeholder.svg';
 
   const handleMiniPlayerTap = (e: React.MouseEvent | React.TouchEvent) => {
-    // Don't open fullscreen if user tapped the play button
     const target = e.target as HTMLElement;
-    if (target.closest('[data-play-btn]')) return;
+    if (target.closest('[data-play-btn]') || target.closest('[data-retry-btn]')) return;
     setFullscreenOpen(true);
   };
 
@@ -40,7 +39,7 @@ const MobileMiniPlayer = () => {
         {/* Progress bar */}
         <div className="h-[2px] w-full bg-muted">
           <div
-            className="h-full bg-primary transition-[width] duration-300 ease-linear"
+            className={cn("h-full transition-[width] duration-300 ease-linear", playbackError ? "bg-destructive" : "bg-primary")}
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -56,33 +55,49 @@ const MobileMiniPlayer = () => {
             />
           </div>
 
-          {/* Track Info */}
+          {/* Track Info + Error */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate leading-tight">
-              {currentTrack.title}
-            </p>
-            <p className="text-xs text-muted-foreground truncate leading-tight">
-              {currentTrack.artist}
-            </p>
+            {playbackError ? (
+              <div className="flex items-center gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5 text-destructive flex-shrink-0" />
+                <p className="text-xs text-destructive truncate">{playbackError.message}</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-foreground truncate leading-tight">
+                  {currentTrack.title}
+                </p>
+                <p className="text-xs text-muted-foreground truncate leading-tight">
+                  {currentTrack.artist}
+                </p>
+              </>
+            )}
           </div>
 
-          {/* Play/Pause */}
-          <button
-            data-play-btn
-            onClick={(e) => {
-              e.stopPropagation();
-              togglePlay();
-            }}
-            className="flex-shrink-0 h-9 w-9 flex items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-90 transition-transform duration-150"
-          >
-            {isLoading ? (
-              <div className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-            ) : isPlaying ? (
-              <Pause className="h-4 w-4" />
-            ) : (
-              <Play className="h-4 w-4 ml-0.5" />
-            )}
-          </button>
+          {/* Retry or Play/Pause */}
+          {playbackError?.canRetry ? (
+            <button
+              data-retry-btn
+              onClick={(e) => { e.stopPropagation(); retryPlayback(); }}
+              className="flex-shrink-0 h-9 w-9 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground active:scale-90 transition-transform duration-150"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              data-play-btn
+              onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+              className="flex-shrink-0 h-9 w-9 flex items-center justify-center rounded-full bg-primary text-primary-foreground active:scale-90 transition-transform duration-150"
+            >
+              {isLoading ? (
+                <div className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              ) : isPlaying ? (
+                <Pause className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4 ml-0.5" />
+              )}
+            </button>
+          )}
         </div>
       </div>
 
