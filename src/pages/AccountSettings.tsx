@@ -19,6 +19,7 @@ import { useAudioEngine, EQ_PRESETS } from "@/hooks/use-audio-engine";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { AudioEqualizer } from "@/components/player/AudioEqualizer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 
 function PlaybackSettingsTab() {
   const { preferences, updatePreference, resetPreferences } = useAudioPreferences();
