@@ -346,6 +346,9 @@ export default function AccountSettings() {
             </TabsContent>
           )}
           
+          {/* Playback Tab */}
+          <PlaybackSettingsTab />
+          
           {/* Notifications Tab */}
           <TabsContent value="notifications" className="space-y-4">
             <Card>
