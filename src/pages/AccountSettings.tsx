@@ -23,8 +23,7 @@ import { Slider } from "@/components/ui/slider";
 
 function PlaybackSettingsTab() {
   const { preferences, updatePreference, resetPreferences } = useAudioPreferences();
-  const { audioRef } = useMusicPlayer();
-  const audioEngine = useAudioEngine(audioRef);
+  const { audioEngine, crossfadeEnabled, crossfadeDuration, setCrossfadeEnabled, setCrossfadeDuration } = useMusicPlayer();
 
   return (
     <TabsContent value="playback" className="space-y-4">
