@@ -15,7 +15,6 @@ import { toast } from "sonner";
 import { UserCircle, Bell, Lock, LogOut, Camera, Music, Globe, Users, Headphones } from "lucide-react";
 import { VerificationBadgeRequest } from "@/components/profile/VerificationBadgeRequest";
 import { useAudioPreferences } from "@/hooks/use-audio-preferences";
-import { useAudioEngine, EQ_PRESETS } from "@/hooks/use-audio-engine";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { AudioEqualizer } from "@/components/player/AudioEqualizer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
