@@ -53,14 +53,14 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
   }, [crossfadeEnabled, crossfadeDuration]);
 
-  // Reset crossfade trigger when track changes
+  // Reset crossfade trigger and restore volume when track changes
   useEffect(() => {
     crossfadeTriggeredRef.current = false;
-    // Reset volume when new track starts
-    if (audioRef.current && musicPlayerState.isPlaying) {
+    // Always restore volume when a new track is set
+    if (audioRef.current) {
       audioRef.current.volume = musicPlayerState.volume / 100;
     }
-  }, [musicPlayerState.currentTrack?.id]);
+  }, [musicPlayerState.currentTrack?.id, musicPlayerState.volume]);
 
   const contextValue: MusicPlayerContextType = {
     ...musicPlayerState,

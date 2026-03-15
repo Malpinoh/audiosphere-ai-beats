@@ -33,20 +33,13 @@ export function useAudioEngine(audioRef: React.RefObject<HTMLAudioElement>) {
   const [eqEnabled, setEqEnabled] = useState(false);
   const [currentPreset, setCurrentPreset] = useState('Flat');
 
-  const initContext = useCallback(() => {
-    if (contextRef.current) return contextRef.current;
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    contextRef.current = ctx;
-    return ctx;
-  }, []);
-
   const connectAudioGraph = useCallback(() => {
     if (connectedRef.current || !audioRef.current) return;
     
     try {
-      const ctx = initContext();
-      
-      // Resume context if suspended (needed after user gesture)
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      contextRef.current = ctx;
+
       if (ctx.state === 'suspended') {
         ctx.resume();
       }
@@ -54,7 +47,6 @@ export function useAudioEngine(audioRef: React.RefObject<HTMLAudioElement>) {
       const source = ctx.createMediaElementSource(audioRef.current);
       sourceRef.current = source;
 
-      // Create 5-band EQ
       const filters = DEFAULT_BANDS.map((band, i) => {
         const filter = ctx.createBiquadFilter();
         filter.type = i === 0 ? 'lowshelf' : i === DEFAULT_BANDS.length - 1 ? 'highshelf' : 'peaking';
@@ -67,12 +59,10 @@ export function useAudioEngine(audioRef: React.RefObject<HTMLAudioElement>) {
       });
       filtersRef.current = filters;
 
-      // Gain node for normalization
       const gainNode = ctx.createGain();
       gainNode.gain.value = 1.0;
       gainNodeRef.current = gainNode;
 
-      // Connect chain: source -> filters -> gain -> destination
       let lastNode: AudioNode = source;
       filters.forEach(filter => {
         lastNode.connect(filter);
@@ -82,10 +72,11 @@ export function useAudioEngine(audioRef: React.RefObject<HTMLAudioElement>) {
       gainNode.connect(ctx.destination);
 
       connectedRef.current = true;
+      console.log('Audio engine connected successfully');
     } catch (err) {
       console.error('Failed to initialize audio engine:', err);
     }
-  }, [audioRef, initContext]);
+  }, [audioRef]);
 
   const setEqBand = useCallback((index: number, gain: number) => {
     if (filtersRef.current[index]) {
@@ -108,10 +99,21 @@ export function useAudioEngine(audioRef: React.RefObject<HTMLAudioElement>) {
 
   const toggleEq = useCallback((enabled: boolean) => {
     setEqEnabled(enabled);
+    
+    // Only connect the audio graph when EQ is first enabled
+    if (enabled && !connectedRef.current) {
+      connectAudioGraph();
+    }
+    
+    // Resume context if suspended
+    if (enabled && contextRef.current?.state === 'suspended') {
+      contextRef.current.resume();
+    }
+    
     filtersRef.current.forEach((filter, i) => {
       filter.gain.value = enabled ? bands[i].gain : 0;
     });
-  }, [bands]);
+  }, [bands, connectAudioGraph]);
 
   const setNormalization = useCallback((enabled: boolean) => {
     if (gainNodeRef.current) {
@@ -119,23 +121,8 @@ export function useAudioEngine(audioRef: React.RefObject<HTMLAudioElement>) {
     }
   }, []);
 
-  // Auto-connect when audio element is available and plays
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    const handlePlay = () => {
-      if (!connectedRef.current) {
-        connectAudioGraph();
-      }
-      if (contextRef.current?.state === 'suspended') {
-        contextRef.current.resume();
-      }
-    };
-    
-    audio.addEventListener('play', handlePlay);
-    return () => audio.removeEventListener('play', handlePlay);
-  }, [audioRef, connectAudioGraph]);
+  // Do NOT auto-connect on play — only connect when user enables EQ
+  // This prevents silent audio when AudioContext is suspended
 
   return {
     bands,
