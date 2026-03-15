@@ -78,7 +78,10 @@ function PlaybackSettingsTab() {
               <h3 className="font-medium">Enable Crossfade</h3>
               <p className="text-sm text-muted-foreground">Blend the end of one track into the next.</p>
             </div>
-            <Switch checked={preferences.crossfadeEnabled} onCheckedChange={(v) => updatePreference('crossfadeEnabled', v)} />
+            <Switch checked={crossfadeEnabled} onCheckedChange={(v) => {
+              setCrossfadeEnabled(v);
+              updatePreference('crossfadeEnabled', v);
+            }} />
           </div>
           {preferences.crossfadeEnabled && (
             <div className="space-y-2">
