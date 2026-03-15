@@ -83,18 +83,21 @@ function PlaybackSettingsTab() {
               updatePreference('crossfadeEnabled', v);
             }} />
           </div>
-          {preferences.crossfadeEnabled && (
+          {crossfadeEnabled && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Duration</span>
-                <span className="text-sm text-muted-foreground tabular-nums">{preferences.crossfadeDuration}s</span>
+                <span className="text-sm text-muted-foreground tabular-nums">{crossfadeDuration}s</span>
               </div>
               <Slider
-                value={[preferences.crossfadeDuration]}
+                value={[crossfadeDuration]}
                 min={1}
                 max={12}
                 step={1}
-                onValueChange={(v) => updatePreference('crossfadeDuration', v[0])}
+                onValueChange={(v) => {
+                  setCrossfadeDuration(v[0]);
+                  updatePreference('crossfadeDuration', v[0]);
+                }}
               />
               <div className="flex justify-between text-[10px] text-muted-foreground">
                 <span>1s</span><span>12s</span>
