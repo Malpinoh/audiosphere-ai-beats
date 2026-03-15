@@ -15,7 +15,6 @@ import { toast } from "sonner";
 import { UserCircle, Bell, Lock, LogOut, Camera, Music, Globe, Users, Headphones } from "lucide-react";
 import { VerificationBadgeRequest } from "@/components/profile/VerificationBadgeRequest";
 import { useAudioPreferences } from "@/hooks/use-audio-preferences";
-import { useAudioEngine, EQ_PRESETS } from "@/hooks/use-audio-engine";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { AudioEqualizer } from "@/components/player/AudioEqualizer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,8 +22,7 @@ import { Slider } from "@/components/ui/slider";
 
 function PlaybackSettingsTab() {
   const { preferences, updatePreference, resetPreferences } = useAudioPreferences();
-  const { audioRef } = useMusicPlayer();
-  const audioEngine = useAudioEngine(audioRef);
+  const { audioEngine, crossfadeEnabled, crossfadeDuration, setCrossfadeEnabled, setCrossfadeDuration } = useMusicPlayer();
 
   return (
     <TabsContent value="playback" className="space-y-4">
@@ -80,20 +78,26 @@ function PlaybackSettingsTab() {
               <h3 className="font-medium">Enable Crossfade</h3>
               <p className="text-sm text-muted-foreground">Blend the end of one track into the next.</p>
             </div>
-            <Switch checked={preferences.crossfadeEnabled} onCheckedChange={(v) => updatePreference('crossfadeEnabled', v)} />
+            <Switch checked={crossfadeEnabled} onCheckedChange={(v) => {
+              setCrossfadeEnabled(v);
+              updatePreference('crossfadeEnabled', v);
+            }} />
           </div>
-          {preferences.crossfadeEnabled && (
+          {crossfadeEnabled && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Duration</span>
-                <span className="text-sm text-muted-foreground tabular-nums">{preferences.crossfadeDuration}s</span>
+                <span className="text-sm text-muted-foreground tabular-nums">{crossfadeDuration}s</span>
               </div>
               <Slider
-                value={[preferences.crossfadeDuration]}
+                value={[crossfadeDuration]}
                 min={1}
                 max={12}
                 step={1}
-                onValueChange={(v) => updatePreference('crossfadeDuration', v[0])}
+                onValueChange={(v) => {
+                  setCrossfadeDuration(v[0]);
+                  updatePreference('crossfadeDuration', v[0]);
+                }}
               />
               <div className="flex justify-between text-[10px] text-muted-foreground">
                 <span>1s</span><span>12s</span>
