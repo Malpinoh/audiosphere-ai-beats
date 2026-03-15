@@ -1,5 +1,6 @@
 
 import { Track } from "@/types/track-types";
+import { EqBand } from "@/hooks/use-audio-engine";
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
@@ -9,6 +10,17 @@ export interface PlaybackError {
   canRetry: boolean;
   audioUrl?: string;
   errorCode?: number;
+}
+
+export interface AudioEngineState {
+  bands: EqBand[];
+  eqEnabled: boolean;
+  currentPreset: string;
+  setEqBand: (index: number, gain: number) => void;
+  applyPreset: (preset: string) => void;
+  toggleEq: (enabled: boolean) => void;
+  setNormalization: (enabled: boolean) => void;
+  connectAudioGraph: () => void;
 }
 
 export interface MusicPlayerContextType {
@@ -47,4 +59,9 @@ export interface MusicPlayerContextType {
   isTrackSaved: (trackId: string) => boolean;
   shareTrack: (trackId: string) => void;
   audioRef: React.RefObject<HTMLAudioElement>;
+  audioEngine: AudioEngineState;
+  crossfadeEnabled: boolean;
+  crossfadeDuration: number;
+  setCrossfadeEnabled: (enabled: boolean) => void;
+  setCrossfadeDuration: (duration: number) => void;
 }
