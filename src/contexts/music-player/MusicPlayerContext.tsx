@@ -78,7 +78,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   return (
     <MusicPlayerContext.Provider value={contextValue}>
       {children}
-      <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
+      <audio ref={audioRef} preload="metadata" crossOrigin="anonymous" style={{ display: 'none' }} />
     </MusicPlayerContext.Provider>
   );
 }
