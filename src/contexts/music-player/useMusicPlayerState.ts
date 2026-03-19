@@ -177,6 +177,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       const audio = audioRef.current;
       audio.pause();
       audio.currentTime = 0;
+      audio.crossOrigin = 'anonymous';
       audio.src = audioUrl;
       
       // Unlock audio on mobile by calling play() synchronously in user gesture context
