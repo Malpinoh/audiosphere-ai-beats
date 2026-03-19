@@ -35,81 +35,103 @@ export function useAudioEngine(audioRef: React.RefObject<HTMLAudioElement>) {
 
   const connectAudioGraph = useCallback(() => {
     if (connectedRef.current || !audioRef.current) return;
-    
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      contextRef.current = ctx;
 
-      if (ctx.state === 'suspended') {
-        ctx.resume();
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const ctx = contextRef.current ?? new AudioContextClass();
+    contextRef.current = ctx;
+
+    const initializeGraph = () => {
+      if (connectedRef.current || !audioRef.current) return;
+
+      try {
+        const source = sourceRef.current ?? ctx.createMediaElementSource(audioRef.current);
+        sourceRef.current = source;
+
+        const filters = DEFAULT_BANDS.map((band, i) => {
+          const filter = ctx.createBiquadFilter();
+          filter.type = i === 0 ? 'lowshelf' : i === DEFAULT_BANDS.length - 1 ? 'highshelf' : 'peaking';
+          filter.frequency.value = band.frequency;
+          filter.gain.value = bands[i]?.gain ?? 0;
+          if (filter.type === 'peaking') {
+            filter.Q.value = 1.4;
+          }
+          return filter;
+        });
+        filtersRef.current = filters;
+
+        const gainNode = ctx.createGain();
+        gainNode.gain.value = 1.0;
+        gainNodeRef.current = gainNode;
+
+        let lastNode: AudioNode = source;
+        filters.forEach((filter) => {
+          lastNode.connect(filter);
+          lastNode = filter;
+        });
+
+        lastNode.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        connectedRef.current = true;
+        console.log('Audio engine connected successfully');
+      } catch (err) {
+        console.error('Failed to initialize audio engine:', err);
       }
+    };
 
-      const source = ctx.createMediaElementSource(audioRef.current);
-      sourceRef.current = source;
-
-      const filters = DEFAULT_BANDS.map((band, i) => {
-        const filter = ctx.createBiquadFilter();
-        filter.type = i === 0 ? 'lowshelf' : i === DEFAULT_BANDS.length - 1 ? 'highshelf' : 'peaking';
-        filter.frequency.value = band.frequency;
-        filter.gain.value = 0;
-        if (filter.type === 'peaking') {
-          filter.Q.value = 1.4;
-        }
-        return filter;
-      });
-      filtersRef.current = filters;
-
-      const gainNode = ctx.createGain();
-      gainNode.gain.value = 1.0;
-      gainNodeRef.current = gainNode;
-
-      let lastNode: AudioNode = source;
-      filters.forEach(filter => {
-        lastNode.connect(filter);
-        lastNode = filter;
-      });
-      lastNode.connect(gainNode);
-      gainNode.connect(ctx.destination);
-
-      connectedRef.current = true;
-      console.log('Audio engine connected successfully');
-    } catch (err) {
-      console.error('Failed to initialize audio engine:', err);
+    if (ctx.state !== 'running') {
+      ctx.resume()
+        .then(() => {
+          if (ctx.state !== 'running') {
+            console.warn('AudioContext is not running yet; EQ graph connection skipped to avoid silent playback');
+            return;
+          }
+          initializeGraph();
+        })
+        .catch((err) => {
+          console.error('Failed to resume audio context:', err);
+        });
+      return;
     }
-  }, [audioRef]);
+
+    initializeGraph();
+  }, [audioRef, bands]);
 
   const setEqBand = useCallback((index: number, gain: number) => {
     if (filtersRef.current[index]) {
       filtersRef.current[index].gain.value = eqEnabled ? gain : 0;
     }
-    setBands(prev => prev.map((band, i) => i === index ? { ...band, gain } : band));
+    setBands((prev) => prev.map((band, i) => i === index ? { ...band, gain } : band));
   }, [eqEnabled]);
 
   const applyPreset = useCallback((presetName: string) => {
     const preset = EQ_PRESETS[presetName];
     if (!preset) return;
+
     setCurrentPreset(presetName);
+
     preset.forEach((gain, i) => {
       if (filtersRef.current[i]) {
         filtersRef.current[i].gain.value = eqEnabled ? gain : 0;
       }
     });
-    setBands(prev => prev.map((band, i) => ({ ...band, gain: preset[i] || 0 })));
+
+    setBands((prev) => prev.map((band, i) => ({ ...band, gain: preset[i] || 0 })));
   }, [eqEnabled]);
 
   const toggleEq = useCallback((enabled: boolean) => {
     setEqEnabled(enabled);
-    
-    // Only connect the audio graph when EQ is first enabled
+
     if (enabled && !connectedRef.current) {
       connectAudioGraph();
     }
-    
-    // Resume context if suspended
+
     if (enabled && contextRef.current?.state === 'suspended') {
-      contextRef.current.resume();
+      contextRef.current.resume().catch((err) => {
+        console.error('Failed to resume suspended audio context:', err);
+      });
     }
-    
+
     filtersRef.current.forEach((filter, i) => {
       filter.gain.value = enabled ? bands[i].gain : 0;
     });
@@ -121,8 +143,28 @@ export function useAudioEngine(audioRef: React.RefObject<HTMLAudioElement>) {
     }
   }, []);
 
-  // Do NOT auto-connect on play — only connect when user enables EQ
-  // This prevents silent audio when AudioContext is suspended
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handlePlay = () => {
+      if (!eqEnabled) return;
+
+      if (!connectedRef.current) {
+        connectAudioGraph();
+        return;
+      }
+
+      if (contextRef.current?.state === 'suspended') {
+        contextRef.current.resume().catch((err) => {
+          console.error('Failed to resume audio context on play:', err);
+        });
+      }
+    };
+
+    audio.addEventListener('play', handlePlay);
+    return () => audio.removeEventListener('play', handlePlay);
+  }, [audioRef, connectAudioGraph, eqEnabled]);
 
   return {
     bands,
