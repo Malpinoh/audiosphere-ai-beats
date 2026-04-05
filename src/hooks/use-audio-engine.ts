@@ -78,13 +78,13 @@ export function useAudioEngine(audioRef: React.RefObject<HTMLAudioElement>) {
   }, []);
 
   const resumeContext = useCallback(async (ctx: AudioContext): Promise<boolean> => {
-    if (ctx.state === 'running') return true;
+    if ((ctx.state as string) === 'running') return true;
     try {
       await ctx.resume();
-      if (ctx.state === 'running') return true;
+      if ((ctx.state as string) === 'running') return true;
       // Some browsers don't transition immediately
       await new Promise(r => setTimeout(r, 100));
-      return ctx.state === 'running';
+      return (ctx.state as string) === 'running';
     } catch (err) {
       console.error('Failed to resume AudioContext:', err);
       return false;
