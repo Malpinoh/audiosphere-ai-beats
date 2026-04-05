@@ -1,6 +1,6 @@
 
 import { Track } from "@/types/track-types";
-import { EqBand } from "@/hooks/use-audio-engine";
+import { EqBand, EngineStatus } from "@/hooks/use-audio-engine";
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
@@ -16,11 +16,14 @@ export interface AudioEngineState {
   bands: EqBand[];
   eqEnabled: boolean;
   currentPreset: string;
+  engineStatus: EngineStatus;
+  engineError: string | null;
   setEqBand: (index: number, gain: number) => void;
   applyPreset: (preset: string) => void;
   toggleEq: (enabled: boolean) => void;
   setNormalization: (enabled: boolean) => void;
   connectAudioGraph: () => void;
+  loadSavedState: (savedBands: EqBand[] | null, savedPreset: string | null, savedEnabled: boolean) => void;
 }
 
 export interface MusicPlayerContextType {

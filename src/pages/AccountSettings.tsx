@@ -22,7 +22,21 @@ import { Slider } from "@/components/ui/slider";
 
 function PlaybackSettingsTab() {
   const { preferences, updatePreference, resetPreferences } = useAudioPreferences();
-  const { audioEngine, crossfadeEnabled, crossfadeDuration, setCrossfadeEnabled, setCrossfadeDuration } = useMusicPlayer();
+  const { audioEngine, crossfadeEnabled, crossfadeDuration, setCrossfadeEnabled, setCrossfadeDuration, queue } = useMusicPlayer();
+
+  const statusLabel = audioEngine.engineStatus === 'ready'
+    ? '● Active'
+    : audioEngine.engineStatus === 'suspended'
+    ? '○ Suspended – play a track first'
+    : audioEngine.engineStatus === 'failed'
+    ? '✕ Unavailable'
+    : '○ Idle';
+
+  const statusColor = audioEngine.engineStatus === 'ready'
+    ? 'text-emerald-500'
+    : audioEngine.engineStatus === 'failed'
+    ? 'text-destructive'
+    : 'text-muted-foreground';
 
   return (
     <TabsContent value="playback" className="space-y-4">
@@ -76,7 +90,7 @@ function PlaybackSettingsTab() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-medium">Enable Crossfade</h3>
-              <p className="text-sm text-muted-foreground">Blend the end of one track into the next.</p>
+              <p className="text-sm text-muted-foreground">Fade out current track before the next one starts.</p>
             </div>
             <Switch checked={crossfadeEnabled} onCheckedChange={(v) => {
               setCrossfadeEnabled(v);
@@ -84,35 +98,52 @@ function PlaybackSettingsTab() {
             }} />
           </div>
           {crossfadeEnabled && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Duration</span>
-                <span className="text-sm text-muted-foreground tabular-nums">{crossfadeDuration}s</span>
+            <>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Duration</span>
+                  <span className="text-sm text-muted-foreground tabular-nums">{crossfadeDuration}s</span>
+                </div>
+                <Slider
+                  value={[crossfadeDuration]}
+                  min={1}
+                  max={12}
+                  step={1}
+                  onValueChange={(v) => {
+                    setCrossfadeDuration(v[0]);
+                    updatePreference('crossfadeDuration', v[0]);
+                  }}
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground">
+                  <span>1s</span><span>12s</span>
+                </div>
               </div>
-              <Slider
-                value={[crossfadeDuration]}
-                min={1}
-                max={12}
-                step={1}
-                onValueChange={(v) => {
-                  setCrossfadeDuration(v[0]);
-                  updatePreference('crossfadeDuration', v[0]);
-                }}
-              />
-              <div className="flex justify-between text-[10px] text-muted-foreground">
-                <span>1s</span><span>12s</span>
-              </div>
-            </div>
+              {queue.length < 2 && (
+                <p className="text-xs text-muted-foreground italic">
+                  Crossfade needs at least 2 tracks in the queue to work.
+                </p>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Equalizer</CardTitle>
-          <CardDescription>Fine-tune your audio with a 5-band EQ.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Equalizer</CardTitle>
+              <CardDescription>Fine-tune your audio with a 5-band EQ.</CardDescription>
+            </div>
+            <span className={`text-xs font-medium ${statusColor}`}>{statusLabel}</span>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          {audioEngine.engineError && audioEngine.engineStatus === 'failed' && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2 text-xs text-destructive">
+              {audioEngine.engineError}
+            </div>
+          )}
           <AudioEqualizer
             bands={audioEngine.bands}
             eqEnabled={audioEngine.eqEnabled}
