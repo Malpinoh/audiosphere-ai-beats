@@ -14,7 +14,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const musicPlayerState = useMusicPlayerState(audioRef, crossfadeActiveRef);
   const audioEngine = useAudioEngine(audioRef);
 
-  // Crossfade state
+  // Crossfade state - initialize from localStorage, then hydrate from Supabase
   const [crossfadeEnabled, setCrossfadeEnabled] = useState(() => {
     try {
       const stored = localStorage.getItem('audio_preferences');
@@ -29,6 +29,38 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     } catch {}
     return 6;
   });
+
+  // Hydrate crossfade settings from Supabase for logged-in users
+  useEffect(() => {
+    const hydrate = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase
+          .from('user_audio_preferences')
+          .select('crossfade_enabled, crossfade_duration')
+          .eq('user_id', user.id)
+          .single();
+        if (data) {
+          const enabled = (data as any).crossfade_enabled ?? false;
+          const duration = (data as any).crossfade_duration ?? 6;
+          setCrossfadeEnabled(enabled);
+          setCrossfadeDuration(duration);
+          // Also sync to localStorage for faster next load
+          try {
+            const stored = localStorage.getItem('audio_preferences');
+            const prefs = stored ? JSON.parse(stored) : {};
+            prefs.crossfadeEnabled = enabled;
+            prefs.crossfadeDuration = duration;
+            localStorage.setItem('audio_preferences', JSON.stringify(prefs));
+          } catch {}
+        }
+      } catch (err) {
+        console.error('[Crossfade] Error hydrating from DB:', err);
+      }
+    };
+    hydrate();
+  }, []);
 
   // ---- Crossfade: fade-out current track then trigger next ----
   const crossfadeTriggeredRef = useRef(false);
