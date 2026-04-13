@@ -30,23 +30,21 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     return 6;
   });
 
-  // Hydrate crossfade settings from Supabase for logged-in users
+  // Hydrate crossfade settings from Supabase when user logs in
   useEffect(() => {
-    const hydrate = async () => {
+    const hydrate = async (userId: string) => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
         const { data } = await supabase
           .from('user_audio_preferences')
           .select('crossfade_enabled, crossfade_duration')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .single();
         if (data) {
           const enabled = (data as any).crossfade_enabled ?? false;
           const duration = (data as any).crossfade_duration ?? 6;
+          console.log(`[Crossfade] Hydrated from DB: enabled=${enabled}, duration=${duration}`);
           setCrossfadeEnabled(enabled);
           setCrossfadeDuration(duration);
-          // Also sync to localStorage for faster next load
           try {
             const stored = localStorage.getItem('audio_preferences');
             const prefs = stored ? JSON.parse(stored) : {};
@@ -59,7 +57,19 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
         console.error('[Crossfade] Error hydrating from DB:', err);
       }
     };
-    hydrate();
+
+    // Try immediately
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) hydrate(user.id);
+    });
+
+    // Also listen for auth changes (login after mount)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        hydrate(session.user.id);
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   // ---- Crossfade: fade-out current track then trigger next ----
