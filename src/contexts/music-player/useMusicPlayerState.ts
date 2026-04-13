@@ -104,7 +104,7 @@ const categorizeError = (error: any, audioUrl?: string): PlaybackError => {
   return { type: 'unknown', message: msg || 'Failed to play audio.', canRetry: true, audioUrl };
 };
 
-export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudioElement>) => {
+export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudioElement>, crossfadeActiveRef?: React.MutableRefObject<boolean>) => {
   const [state, setState] = useState<MusicPlayerState>(initialState);
   const internalAudioRef = useRef<HTMLAudioElement>(null);
   const audioRef = externalAudioRef || internalAudioRef;
@@ -429,6 +429,8 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
           streamLoggedRef.current.delete(state.currentTrack.id);
         }
         setState(prev => ({ ...prev, isPlaying: false }));
+        // If crossfade already triggered playNext, don't double-skip
+        if (crossfadeActiveRef?.current) return;
         playNext();
       };
       const handleAudioElementError = (e: Event) => { handleAudioError(e, 'audio element'); };

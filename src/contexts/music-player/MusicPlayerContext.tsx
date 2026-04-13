@@ -4,12 +4,14 @@ import { MusicPlayerContextType } from './types';
 import { useMusicPlayerState } from './useMusicPlayerState';
 import { useAudioEngine } from '@/hooks/use-audio-engine';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined);
 
 export function MusicPlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const musicPlayerState = useMusicPlayerState(audioRef);
+  const crossfadeActiveRef = useRef(false);
+  const musicPlayerState = useMusicPlayerState(audioRef, crossfadeActiveRef);
   const audioEngine = useAudioEngine(audioRef);
 
   // Crossfade state
@@ -32,6 +34,9 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const crossfadeTriggeredRef = useRef(false);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const savedVolumeRef = useRef<number | null>(null);
+  // Stable ref for playNext so the effect doesn't re-run and kill the fade
+  const playNextRef = useRef(musicPlayerState.playNext);
+  playNextRef.current = musicPlayerState.playNext;
 
   useEffect(() => {
     if (!crossfadeEnabled || !audioRef.current) return;
@@ -47,22 +52,29 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
         !audio.paused
       ) {
         crossfadeTriggeredRef.current = true;
+        crossfadeActiveRef.current = true;
         // Save the volume so we can restore it
         savedVolumeRef.current = audio.volume;
 
-        const steps = 20;
-        const stepTime = (crossfadeDuration * 1000) / steps;
-        const volumeStep = audio.volume / steps;
+        const steps = 30;
+        const fadeTime = Math.min(crossfadeDuration, remaining - 0.3);
+        const stepTime = (fadeTime * 1000) / steps;
+        const startVolume = audio.volume;
 
+        let step = 0;
         fadeIntervalRef.current = setInterval(() => {
-          if (audio.volume > volumeStep) {
-            audio.volume = Math.max(0, audio.volume - volumeStep);
+          step++;
+          if (step < steps) {
+            // Smooth ease-out curve
+            const progress = step / steps;
+            const eased = 1 - progress * progress;
+            audio.volume = Math.max(0, startVolume * eased);
           } else {
             audio.volume = 0;
             if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
             fadeIntervalRef.current = null;
-            // Trigger next track
-            musicPlayerState.playNext();
+            // Trigger next track via stable ref
+            playNextRef.current();
           }
         }, stepTime);
       }
@@ -71,16 +83,18 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     audio.addEventListener('timeupdate', handleTimeUpdate);
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
-      if (fadeIntervalRef.current) {
+      // Don't kill an active fade on cleanup - only kill if not mid-fade
+      if (fadeIntervalRef.current && !crossfadeTriggeredRef.current) {
         clearInterval(fadeIntervalRef.current);
         fadeIntervalRef.current = null;
       }
     };
-  }, [crossfadeEnabled, crossfadeDuration, musicPlayerState.playNext]);
+  }, [crossfadeEnabled, crossfadeDuration]); // stable deps only
 
   // Reset crossfade trigger and restore volume when track changes
   useEffect(() => {
     crossfadeTriggeredRef.current = false;
+    crossfadeActiveRef.current = false;
     if (fadeIntervalRef.current) {
       clearInterval(fadeIntervalRef.current);
       fadeIntervalRef.current = null;
@@ -91,6 +105,23 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
       audioRef.current.volume = targetVol;
       savedVolumeRef.current = null;
     }
+  }, [musicPlayerState.currentTrack?.id]);
+
+  // ---- Auto-detect and persist actual track duration ----
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const handleDurationDetected = () => {
+      const realDuration = Math.round(audio.duration);
+      const track = musicPlayerState.currentTrack;
+      if (!track || !realDuration || realDuration <= 0) return;
+      // Update DB if stored duration is missing/wrong
+      if (!track.duration || Math.abs(track.duration - realDuration) > 2) {
+        supabase.from('tracks').update({ duration: realDuration }).eq('id', track.id).then(() => {});
+      }
+    };
+    audio.addEventListener('loadedmetadata', handleDurationDetected);
+    return () => audio.removeEventListener('loadedmetadata', handleDurationDetected);
   }, [musicPlayerState.currentTrack?.id]);
 
   // Persist crossfade settings to localStorage
