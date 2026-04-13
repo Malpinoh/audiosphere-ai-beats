@@ -38,14 +38,37 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const playNextRef = useRef(musicPlayerState.playNext);
   playNextRef.current = musicPlayerState.playNext;
 
+  // Debug: log crossfade state on mount
   useEffect(() => {
-    if (!crossfadeEnabled || !audioRef.current) return;
+    console.log(`[Crossfade] State: enabled=${crossfadeEnabled}, duration=${crossfadeDuration}s`);
+  }, [crossfadeEnabled, crossfadeDuration]);
 
+  useEffect(() => {
+    if (!crossfadeEnabled) {
+      console.log('[Crossfade] Disabled, skipping listener setup');
+      return;
+    }
+    
     const audio = audioRef.current;
+    if (!audio) {
+      console.log('[Crossfade] No audio element available');
+      return;
+    }
+
+    console.log('[Crossfade] Setting up timeupdate listener');
+    let debugCounter = 0;
+    
     const handleTimeUpdate = () => {
       const remaining = audio.duration - audio.currentTime;
-      // Skip if duration unknown or track too short
-      if (!isFinite(remaining) || isNaN(audio.duration)) return;
+      
+      // Debug log every ~5 seconds
+      debugCounter++;
+      if (debugCounter % 20 === 0) {
+        console.log(`[Crossfade] Monitoring: remaining=${remaining.toFixed(1)}s, duration=${audio.duration.toFixed(1)}s, paused=${audio.paused}, triggered=${crossfadeTriggeredRef.current}`);
+      }
+      
+      // Skip if duration unknown
+      if (!isFinite(remaining) || isNaN(audio.duration) || audio.duration <= 0) return;
       
       if (
         remaining <= crossfadeDuration &&
@@ -57,7 +80,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
         crossfadeTriggeredRef.current = true;
         crossfadeActiveRef.current = true;
         savedVolumeRef.current = audio.volume;
-        console.log(`[Crossfade] Starting fade-out. Remaining: ${remaining.toFixed(1)}s, Duration: ${crossfadeDuration}s`);
+        console.log(`[Crossfade] 🎵 Starting fade-out! Remaining: ${remaining.toFixed(1)}s, Volume: ${audio.volume}`);
         toast.info('Crossfade: fading to next track…', { duration: 2000 });
 
         const steps = 30;
@@ -76,7 +99,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
             audio.volume = 0;
             if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
             fadeIntervalRef.current = null;
-            console.log('[Crossfade] Fade complete, playing next track');
+            console.log('[Crossfade] ✅ Fade complete, triggering next track');
             playNextRef.current();
           }
         }, stepTime);
@@ -86,13 +109,12 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     audio.addEventListener('timeupdate', handleTimeUpdate);
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
-      // Don't kill an active fade on cleanup - only kill if not mid-fade
       if (fadeIntervalRef.current && !crossfadeTriggeredRef.current) {
         clearInterval(fadeIntervalRef.current);
         fadeIntervalRef.current = null;
       }
     };
-  }, [crossfadeEnabled, crossfadeDuration]); // stable deps only
+  }, [crossfadeEnabled, crossfadeDuration]);
 
   // Reset crossfade trigger and restore volume when track changes
   useEffect(() => {
