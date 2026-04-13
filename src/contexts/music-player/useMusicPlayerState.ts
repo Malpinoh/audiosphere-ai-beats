@@ -429,6 +429,8 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
           streamLoggedRef.current.delete(state.currentTrack.id);
         }
         setState(prev => ({ ...prev, isPlaying: false }));
+        // If crossfade already triggered playNext, don't double-skip
+        if (crossfadeActiveRef?.current) return;
         playNext();
       };
       const handleAudioElementError = (e: Event) => { handleAudioError(e, 'audio element'); };
