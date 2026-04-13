@@ -44,20 +44,24 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     const audio = audioRef.current;
     const handleTimeUpdate = () => {
       const remaining = audio.duration - audio.currentTime;
+      // Skip if duration unknown or track too short
+      if (!isFinite(remaining) || isNaN(audio.duration)) return;
+      
       if (
         remaining <= crossfadeDuration &&
-        remaining > 0.5 &&
+        remaining > 0.3 &&
         audio.duration > crossfadeDuration + 2 &&
         !crossfadeTriggeredRef.current &&
         !audio.paused
       ) {
         crossfadeTriggeredRef.current = true;
         crossfadeActiveRef.current = true;
-        // Save the volume so we can restore it
         savedVolumeRef.current = audio.volume;
+        console.log(`[Crossfade] Starting fade-out. Remaining: ${remaining.toFixed(1)}s, Duration: ${crossfadeDuration}s`);
+        toast.info('Crossfade: fading to next track…', { duration: 2000 });
 
         const steps = 30;
-        const fadeTime = Math.min(crossfadeDuration, remaining - 0.3);
+        const fadeTime = Math.min(crossfadeDuration, remaining - 0.2);
         const stepTime = (fadeTime * 1000) / steps;
         const startVolume = audio.volume;
 
@@ -65,7 +69,6 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
         fadeIntervalRef.current = setInterval(() => {
           step++;
           if (step < steps) {
-            // Smooth ease-out curve
             const progress = step / steps;
             const eased = 1 - progress * progress;
             audio.volume = Math.max(0, startVolume * eased);
@@ -73,7 +76,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
             audio.volume = 0;
             if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
             fadeIntervalRef.current = null;
-            // Trigger next track via stable ref
+            console.log('[Crossfade] Fade complete, playing next track');
             playNextRef.current();
           }
         }, stepTime);
