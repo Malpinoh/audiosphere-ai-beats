@@ -201,7 +201,7 @@ export function TrackCard({ track, showArtist = true, hidePlay = false, variant 
       
       {/* Duration */}
       <div className="text-muted-foreground text-xs tabular-nums hidden sm:block">
-        {track.duration ? formatDuration(track.duration) : '0:00'}
+        {track.duration && track.duration > 0 ? formatDuration(track.duration) : '—'}
       </div>
       
       {/* Action buttons - always visible on mobile (no hover) */}

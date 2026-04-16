@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useRef, useState, useCallback, useEffect } from 'react';
 import { MusicPlayerContextType } from './types';
 import { useMusicPlayerState } from './useMusicPlayerState';
@@ -13,6 +12,23 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const crossfadeActiveRef = useRef(false);
   const musicPlayerState = useMusicPlayerState(audioRef, crossfadeActiveRef);
   const audioEngine = useAudioEngine(audioRef);
+
+  // STEP 6: Hydrate EQ on load
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('audio_preferences');
+      if (stored) {
+        const prefs = JSON.parse(stored);
+        if (prefs.eqBands || prefs.eqPreset || prefs.eqEnabled) {
+          audioEngine.loadSavedState(
+            prefs.eqBands || null,
+            prefs.eqPreset || null,
+            prefs.eqEnabled ?? false
+          );
+        }
+      }
+    } catch {}
+  }, []);
 
   // Crossfade state - initialize from localStorage, then hydrate from Supabase
   const [crossfadeEnabled, setCrossfadeEnabled] = useState(() => {
@@ -58,12 +74,10 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
       }
     };
 
-    // Try immediately
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) hydrate(user.id);
     });
 
-    // Also listen for auth changes (login after mount)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         hydrate(session.user.id);
@@ -76,40 +90,25 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const crossfadeTriggeredRef = useRef(false);
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const savedVolumeRef = useRef<number | null>(null);
-  // Stable ref for playNext so the effect doesn't re-run and kill the fade
+  // Stable ref for playNext so the effect doesn't re-run
   const playNextRef = useRef(musicPlayerState.playNext);
   playNextRef.current = musicPlayerState.playNext;
 
-  // Debug: log crossfade state on mount
   useEffect(() => {
     console.log(`[Crossfade] State: enabled=${crossfadeEnabled}, duration=${crossfadeDuration}s`);
   }, [crossfadeEnabled, crossfadeDuration]);
 
   useEffect(() => {
-    if (!crossfadeEnabled) {
-      console.log('[Crossfade] Disabled, skipping listener setup');
-      return;
-    }
+    if (!crossfadeEnabled) return;
     
     const audio = audioRef.current;
-    if (!audio) {
-      console.log('[Crossfade] No audio element available');
-      return;
-    }
+    if (!audio) return;
 
     console.log('[Crossfade] Setting up timeupdate listener');
-    let debugCounter = 0;
     
     const handleTimeUpdate = () => {
       const remaining = audio.duration - audio.currentTime;
       
-      // Debug log every ~5 seconds
-      debugCounter++;
-      if (debugCounter % 20 === 0) {
-        console.log(`[Crossfade] Monitoring: remaining=${remaining.toFixed(1)}s, duration=${audio.duration.toFixed(1)}s, paused=${audio.paused}, triggered=${crossfadeTriggeredRef.current}`);
-      }
-      
-      // Skip if duration unknown
       if (!isFinite(remaining) || isNaN(audio.duration) || audio.duration <= 0) return;
       
       if (
@@ -141,7 +140,11 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
             audio.volume = 0;
             if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
             fadeIntervalRef.current = null;
-            console.log('[Crossfade] ✅ Fade complete, triggering next track');
+            console.log('[Crossfade] ✅ Fade complete, restoring volume and triggering next track');
+            // STEP 1 FIX: Restore volume BEFORE triggering next track
+            // so the new track does not start at volume 0
+            audio.volume = savedVolumeRef.current ?? startVolume;
+            savedVolumeRef.current = null;
             playNextRef.current();
           }
         }, stepTime);
@@ -151,6 +154,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     audio.addEventListener('timeupdate', handleTimeUpdate);
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
+      // Only clear interval if fade was not triggered (unmounting mid-fade keeps it alive)
       if (fadeIntervalRef.current && !crossfadeTriggeredRef.current) {
         clearInterval(fadeIntervalRef.current);
         fadeIntervalRef.current = null;
@@ -158,7 +162,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     };
   }, [crossfadeEnabled, crossfadeDuration]);
 
-  // Reset crossfade trigger and restore volume when track changes
+  // Reset crossfade trigger when track changes
   useEffect(() => {
     crossfadeTriggeredRef.current = false;
     crossfadeActiveRef.current = false;
@@ -166,10 +170,9 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
       clearInterval(fadeIntervalRef.current);
       fadeIntervalRef.current = null;
     }
-    if (audioRef.current) {
-      // Restore volume to user's setting
-      const targetVol = savedVolumeRef.current ?? musicPlayerState.volume / 100;
-      audioRef.current.volume = targetVol;
+    // Ensure volume is correct for the new track
+    if (audioRef.current && savedVolumeRef.current !== null) {
+      audioRef.current.volume = savedVolumeRef.current;
       savedVolumeRef.current = null;
     }
   }, [musicPlayerState.currentTrack?.id]);
@@ -182,7 +185,6 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
       const realDuration = Math.round(audio.duration);
       const track = musicPlayerState.currentTrack;
       if (!track || !realDuration || realDuration <= 0) return;
-      // Update DB if stored duration is missing/wrong
       if (!track.duration || Math.abs(track.duration - realDuration) > 2) {
         supabase.from('tracks').update({ duration: realDuration }).eq('id', track.id).then(() => {});
       }

@@ -2,7 +2,7 @@ import { useMusicPlayer } from "@/contexts/music-player";
 import { 
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, 
   Repeat, Repeat1, Shuffle, Heart, ListMusic, MessageSquare,
-  AlertCircle, RotateCcw
+  AlertCircle, RotateCcw, ChevronUp, ChevronDown
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ const MusicPlayer = () => {
     togglePlay, playNext, playPrevious, seekTo, setVolume,
     toggleMute, toggleRepeat, toggleShuffle, clearQueue,
     playTrack, removeFromQueue, likeTrack, unlikeTrack, isTrackLiked,
-    playbackError, retryPlayback
+    playbackError, retryPlayback, reorderQueue
   } = useMusicPlayer();
   
   const [currentQuality, setCurrentQuality] = useState<AudioQualityTier>('auto');
@@ -186,12 +186,24 @@ const MusicPlayer = () => {
                             <h4 className="text-sm font-medium truncate text-foreground">{track.title}</h4>
                             <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
                           </div>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => playTrack(track)}>
-                            {currentTrack?.id === track.id && isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => removeFromQueue(track.id)}>
-                            <span className="sr-only">Remove</span><span aria-hidden>×</span>
-                          </Button>
+                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                            <div className="flex flex-col">
+                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground"
+                                onClick={() => { const idx = queue.indexOf(track); if (idx > 0) reorderQueue(idx, idx - 1); }} disabled={queue.indexOf(track) === 0}>
+                                <ChevronUp className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground"
+                                onClick={() => { const idx = queue.indexOf(track); if (idx < queue.length - 1) reorderQueue(idx, idx + 1); }} disabled={queue.indexOf(track) === queue.length - 1}>
+                                <ChevronDown className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => playTrack(track)}>
+                              {currentTrack?.id === track.id && isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-foreground" onClick={() => removeFromQueue(track.id)}>
+                              <span className="sr-only">Remove</span><span aria-hidden>×</span>
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
