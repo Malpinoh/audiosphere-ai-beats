@@ -51,6 +51,7 @@ export interface MusicPlayerContextType {
   toggleShuffle: () => void;
   addToQueue: (track: Track) => void;
   removeFromQueue: (trackId: string) => void;
+  reorderQueue: (fromIndex: number, toIndex: number) => void;
   retryPlayback: () => void;
   likedTracks: Set<string>;
   savedTracks: Set<string>;

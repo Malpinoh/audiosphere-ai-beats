@@ -67,7 +67,6 @@ const getValidAudioUrl = (audioFilePath: string): string => {
 };
 
 const categorizeError = (error: any, audioUrl?: string): PlaybackError => {
-  // Check network status first
   if (!navigator.onLine) {
     return {
       type: 'network',
@@ -76,8 +75,6 @@ const categorizeError = (error: any, audioUrl?: string): PlaybackError => {
       audioUrl,
     };
   }
-
-  // MediaError from audio element
   if (error?.target?.error || error?.code) {
     const mediaError = error?.target?.error || error;
     const code = mediaError.code || mediaError;
@@ -92,7 +89,6 @@ const categorizeError = (error: any, audioUrl?: string): PlaybackError => {
         return { type: 'source', message: 'Audio format is not supported by your browser.', canRetry: false, audioUrl, errorCode: code };
     }
   }
-
   const msg = error?.message || String(error);
   if (msg.includes('timeout') || msg.includes('Timeout')) {
     return { type: 'timeout', message: 'Audio took too long to load. Try again.', canRetry: true, audioUrl };
@@ -100,8 +96,24 @@ const categorizeError = (error: any, audioUrl?: string): PlaybackError => {
   if (msg.includes('network') || msg.includes('Network') || msg.includes('fetch')) {
     return { type: 'network', message: 'Network error while loading audio.', canRetry: true, audioUrl };
   }
-
   return { type: 'unknown', message: msg || 'Failed to play audio.', canRetry: true, audioUrl };
+};
+
+// --- Resume playback helpers ---
+const POSITION_SAVE_INTERVAL = 5000; // ms
+const getPositionKey = (trackId: string) => `track-position-${trackId}`;
+const savePosition = (trackId: string, time: number) => {
+  try { localStorage.setItem(getPositionKey(trackId), String(time)); } catch {}
+};
+const loadPosition = (trackId: string): number | null => {
+  try {
+    const v = localStorage.getItem(getPositionKey(trackId));
+    if (v !== null) { const n = parseFloat(v); return isFinite(n) && n > 2 ? n : null; }
+  } catch {}
+  return null;
+};
+const clearPosition = (trackId: string) => {
+  try { localStorage.removeItem(getPositionKey(trackId)); } catch {}
 };
 
 export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudioElement>, crossfadeActiveRef?: React.MutableRefObject<boolean>) => {
@@ -112,22 +124,14 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   const streamLoggedRef = useRef<Set<string>>(new Set());
   const playbackLockRef = useRef<number>(0);
   const lastAudioUrlRef = useRef<string>('');
+  const lastPositionSaveRef = useRef<number>(0);
 
   const handleAudioError = useCallback((error: any, context: string = '', audioUrl?: string) => {
     if (error?.name === 'AbortError' || (error instanceof DOMException && error.name === 'AbortError')) return;
     if (error?.message?.includes('interrupted') || error?.message?.includes('aborted')) return;
-
     console.error(`Audio error in ${context}:`, error);
-    
     const playbackError = categorizeError(error, audioUrl || lastAudioUrlRef.current);
-    
-    setState(prev => ({
-      ...prev,
-      isLoading: false,
-      isPlaying: false,
-      playbackError,
-    }));
-    
+    setState(prev => ({ ...prev, isLoading: false, isPlaying: false, playbackError }));
     toast.error(playbackError.message, { duration: 2500 });
   }, []);
 
@@ -155,9 +159,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       handleAudioError(new Error('No audio file path'), 'playTrack');
       return;
     }
-
     const lockId = ++playbackLockRef.current;
-
     setState(prev => ({
       ...prev,
       isLoading: true,
@@ -165,22 +167,15 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       currentTrack: track,
       queue: prev.queue.some(t => t.id === track.id) ? prev.queue : [track, ...prev.queue]
     }));
-
     try {
       const audioUrl = getValidAudioUrl(track.audio_file_path);
       lastAudioUrlRef.current = audioUrl;
-
-      if (!audioRef.current) {
-        throw new Error('Audio element not available');
-      }
-
+      if (!audioRef.current) throw new Error('Audio element not available');
       const audio = audioRef.current;
       audio.pause();
       audio.currentTime = 0;
       audio.crossOrigin = 'anonymous';
       audio.src = audioUrl;
-      
-      // Unlock audio on mobile by calling play() synchronously in user gesture context
       audio.play().catch(() => {});
 
       const waitForCanPlay = (retryCount: number = 0): Promise<void> => {
@@ -193,25 +188,24 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
           audio.addEventListener('error', handleError);
           setTimeout(() => {
             if (!resolved) {
-              resolved = true;
-              cleanup();
-              if (retryCount < 1) {
-                audio.load();
-                waitForCanPlay(retryCount + 1).then(resolve).catch(reject);
-              } else {
-                reject(new Error('Audio loading timeout - file may be too large or network is slow'));
-              }
+              resolved = true; cleanup();
+              if (retryCount < 1) { audio.load(); waitForCanPlay(retryCount + 1).then(resolve).catch(reject); }
+              else { reject(new Error('Audio loading timeout - file may be too large or network is slow')); }
             }
           }, 45000);
-          // If audio is already ready (e.g. cached), resolve immediately
-          if (audio.readyState >= 3) {
-            handleCanPlay();
-          }
+          if (audio.readyState >= 3) handleCanPlay();
         });
       };
 
       await waitForCanPlay();
       if (playbackLockRef.current !== lockId) return;
+
+      // STEP 2: Resume from last position
+      const savedPos = loadPosition(track.id);
+      if (savedPos !== null && savedPos < (audio.duration - 5)) {
+        audio.currentTime = savedPos;
+        console.log(`[Resume] Restored position ${savedPos.toFixed(1)}s for track ${track.id}`);
+      }
 
       await audio.play();
       if (playbackLockRef.current !== lockId) return;
@@ -232,9 +226,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   }, [handleAudioError, logStream, updateMediaSession]);
 
   const retryPlayback = useCallback(() => {
-    if (state.currentTrack) {
-      playTrack(state.currentTrack);
-    }
+    if (state.currentTrack) playTrack(state.currentTrack);
   }, [state.currentTrack, playTrack]);
 
   const play = useCallback(async () => {
@@ -299,7 +291,20 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     setState(prev => ({ ...prev, queue: [] }));
   }, []);
 
+  // STEP 4: Queue reorder
+  const reorderQueue = useCallback((fromIndex: number, toIndex: number) => {
+    setState(prev => {
+      const newQueue = [...prev.queue];
+      if (fromIndex < 0 || fromIndex >= newQueue.length || toIndex < 0 || toIndex >= newQueue.length) return prev;
+      const [moved] = newQueue.splice(fromIndex, 1);
+      newQueue.splice(toIndex, 0, moved);
+      return { ...prev, queue: newQueue };
+    });
+  }, []);
+
   const playNext = useCallback(() => {
+    // Clear saved position for current track on skip
+    if (state.currentTrack) clearPosition(state.currentTrack.id);
     let nextTrack: Track | null = null;
     const currentIndex = state.queue.findIndex(track => track.id === state.currentTrack?.id);
     if (state.repeatMode === 'one' && state.currentTrack) { playTrack(state.currentTrack); return; }
@@ -315,6 +320,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   }, [state.queue, state.currentTrack, state.isShuffle, state.repeatMode, playTrack]);
 
   const playPrevious = useCallback(() => {
+    if (state.currentTrack) clearPosition(state.currentTrack.id);
     const currentIndex = state.queue.findIndex(track => track.id === state.currentTrack?.id);
     if (state.isShuffle) {
       const availableTracks = state.queue.filter(track => track.id !== state.currentTrack?.id);
@@ -415,10 +421,24 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
   useEffect(() => {
     if (audioRef.current) {
       const audio = audioRef.current;
-      const updateCurrentTime = () => { setState(prev => ({ ...prev, currentTime: audio.currentTime || 0 })); };
+
+      // STEP 2: Throttled position save
+      const updateCurrentTime = () => {
+        const now = Date.now();
+        setState(prev => ({ ...prev, currentTime: audio.currentTime || 0 }));
+        // Save position every 5 seconds
+        if (state.currentTrack && now - lastPositionSaveRef.current >= POSITION_SAVE_INTERVAL) {
+          lastPositionSaveRef.current = now;
+          savePosition(state.currentTrack.id, audio.currentTime);
+        }
+      };
+
       const updateDuration = () => { setState(prev => ({ ...prev, duration: audio.duration || 0 })); };
+
       const handleEnded = async () => {
+        // Clear saved position on track end
         if (state.currentTrack) {
+          clearPosition(state.currentTrack.id);
           try {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
@@ -433,17 +453,26 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
         if (crossfadeActiveRef?.current) return;
         playNext();
       };
+
       const handleAudioElementError = (e: Event) => { handleAudioError(e, 'audio element'); };
+
+      // STEP 3: Buffering detection
+      const handleWaiting = () => { setState(prev => prev.isPlaying ? { ...prev, isLoading: true } : prev); };
+      const handlePlaying = () => { setState(prev => ({ ...prev, isLoading: false })); };
 
       audio.addEventListener('timeupdate', updateCurrentTime);
       audio.addEventListener('loadedmetadata', updateDuration);
       audio.addEventListener('ended', handleEnded);
       audio.addEventListener('error', handleAudioElementError);
+      audio.addEventListener('waiting', handleWaiting);
+      audio.addEventListener('playing', handlePlaying);
       return () => {
         audio.removeEventListener('timeupdate', updateCurrentTime);
         audio.removeEventListener('loadedmetadata', updateDuration);
         audio.removeEventListener('ended', handleEnded);
         audio.removeEventListener('error', handleAudioElementError);
+        audio.removeEventListener('waiting', handleWaiting);
+        audio.removeEventListener('playing', handlePlaying);
       };
     }
   }, [playNext, handleAudioError, state.currentTrack]);
@@ -484,6 +513,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     toggleShuffle,
     addToQueue,
     removeFromQueue,
+    reorderQueue,
     retryPlayback,
     likedTracks: state.likedTracks,
     savedTracks: state.savedTracks,
