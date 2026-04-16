@@ -1,87 +1,223 @@
+Proceed with the Playback Engine stabilization updates using the existing architecture.
 
-Goal: make Playback Settings actually control playback, fix EQ muting audio, and make crossfade visibly and audibly work.
+Follow this exact execution order and ensure regression testing after each step.
 
-1. Fix the EQ mute root cause in the audio engine
-- Refactor `src/hooks/use-audio-engine.ts` so enabling EQ never reroutes audio into a broken/suspended graph.
-- Build a safer graph lifecycle:
-  - create/resume `AudioContext` only from a valid user action
-  - guard `createMediaElementSource()` so it is created once only
-  - ensure the node chain is complete before applying gains
-  - add a bypass path / safe fallback if graph init fails
-- Add explicit engine status + failure reason so the app can explain why EQ is unavailable instead of silently muting audio.
+-------------------------------------
 
-2. Sync saved playback preferences into the live player
-- In `src/pages/AccountSettings.tsx` and `src/contexts/music-player/MusicPlayerContext.tsx`, apply stored preferences on load instead of only saving them.
-- Ensure these settings hydrate the active player:
-  - preferred quality
-  - auto quality
-  - EQ enabled state
-  - EQ preset/band gains
-  - normalization
-  - crossfade enabled/duration
-- Today the settings UI mostly saves values, but the live engine/player is not fully restored from those saved values.
+STEP 1 — FIX CROSSFADE VOLUME RACE CONDITION
 
-3. Make EQ state complete and persistent
-- Extend the audio engine/context contract in `src/contexts/music-player/types.ts` and related files so it can:
-  - report engine readiness/error
-  - load saved band values
-  - load preset selection
-  - expose whether EQ can currently process the active stream
-- Save actual band values/preset back through `useAudioPreferences` when the user changes sliders or presets.
+File:
 
-4. Fix crossfade so it is a real transition, not only a fade-out
-- Replace the current logic in `src/contexts/music-player/MusicPlayerContext.tsx` that only lowers the current track volume near the end.
-- Implement proper behavior:
-  - detect next playable track from queue
-  - pre-trigger the transition before track end
-  - start next track cleanly
-  - restore normal volume after transition
-  - prevent duplicate triggers during one track
-- If true overlapping crossfade is not possible with the single-audio-element architecture, implement a reliable “gapless fade transition” and label it correctly in UI.
+src/contexts/music-player/MusicPlayerContext.tsx
 
-5. Improve Playback Settings UI feedback
-- Upgrade `src/pages/AccountSettings.tsx` so each setting shows live status:
-  - EQ: “Active / unavailable / failed to initialize”
-  - Crossfade: “Works when next track exists in queue”
-  - Quality: show effective mode (Auto vs selected)
-- Add short helper/error text when EQ cannot be applied due to browser/context/CORS/runtime limitations.
+Requirements:
 
-6. Wire quality settings to actual playback behavior
-- Connect `preferredQuality` and `autoQuality` to the playback system instead of leaving them as mostly saved preferences.
-- Reuse the existing adaptive streaming hook/patterns where possible so account settings and player controls stay in sync.
-- Make sure changing quality does not unintentionally reset playback or break EQ/crossfade.
+Restore the audio volume immediately before calling playNextRef.current().
 
-7. Add diagnostics for playback enhancements
-- Extend the existing diagnostics/error surfaces so users can see clear reasons such as:
-  - AudioContext suspended
-  - EQ initialization failed
-  - stream cannot be processed
-  - no next track available for crossfade
-  - network/source playback issue
-- Keep toast timing at 2.5 seconds, but show durable inline status in settings/player for enhancement-specific failures.
+Do not rely on React effects to restore volume during crossfade.
 
-8. Regression checks after implementation
-- Verify these flows:
-  - play track normally with EQ off
-  - turn EQ on and confirm sound still plays
-  - move each EQ band and apply presets
-  - reload page and confirm playback settings restore
-  - enable crossfade with at least 2 queued tracks
-  - confirm transition occurs and volume restores correctly
-  - switch quality modes without breaking playback
-- Also confirm desktop/mobile player UIs reflect the same shared state.
+Ensure:
 
-Technical notes
-- Likely current root causes:
-  - EQ graph can connect in a bad state and steal output from the plain audio path.
-  - Saved preferences are not fully re-applied to the active engine on load.
-  - Crossfade currently fades out only; it does not create a real track-to-track blend.
-  - Quality settings are only partially wired to the actual playback pipeline.
-- Files most likely involved:
-  - `src/hooks/use-audio-engine.ts`
-  - `src/contexts/music-player/MusicPlayerContext.tsx`
-  - `src/contexts/music-player/types.ts`
-  - `src/hooks/use-audio-preferences.tsx`
-  - `src/pages/AccountSettings.tsx`
-  - possibly `src/components/layout/MusicPlayer.tsx`
-  - possibly `src/hooks/use-adaptive-streaming.tsx`
+audio.volume = savedVolumeRef.current
+
+is executed right before:
+
+playNextRef.current()
+
+Reset:
+
+crossfadeActiveRef
+
+only after the new track successfully starts playing.
+
+Ensure:
+
+No track starts at volume 0
+
+No silent playback occurs
+
+-------------------------------------
+
+STEP 2 — IMPLEMENT RESUME PLAYBACK FROM LAST POSITION
+
+File:
+
+src/contexts/music-player/useMusicPlayerState.ts
+
+Requirements:
+
+Save playback position every 5 seconds using localStorage.
+
+Key format:
+
+track-position-{trackId}
+
+Implementation:
+
+Use throttling to prevent excessive writes.
+
+On track load:
+
+Check localStorage for saved position.
+
+If position exists:
+
+Set:
+
+audio.currentTime
+
+before:
+
+[audio.play](http://audio.play)()
+
+Clear saved position when:
+
+Track ends
+
+User manually skips track
+
+Ensure:
+
+Resume works after refresh
+
+Resume works after navigation
+
+Resume works on mobile
+
+-------------------------------------
+
+STEP 3 — ADD BUFFERING DETECTION
+
+File:
+
+src/contexts/music-player/useMusicPlayerState.ts
+
+Add listeners:
+
+audio.addEventListener("waiting")
+
+audio.addEventListener("playing")
+
+Behavior:
+
+If audio is buffering:
+
+set isLoading = true
+
+When playback resumes:
+
+set isLoading = false
+
+Ensure:
+
+Spinner appears during mid-stream buffering
+
+Spinner disappears immediately when playback resumes
+
+-------------------------------------
+
+STEP 4 — ADD QUEUE REORDER FUNCTION
+
+Files:
+
+src/contexts/music-player/types.ts
+
+src/contexts/music-player/useMusicPlayerState.ts
+
+src/components/layout/MusicPlayer.tsx
+
+Requirements:
+
+Add function:
+
+reorderQueue(fromIndex: number, toIndex: number)
+
+Implementation:
+
+Use array splice logic.
+
+UI:
+
+Add Up and Down arrow buttons to each queue item.
+
+Do not add drag-and-drop yet.
+
+Ensure:
+
+Queue updates instantly
+
+Current playing track index remains correct
+
+-------------------------------------
+
+STEP 5 — FIX TRACK DURATION DISPLAY
+
+File:
+
+src/components/ui/track-card.tsx
+
+Requirements:
+
+If duration is missing:
+
+Display:
+
+—
+
+Do not display:
+
+0:00
+
+Ensure:
+
+Duration updates automatically once detected during playback.
+
+-------------------------------------
+
+STEP 6 — HYDRATE PLAYBACK PREFERENCES ON LOAD
+
+File:
+
+src/contexts/music-player/MusicPlayerContext.tsx
+
+Requirements:
+
+After loading saved EQ and audio preferences:
+
+Call:
+
+audioEngine.loadSavedState()
+
+Then:
+
+audioEngine.toggleEq()
+
+Ensure:
+
+EQ settings are active immediately when playback starts.
+
+-------------------------------------
+
+TESTING REQUIREMENTS
+
+After completing all steps, verify:
+
+Crossfade works smoothly
+
+Tracks never start muted
+
+Playback resumes correctly
+
+Queue reorder works
+
+Buffering spinner behaves correctly
+
+Duration display is accurate
+
+Playback works on mobile
+
+Do not deploy until all tests pass.
+
+-------------------------------------
+
+End of stabilization update.
