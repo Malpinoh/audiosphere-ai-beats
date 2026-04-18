@@ -204,11 +204,38 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     } catch {}
   }, [crossfadeEnabled, crossfadeDuration]);
 
+  // Playback rate
+  const [playbackRate, setPlaybackRateState] = useState(() => {
+    try {
+      const stored = localStorage.getItem('audio_preferences');
+      if (stored) return JSON.parse(stored).playbackRate ?? 1;
+    } catch {}
+    return 1;
+  });
+
+  const setPlaybackRate = useCallback((rate: number) => {
+    setPlaybackRateState(rate);
+    if (audioRef.current) audioRef.current.playbackRate = rate;
+    try {
+      const stored = localStorage.getItem('audio_preferences');
+      const prefs = stored ? JSON.parse(stored) : {};
+      prefs.playbackRate = rate;
+      localStorage.setItem('audio_preferences', JSON.stringify(prefs));
+    } catch {}
+  }, []);
+
+  // Re-apply playback rate whenever a new track loads
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.playbackRate = playbackRate;
+  }, [musicPlayerState.currentTrack?.id, playbackRate]);
+
   const contextValue: MusicPlayerContextType = {
     ...musicPlayerState,
     audioEngine,
     crossfadeEnabled,
     crossfadeDuration,
+    playbackRate,
+    setPlaybackRate,
     setCrossfadeEnabled: useCallback((enabled: boolean) => {
       setCrossfadeEnabled(enabled);
       if (enabled) {
