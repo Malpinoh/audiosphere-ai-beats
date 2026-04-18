@@ -1,107 +1,113 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Play, Heart, TrendingUp, Music } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useTracks } from "@/hooks/use-tracks";
-import { useMusicPlayer } from "@/contexts/music-player";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useFeaturedBanners } from "@/hooks/use-featured-banners";
+import { cn } from "@/lib/utils";
 
 export function HeroSection() {
-  const { tracks } = useTracks({ limit: 1 });
-  const { playTrack, currentTrack, isPlaying, togglePlay } = useMusicPlayer();
-  const [currentBg, setCurrentBg] = useState(0);
-  
-  const featuredTrack = tracks[0];
-  const isCurrentTrack = currentTrack?.id === featuredTrack?.id;
-
-  const backgrounds = [
-    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1920&h=1080&fit=crop",
-    "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1920&h=1080&fit=crop",
-    "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1920&h=1080&fit=crop",
-  ];
+  const { banners, loading } = useFeaturedBanners(true);
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentBg((prev) => (prev + 1) % backgrounds.length);
-    }, 8000);
-    return () => clearInterval(interval);
-  }, []);
-  
-  const handlePlay = () => {
-    if (featuredTrack) {
-      if (isCurrentTrack) {
-        togglePlay();
-      } else {
-        playTrack(featuredTrack);
-      }
-    }
+    if (paused || banners.length <= 1) return;
+    const id = setInterval(() => {
+      setIndex((i) => (i + 1) % banners.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [paused, banners.length]);
+
+  useEffect(() => {
+    if (index >= banners.length) setIndex(0);
+  }, [banners.length, index]);
+
+  if (loading || banners.length === 0) return null;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
   };
-  
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current == null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 50) {
+      setIndex((i) =>
+        dx < 0 ? (i + 1) % banners.length : (i - 1 + banners.length) % banners.length
+      );
+    }
+    touchStartX.current = null;
+  };
+
+  const goPrev = () => setIndex((i) => (i - 1 + banners.length) % banners.length);
+  const goNext = () => setIndex((i) => (i + 1) % banners.length);
+
   return (
-    <section className="relative h-[240px] sm:h-[360px] md:h-[440px] overflow-hidden rounded-2xl">
-      {/* Background Images */}
-      {backgrounds.map((bg, index) => (
-        <div
-          key={bg}
-          className={`absolute inset-0 transition-opacity duration-1000 ${
-            index === currentBg ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <img 
-            src={bg}
-            alt="Featured background"
+    <section
+      className="relative w-full overflow-hidden rounded-2xl bg-muted aspect-[16/5] min-h-[180px]"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      aria-label="Featured banners"
+    >
+      {banners.map((banner, i) => {
+        const content = (
+          <img
+            src={banner.image_url}
+            alt={banner.title || "Featured banner"}
             className="w-full h-full object-cover"
-            loading={index === 0 ? "eager" : "lazy"}
+            loading={i === 0 ? "eager" : "lazy"}
           />
-        </div>
-      ))}
-      
-      {/* Gradient Overlays */}
-      <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/60 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-      
-      {/* Content */}
-      <div className="absolute inset-0 flex items-center p-4 sm:p-8 md:p-12">
-        <div className="max-w-lg space-y-3 sm:space-y-5">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full bg-primary/20 text-primary border border-primary/30">
-              <TrendingUp className="h-3 w-3" />
-              Featured
-            </span>
+        );
+        return (
+          <div
+            key={banner.id}
+            className={cn(
+              "absolute inset-0 transition-opacity duration-700",
+              i === index ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
+          >
+            {banner.link_url ? (
+              <a href={banner.link_url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                {content}
+              </a>
+            ) : (
+              content
+            )}
           </div>
-          
-          <div>
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-1 sm:mb-2">
-              <span className="maudio-gradient-text">
-                Discover New Music
-              </span>
-            </h1>
-            <p className="text-xs sm:text-base md:text-lg text-muted-foreground max-w-sm">
-              Stream and discover tracks from independent artists worldwide.
-            </p>
+        );
+      })}
+
+      {banners.length > 1 && (
+        <>
+          <button
+            onClick={goPrev}
+            aria-label="Previous banner"
+            className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full bg-background/60 hover:bg-background/80 backdrop-blur text-foreground"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={goNext}
+            aria-label="Next banner"
+            className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 items-center justify-center rounded-full bg-background/60 hover:bg-background/80 backdrop-blur text-foreground"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {banners.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIndex(i)}
+                aria-label={`Go to banner ${i + 1}`}
+                className={cn(
+                  "h-1.5 rounded-full transition-all",
+                  i === index ? "w-6 bg-foreground" : "w-1.5 bg-foreground/40"
+                )}
+              />
+            ))}
           </div>
-          
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Button 
-              size="sm"
-              onClick={handlePlay}
-              className="gap-1.5 sm:gap-2 maudio-gradient-bg hover:opacity-90 transition-opacity shadow-lg shadow-primary/25 text-xs sm:text-sm"
-            >
-              <Play className="h-4 w-4" />
-              {isCurrentTrack && isPlaying ? "Now Playing" : "Start Listening"}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="gap-1.5 sm:gap-2 border-border/50 bg-background/50 backdrop-blur-sm hover:bg-background/70 text-xs sm:text-sm"
-              asChild
-            >
-              <Link to="/browse">
-                Explore
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
     </section>
   );
 }

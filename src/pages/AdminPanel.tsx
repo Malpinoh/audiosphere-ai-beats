@@ -10,6 +10,7 @@ import { ReportsManagement } from "@/components/admin/ReportsManagement";
 import { CommentsManagement } from "@/components/admin/CommentsManagement";
 import { VerificationManagement } from "@/components/admin/VerificationManagement";
 import { PayoutsManagement } from "@/components/admin/PayoutsManagement";
+import { FeaturedBannersManagement } from "@/components/admin/FeaturedBannersManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   BarChart3, 
@@ -20,7 +21,8 @@ import {
   MessageSquare,
   Shield,
   DollarSign,
-  Menu
+  Menu,
+  Image as ImageIcon
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +38,7 @@ const adminTabs = [
   { value: "reports", label: "Reports", icon: Flag },
   { value: "comments", label: "Comments", icon: MessageSquare },
   { value: "payouts", label: "Payouts", icon: DollarSign },
+  { value: "banners", label: "Banners", icon: ImageIcon },
 ];
 
 export default function AdminPanel() {
@@ -67,6 +70,7 @@ export default function AdminPanel() {
       case "reports": return <ReportsManagement />;
       case "comments": return <CommentsManagement />;
       case "payouts": return <PayoutsManagement />;
+      case "banners": return <FeaturedBannersManagement />;
       default: return <Analytics />;
     }
   };
