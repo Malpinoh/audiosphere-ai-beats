@@ -1,223 +1,111 @@
-Proceed with the Playback Engine stabilization updates using the existing architecture.
 
-Follow this exact execution order and ensure regression testing after each step.
 
--------------------------------------
+This is a large, multi-part implementation. Let me quickly scan the relevant existing files to ground the plan.
+<lov-tool-use id="toolu_vrtx_01DgVNgsU9CMYZB46um44uHT" name="code--view" integration-id="code" data="{\"file_path\": \"src/hooks/use-audio-engine.ts\"}">
+</lov-tool-use>
 
-STEP 1 — FIX CROSSFADE VOLUME RACE CONDITION
+<lov-tool-use id="toolu_vrtx_012tXr1sxj8vu23LGV6jkYA9" name="code--view" integration-id="code" data="{\"file_path\": \"src/contexts/music-player/MusicPlayerContext.tsx\"}">
+</lov-tool-use>
 
-File:
+<lov-tool-use id="toolu_vrtx_01Lg6Uh8zAKKj5rKe41vbjBk" name="code--view" integration-id="code" data="{\"file_path\": \"src/contexts/music-player/useMusicPlayerState.ts\"}">
+</lov-tool-use>
 
-src/contexts/music-player/MusicPlayerContext.tsx
+<lov-tool-use id="toolu_vrtx_01JZiTnfBdy1EE73MYN5TYA4" name="code--view" integration-id="code" data="{\"file_path\": \"src/pages/AccountSettings.tsx\"}">
+</lov-tool-use>
 
-Requirements:
+<lov-tool-use id="toolu_vrtx_01En8UAFZDMmPwdJc8zDhCYq" name="code--view" integration-id="code" data="{\"file_path\": \"src/components/layout/MobileFullscreenPlayer.tsx\", \"lines\": \"1,40\"}">
+</lov-tool-use>
 
-Restore the audio volume immediately before calling playNextRef.current().
+<lov-tool-use id="toolu_vrtx_01J9Q8AqyJggNKNDwU3msE4V" name="code--view" integration-id="code" data="{\"file_path\": \"src/components/layout/MobileFullscreenPlayer.tsx\", \"lines\": \"1,30\"}">
+</lov-tool-use>
 
-Do not rely on React effects to restore volume during crossfade.
+<lov-tool-use id="toolu_vrtx_01LXf9UhQwkPLngsFgPGLcew" name="code--view" integration-id="code" data="{\"file_path\": \"src/contexts/music-player/MusicPlayerContext.tsx\", \"lines\": \"1,80\"}">
+</lov-tool-use>
+I have enough context to plan. Let me present the plan.
 
-Ensure:
+<lov-plan>
 
-audio.volume = savedVolumeRef.current
+## Implementation Plan
 
-is executed right before:
+A large multi-part upgrade. I'll group by part, list new files/edits, and call out scope decisions.
 
-playNextRef.current()
+### Part 1 — Admin Featured Banner Management
 
-Reset:
+**Database migration**
+- New table `featured_banners`: `id uuid pk`, `image_url text`, `title text null`, `link_url text null`, `display_order int`, `is_active bool default true`, `created_at timestamptz default now()`.
+- RLS: anyone can SELECT active rows; only admins (via `is_admin()`) can INSERT/UPDATE/DELETE.
+- New public storage bucket `featured_banners` for uploads, with admin-only write policies.
 
-crossfadeActiveRef
+**Admin UI**
+- New `src/components/admin/FeaturedBannersManagement.tsx`: upload (max 15 enforced), preview grid, active toggle, delete, replace, reorder via up/down arrows (drag-and-drop deferred to keep scope tight).
+- Add tab "Banners" in `src/pages/AdminPanel.tsx`.
 
-only after the new track successfully starts playing.
+**Home display**
+- Rewrite `src/components/sections/HeroSection.tsx`: remove all static text/buttons. Fetch active banners ordered by `display_order`. Render auto-rotating slider (5s), pause on hover (desktop), swipe (mobile), arrow nav (desktop). If 0 active banners → render nothing. 16:5 aspect on desktop, responsive on mobile, `object-cover`.
 
-Ensure:
+### Part 2 — Mobile Playback Reliability
 
-No track starts at volume 0
+Edit `src/contexts/music-player/useMusicPlayerState.ts` and `src/hooks/use-audio-engine.ts`:
+- Force `audio.preload = "metadata"`.
+- 8s load timeout → auto-retry up to 3 times, then surface error.
+- Already have `waiting`/`playing`; add `canplay` to clear loader and set ready state.
+- Detect slow connection via `navigator.connection.effectiveType` (`2g`/`slow-2g`/`3g`) → request lower-quality variant via existing `get_track_stream_url` rpc with reduced `p_max_bitrate`.
 
-No silent playback occurs
+### Part 3 — Settings / EQ Page Mobile Responsive
 
--------------------------------------
+Edit `src/pages/AccountSettings.tsx`:
+- Single-column on mobile, grid on `md+`.
+- Sliders full width, min 44px touch targets, no horizontal scroll, scrollable container.
 
-STEP 2 — IMPLEMENT RESUME PLAYBACK FROM LAST POSITION
+### Part 4 + 5 — Full-Screen Player Redesign & Functional Controls
 
-File:
+Rewrite `src/components/layout/MobileFullscreenPlayer.tsx` as scrollable layout:
 
-src/contexts/music-player/useMusicPlayerState.ts
+Sections (top→bottom, vertically scrollable):
+1. Header (close, queue button, settings hint)
+2. Artwork
+3. Title/artist + Like
+4. Progress bar + times
+5. Main controls: Shuffle, Prev, Play/Pause, Next, Repeat
+6. Secondary row: Like, Add to Queue, View Queue, Share, Volume
+7. **Metadata card**: title, artist, album, genre, release year, duration, songwriters, producer, composer, label, ISRC, language, explicit — only render fields that exist.
+8. **Song DNA card**: genre, mood, energy, tempo, danceability, popularity (progress bars + tags). Derive from track fields where present; show "—" placeholder for unknown attributes (no fake data).
+9. **Related Tracks**: 5 tracks via existing `get_similar_tracks` rpc; tap to play.
 
-Requirements:
+**Queue drawer**: new bottom Sheet opened by Queue button, shows current + upcoming, reorder (uses existing `reorderQueue`), remove.
 
-Save playback position every 5 seconds using localStorage.
+**Swipe-down from top → Playback Settings drawer** (new component `PlaybackSettingsDrawer.tsx`):
+- EQ: Bass / Mid / Treble sliders + presets (Normal, Bass Boost, Treble Boost, Vocal, Dance, Flat). Maps onto existing 5-band engine via preset definitions.
+- Crossfade slider 0–12s (Off, 2, 4, 6, 8, 10, 12) — wired into existing `crossfadeDuration` state and `user_audio_preferences`.
+- Playback speed selector (0.75x / 1x / 1.25x / 1.5x / 2x) → sets `audio.playbackRate` on the active element. New context method `setPlaybackRate`.
+- Audio quality selector (Auto / High / Medium / Low) → updates `user_audio_preferences.preferred_quality` + `auto_quality` and re-resolves stream.
 
-Key format:
+**Gesture handling**: existing swipe-down-to-close stays for outside-of-top area; swipe-down only from top 60px region opens settings drawer (drag-up dismiss). Tap outside closes.
 
-track-position-{trackId}
+### Scope decisions (kept minimal)
+- Reorder uses up/down buttons (no DnD library) for both banners and queue.
+- Song DNA shows real values where available; missing attributes display "—" (per platform real-data rule).
+- "Download" button only renders if a future `downloadable` flag is set; otherwise hidden.
+- Songwriter/Producer/Composer/Label/ISRC/Language/Explicit fields will display only if present on the track. (Schema does not currently store them — they will simply hide until added later. No DB column additions in this plan to keep scope contained. Can add a follow-up migration if you want them editable now — say the word.)
 
-Implementation:
+### Files
+**New**
+- `supabase/migrations/<ts>_featured_banners.sql`
+- `src/components/admin/FeaturedBannersManagement.tsx`
+- `src/components/player/PlaybackSettingsDrawer.tsx`
+- `src/components/player/QueueDrawer.tsx`
+- `src/components/player/RelatedTracksSection.tsx`
+- `src/components/player/SongDnaCard.tsx`
+- `src/components/player/TrackMetadataCard.tsx`
+- `src/hooks/use-featured-banners.tsx`
 
-Use throttling to prevent excessive writes.
+**Edited**
+- `src/components/sections/HeroSection.tsx`
+- `src/pages/AdminPanel.tsx`
+- `src/pages/AccountSettings.tsx`
+- `src/components/layout/MobileFullscreenPlayer.tsx`
+- `src/contexts/music-player/MusicPlayerContext.tsx`
+- `src/contexts/music-player/useMusicPlayerState.ts`
+- `src/contexts/music-player/types.ts`
+- `src/hooks/use-audio-engine.ts`
 
-On track load:
-
-Check localStorage for saved position.
-
-If position exists:
-
-Set:
-
-audio.currentTime
-
-before:
-
-[audio.play](http://audio.play)()
-
-Clear saved position when:
-
-Track ends
-
-User manually skips track
-
-Ensure:
-
-Resume works after refresh
-
-Resume works after navigation
-
-Resume works on mobile
-
--------------------------------------
-
-STEP 3 — ADD BUFFERING DETECTION
-
-File:
-
-src/contexts/music-player/useMusicPlayerState.ts
-
-Add listeners:
-
-audio.addEventListener("waiting")
-
-audio.addEventListener("playing")
-
-Behavior:
-
-If audio is buffering:
-
-set isLoading = true
-
-When playback resumes:
-
-set isLoading = false
-
-Ensure:
-
-Spinner appears during mid-stream buffering
-
-Spinner disappears immediately when playback resumes
-
--------------------------------------
-
-STEP 4 — ADD QUEUE REORDER FUNCTION
-
-Files:
-
-src/contexts/music-player/types.ts
-
-src/contexts/music-player/useMusicPlayerState.ts
-
-src/components/layout/MusicPlayer.tsx
-
-Requirements:
-
-Add function:
-
-reorderQueue(fromIndex: number, toIndex: number)
-
-Implementation:
-
-Use array splice logic.
-
-UI:
-
-Add Up and Down arrow buttons to each queue item.
-
-Do not add drag-and-drop yet.
-
-Ensure:
-
-Queue updates instantly
-
-Current playing track index remains correct
-
--------------------------------------
-
-STEP 5 — FIX TRACK DURATION DISPLAY
-
-File:
-
-src/components/ui/track-card.tsx
-
-Requirements:
-
-If duration is missing:
-
-Display:
-
-—
-
-Do not display:
-
-0:00
-
-Ensure:
-
-Duration updates automatically once detected during playback.
-
--------------------------------------
-
-STEP 6 — HYDRATE PLAYBACK PREFERENCES ON LOAD
-
-File:
-
-src/contexts/music-player/MusicPlayerContext.tsx
-
-Requirements:
-
-After loading saved EQ and audio preferences:
-
-Call:
-
-audioEngine.loadSavedState()
-
-Then:
-
-audioEngine.toggleEq()
-
-Ensure:
-
-EQ settings are active immediately when playback starts.
-
--------------------------------------
-
-TESTING REQUIREMENTS
-
-After completing all steps, verify:
-
-Crossfade works smoothly
-
-Tracks never start muted
-
-Playback resumes correctly
-
-Queue reorder works
-
-Buffering spinner behaves correctly
-
-Duration display is accurate
-
-Playback works on mobile
-
-Do not deploy until all tests pass.
-
--------------------------------------
-
-End of stabilization update.
