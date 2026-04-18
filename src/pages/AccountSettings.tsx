@@ -295,30 +295,32 @@ export default function AccountSettings() {
         </div>
         
         <Tabs defaultValue="profile" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <UserCircle className="h-4 w-4" />
-              Profile
-            </TabsTrigger>
-            {isArtist && (
-              <TabsTrigger value="artist" className="flex items-center gap-2">
-                <Music className="h-4 w-4" />
-                Artist Info
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex w-max sm:w-auto">
+              <TabsTrigger value="profile" className="flex items-center gap-2 min-h-11">
+                <UserCircle className="h-4 w-4" />
+                <span className="hidden sm:inline">Profile</span>
               </TabsTrigger>
-            )}
-            <TabsTrigger value="playback" className="flex items-center gap-2">
-              <Headphones className="h-4 w-4" />
-              Playback
-            </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              Notifications
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2">
-              <Lock className="h-4 w-4" />
-              Security
-            </TabsTrigger>
-          </TabsList>
+              {isArtist && (
+                <TabsTrigger value="artist" className="flex items-center gap-2 min-h-11">
+                  <Music className="h-4 w-4" />
+                  <span className="hidden sm:inline">Artist Info</span>
+                </TabsTrigger>
+              )}
+              <TabsTrigger value="playback" className="flex items-center gap-2 min-h-11">
+                <Headphones className="h-4 w-4" />
+                <span className="hidden sm:inline">Playback</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center gap-2 min-h-11">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Notifications</span>
+              </TabsTrigger>
+              <TabsTrigger value="security" className="flex items-center gap-2 min-h-11">
+                <Lock className="h-4 w-4" />
+                <span className="hidden sm:inline">Security</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           {/* Basic Profile Tab - For All Users */}
           <TabsContent value="profile" className="space-y-4">

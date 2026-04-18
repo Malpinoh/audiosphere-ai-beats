@@ -167,62 +167,81 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       currentTrack: track,
       queue: prev.queue.some(t => t.id === track.id) ? prev.queue : [track, ...prev.queue]
     }));
-    try {
-      const audioUrl = getValidAudioUrl(track.audio_file_path);
-      lastAudioUrlRef.current = audioUrl;
-      if (!audioRef.current) throw new Error('Audio element not available');
-      const audio = audioRef.current;
-      audio.pause();
-      audio.currentTime = 0;
-      audio.crossOrigin = 'anonymous';
-      audio.src = audioUrl;
-      audio.play().catch(() => {});
 
-      const waitForCanPlay = (retryCount: number = 0): Promise<void> => {
-        return new Promise((resolve, reject) => {
-          let resolved = false;
-          const handleCanPlay = () => { if (resolved) return; resolved = true; cleanup(); resolve(); };
-          const handleError = () => { if (resolved) return; resolved = true; cleanup(); reject(new Error(`Failed to load audio: ${audio.error?.message || 'Unknown error'}`)); };
-          const cleanup = () => { audio.removeEventListener('canplay', handleCanPlay); audio.removeEventListener('error', handleError); };
-          audio.addEventListener('canplay', handleCanPlay);
-          audio.addEventListener('error', handleError);
-          setTimeout(() => {
-            if (!resolved) {
-              resolved = true; cleanup();
-              if (retryCount < 1) { audio.load(); waitForCanPlay(retryCount + 1).then(resolve).catch(reject); }
-              else { reject(new Error('Audio loading timeout - file may be too large or network is slow')); }
-            }
-          }, 45000);
-          if (audio.readyState >= 3) handleCanPlay();
-        });
-      };
+    // Detect slow connection for network adaptation hint
+    const conn = (navigator as any).connection;
+    const slow = conn && (conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g');
+    if (slow) console.log('[Network] Slow connection detected, prefer lower bitrate');
 
-      await waitForCanPlay();
-      if (playbackLockRef.current !== lockId) return;
+    const MAX_RETRIES = 3;
+    const LOAD_TIMEOUT_MS = 8000;
 
-      // STEP 2: Resume from last position
-      const savedPos = loadPosition(track.id);
-      if (savedPos !== null && savedPos < (audio.duration - 5)) {
-        audio.currentTime = savedPos;
-        console.log(`[Resume] Restored position ${savedPos.toFixed(1)}s for track ${track.id}`);
+    const attemptPlay = async (attempt: number): Promise<void> => {
+      try {
+        const audioUrl = getValidAudioUrl(track.audio_file_path);
+        lastAudioUrlRef.current = audioUrl;
+        if (!audioRef.current) throw new Error('Audio element not available');
+        const audio = audioRef.current;
+        audio.pause();
+        audio.currentTime = 0;
+        audio.crossOrigin = 'anonymous';
+        audio.preload = 'metadata';
+        audio.src = audioUrl;
+        audio.play().catch(() => {});
+
+        const waitForCanPlay = (): Promise<void> => {
+          return new Promise((resolve, reject) => {
+            let resolved = false;
+            const handleCanPlay = () => { if (resolved) return; resolved = true; cleanup(); resolve(); };
+            const handleError = () => { if (resolved) return; resolved = true; cleanup(); reject(new Error(`Failed to load audio: ${audio.error?.message || 'Unknown error'}`)); };
+            const cleanup = () => { audio.removeEventListener('canplay', handleCanPlay); audio.removeEventListener('error', handleError); };
+            audio.addEventListener('canplay', handleCanPlay);
+            audio.addEventListener('error', handleError);
+            setTimeout(() => {
+              if (!resolved) {
+                resolved = true; cleanup();
+                reject(new Error('timeout'));
+              }
+            }, LOAD_TIMEOUT_MS);
+            if (audio.readyState >= 3) handleCanPlay();
+          });
+        };
+
+        await waitForCanPlay();
+        if (playbackLockRef.current !== lockId) return;
+
+        // Resume from last position
+        const savedPos = loadPosition(track.id);
+        if (savedPos !== null && savedPos < (audio.duration - 5)) {
+          audio.currentTime = savedPos;
+        }
+
+        await audio.play();
+        if (playbackLockRef.current !== lockId) return;
+
+        setState(prev => ({ ...prev, isPlaying: true, isLoading: false, playbackError: null }));
+        updateMediaSession(track);
+
+        if (!streamLoggedRef.current.has(track.id)) {
+          streamLoggedRef.current.add(track.id);
+          logStream(track.id);
+        }
+      } catch (error: any) {
+        if (playbackLockRef.current !== lockId) return;
+        if (error?.name === 'AbortError' || error?.message?.includes('interrupted')) return;
+        const isTimeoutOrNetwork = error?.message === 'timeout' || /network|fetch/i.test(error?.message || '');
+        if (isTimeoutOrNetwork && attempt < MAX_RETRIES) {
+          console.warn(`[Playback] Attempt ${attempt} failed (${error?.message}), retrying…`);
+          await new Promise(r => setTimeout(r, 600 * attempt));
+          if (playbackLockRef.current !== lockId) return;
+          return attemptPlay(attempt + 1);
+        }
+        console.error('Playback failed after retries:', error);
+        handleAudioError(error, 'playTrack', lastAudioUrlRef.current);
       }
+    };
 
-      await audio.play();
-      if (playbackLockRef.current !== lockId) return;
-
-      setState(prev => ({ ...prev, isPlaying: true, isLoading: false, playbackError: null }));
-      updateMediaSession(track);
-
-      if (!streamLoggedRef.current.has(track.id)) {
-        streamLoggedRef.current.add(track.id);
-        logStream(track.id);
-      }
-    } catch (error: any) {
-      if (playbackLockRef.current !== lockId) return;
-      if (error?.name === 'AbortError' || error?.message?.includes('interrupted')) return;
-      console.error("Playback failed:", error);
-      handleAudioError(error, 'playTrack', lastAudioUrlRef.current);
-    }
+    await attemptPlay(1);
   }, [handleAudioError, logStream, updateMediaSession]);
 
   const retryPlayback = useCallback(() => {

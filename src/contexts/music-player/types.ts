@@ -68,4 +68,6 @@ export interface MusicPlayerContextType {
   crossfadeDuration: number;
   setCrossfadeEnabled: (enabled: boolean) => void;
   setCrossfadeDuration: (duration: number) => void;
+  playbackRate: number;
+  setPlaybackRate: (rate: number) => void;
 }
