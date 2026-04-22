@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, Upload, User, LogOut, BarChart3, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,8 +30,20 @@ const navLinks = [
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isFullscreenPlayerOpen, setIsFullscreenPlayerOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const open = (e as CustomEvent).detail?.open === true;
+      setIsFullscreenPlayerOpen(open);
+    };
+    window.addEventListener("fullscreen-player-change", handler);
+    return () => window.removeEventListener("fullscreen-player-change", handler);
+  }, []);
+
+  if (isFullscreenPlayerOpen) return null;
 
   const handleSignOut = async () => {
     await signOut();

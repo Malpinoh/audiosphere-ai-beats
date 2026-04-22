@@ -106,10 +106,19 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: Props) => {
   const handleSkipBackward = () => (currentTime < 5 ? playPrevious() : seekTo(0));
 
   useEffect(() => {
-    if (isOpen) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      document.body.dataset.fullscreenPlayer = "open";
+      window.dispatchEvent(new CustomEvent("fullscreen-player-change", { detail: { open: true } }));
+    } else {
+      document.body.style.overflow = "";
+      delete document.body.dataset.fullscreenPlayer;
+      window.dispatchEvent(new CustomEvent("fullscreen-player-change", { detail: { open: false } }));
+    }
     return () => {
       document.body.style.overflow = "";
+      delete document.body.dataset.fullscreenPlayer;
+      window.dispatchEvent(new CustomEvent("fullscreen-player-change", { detail: { open: false } }));
     };
   }, [isOpen]);
 
@@ -166,7 +175,7 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: Props) => {
       </div>
 
       {/* Scrollable content */}
-      <div className="absolute inset-0 top-[60px] pt-safe-top pb-safe-bottom overflow-y-auto overscroll-contain">
+      <div className="absolute inset-0 top-[60px] pt-safe-top pb-safe-bottom overflow-y-auto overscroll-contain scrollbar-hide">
         <div className="px-4 pb-24 space-y-5">
           {/* Artwork */}
           <div className="flex items-center justify-center pt-4">
