@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import MainLayout from "@/components/layout/MainLayout";
 import { useTrack } from "@/hooks/use-track";
 import { useMusicPlayer } from "@/contexts/music-player";
@@ -34,6 +35,23 @@ export default function TrackPage() {
 
   return (
     <MainLayout>
+      {track && (
+        <Helmet>
+          <title>{`${track.title} — ${track.artist} · Maudio`}</title>
+          <meta name="description" content={`Listen to ${track.title} by ${track.artist} on Maudio.`} />
+          <meta property="og:type" content="music.song" />
+          <meta property="og:title" content={`${track.title} — ${track.artist}`} />
+          <meta property="og:description" content={`Listen to ${track.title} by ${track.artist} on Maudio.`} />
+          <meta property="og:image" content={track.cover || track.cover_art_path || "https://maudio.online/maudio-logo.png"} />
+          <meta property="og:url" content={`https://maudio.online/track/${track.id}`} />
+          <meta property="og:site_name" content="Maudio" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={`${track.title} — ${track.artist}`} />
+          <meta name="twitter:description" content={`Listen to ${track.title} by ${track.artist} on Maudio.`} />
+          <meta name="twitter:image" content={track.cover || track.cover_art_path || "https://maudio.online/maudio-logo.png"} />
+          <link rel="canonical" href={`https://maudio.online/track/${track.id}`} />
+        </Helmet>
+      )}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
         {loading ? (
           <div className={`${isMobile ? 'flex flex-col items-center' : 'grid md:grid-cols-12 gap-6'}`}>

@@ -1,5 +1,6 @@
 
 import { useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import MainLayout from "@/components/layout/MainLayout";
 import { useArtistProfile } from "@/hooks/use-artist-profile";
 import { useArtistTracks } from "@/hooks/use-artist-tracks";
@@ -59,6 +60,19 @@ const ArtistProfile = () => {
 
   return (
     <MainLayout>
+      <Helmet>
+        <title>{`${artistProfile.full_name || artistProfile.username || "Artist"} · Maudio`}</title>
+        <meta name="description" content={`Discover music by ${artistProfile.full_name || artistProfile.username || "this artist"} on Maudio`} />
+        <meta property="og:type" content="profile" />
+        <meta property="og:title" content={artistProfile.full_name || artistProfile.username || "Artist"} />
+        <meta property="og:description" content={`Discover music by ${artistProfile.full_name || artistProfile.username || "this artist"} on Maudio`} />
+        <meta property="og:image" content={getAvatarImage()} />
+        <meta property="og:url" content={`https://maudio.online/artist/${artistSlug || artistProfile.id}`} />
+        <meta property="og:site_name" content="Maudio" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content={getAvatarImage()} />
+        <link rel="canonical" href={`https://maudio.online/artist/${artistSlug || artistProfile.id}`} />
+      </Helmet>
       {/* Artist Header */}
       <ArtistHeader 
         artist={artistProfile}
@@ -103,6 +117,8 @@ const ArtistProfile = () => {
           followLoading={followLoading}
           handleToggleFollow={toggleFollow}
           tracksCount={tracks.length}
+          artistId={artistProfile.id}
+          artistName={artistProfile.full_name || artistProfile.username || undefined}
         />
         
         <ArtistStatsDisplay artistId={artistProfile.id} />

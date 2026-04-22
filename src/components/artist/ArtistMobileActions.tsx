@@ -2,26 +2,50 @@
 import { Play, Heart, Share, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
+import { shareContent } from "@/lib/share";
+import { toast } from "sonner";
+import { useParams } from "react-router-dom";
 
 interface ArtistMobileActionsProps {
   isFollowing: boolean;
   followLoading: boolean;
   handleToggleFollow: () => Promise<void>;
   tracksCount: number;
+  artistId?: string;
+  artistName?: string;
 }
 
 export const ArtistMobileActions = ({
   isFollowing,
   followLoading,
   handleToggleFollow,
-  tracksCount
+  tracksCount,
+  artistId,
+  artistName,
 }: ArtistMobileActionsProps) => {
   const { setQueue, playTrack } = useMusicPlayer();
+  const { artistSlug } = useParams<{ artistSlug: string }>();
   
   // This would need actual implementation with the tracks data
   const handlePlayAll = () => {
     // Implementation would depend on the available tracks
     console.log("Play all tracks from this artist");
+  };
+
+  const handleShare = async () => {
+    const id = artistSlug || artistId;
+    if (!id) return;
+    try {
+      await shareContent({
+        kind: "artist",
+        id,
+        title: artistName || "Artist on Maudio",
+        text: `Discover music by ${artistName || "this artist"} on Maudio`,
+      });
+      toast.success("Share link copied");
+    } catch {
+      toast.error("Could not share");
+    }
   };
 
   return (
@@ -45,7 +69,7 @@ export const ArtistMobileActions = ({
         )}
         {isFollowing ? "Following" : "Follow"}
       </Button>
-      <Button variant="outline" size="icon">
+      <Button variant="outline" size="icon" onClick={handleShare}>
         <Share className="h-4 w-4" />
       </Button>
     </div>
