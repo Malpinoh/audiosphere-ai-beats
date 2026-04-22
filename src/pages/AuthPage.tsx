@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import maudioLogo from "@/assets/maudio-logo.png";
 
 const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -98,9 +99,11 @@ const AuthPage = () => {
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl maudio-gradient-bg mb-4 shadow-lg shadow-primary/25">
-            <span className="text-primary-foreground font-bold text-xl">M</span>
-          </div>
+          <img
+            src={maudioLogo}
+            alt="Maudio"
+            className="inline-block h-16 w-16 rounded-2xl object-cover mb-4 shadow-lg shadow-primary/25"
+          />
           <h1 className="text-2xl font-bold maudio-gradient-text">MAUDIO</h1>
           <p className="text-muted-foreground text-sm mt-1">Stream. Discover. Share.</p>
         </div>

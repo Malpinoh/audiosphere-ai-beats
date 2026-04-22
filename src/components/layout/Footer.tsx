@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import maudioLogo from "@/assets/maudio-logo.png";
 
 const Footer = () => {
   return (
@@ -72,9 +73,7 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold text-foreground mb-4">MAUDIO</h3>
             <div className="flex items-center space-x-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center shadow-lg shadow-primary/25">
-                <span className="text-primary-foreground font-bold text-sm">M</span>
-              </div>
+              <img src={maudioLogo} alt="Maudio" className="w-8 h-8 rounded-lg object-cover shadow-lg shadow-primary/25" />
               <span className="font-bold text-lg maudio-gradient-text">
                 MAUDIO
               </span>

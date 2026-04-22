@@ -28,6 +28,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import maudioLogo from "@/assets/maudio-logo.png";
 
 const adminTabs = [
   { value: "analytics", label: "Analytics", icon: BarChart3 },
@@ -98,9 +99,12 @@ export default function AdminPanel() {
         <div className="container py-6 lg:py-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-6 lg:mb-8">
-            <div>
-              <h1 className="text-2xl lg:text-4xl font-bold text-foreground">Admin Panel</h1>
-              <p className="text-sm lg:text-base text-muted-foreground mt-1">Manage your music platform</p>
+            <div className="flex items-center gap-3">
+              <img src={maudioLogo} alt="Maudio" className="h-10 w-10 lg:h-12 lg:w-12 rounded-xl object-cover shadow-lg shadow-primary/25" />
+              <div>
+                <h1 className="text-2xl lg:text-4xl font-bold text-foreground">Admin Panel</h1>
+                <p className="text-sm lg:text-base text-muted-foreground mt-1">Manage your music platform</p>
+              </div>
             </div>
             
             {/* Mobile menu trigger */}
