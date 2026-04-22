@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Helmet } from "react-helmet-async";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, Settings, Edit2 } from "lucide-react";
+import { ArrowLeft, Play, Settings, Edit2, Share } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { shareContent } from "@/lib/share";
 import { PlaylistManager } from "@/components/playlist/PlaylistManager";
 import { PlaylistFollowButton } from "@/components/playlist/PlaylistFollowButton";
 import { PlaylistEditModal } from "@/components/playlist/PlaylistEditModal";
@@ -65,6 +67,16 @@ const PlaylistDetailPage = () => {
 
   const isOwner = playlist && user && playlist.created_by === user.id;
 
+  const handleSharePlaylist = async () => {
+    if (!playlist) return;
+    try {
+      await shareContent({ kind: "playlist", id: playlist.id, title: playlist.title, text: `Listen to ${playlist.title} on Maudio` });
+      toast.success("Share link copied");
+    } catch {
+      toast.error("Could not share playlist");
+    }
+  };
+
   if (loading) return (
     <MainLayout>
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
@@ -97,6 +109,19 @@ const PlaylistDetailPage = () => {
 
   return (
     <MainLayout>
+      <Helmet>
+        <title>{`${playlist.title} · Maudio`}</title>
+        <meta name="description" content={playlist.description || `Listen to the playlist ${playlist.title} on Maudio`} />
+        <meta property="og:type" content="music.playlist" />
+        <meta property="og:title" content={playlist.title} />
+        <meta property="og:description" content={playlist.description || `Listen to the playlist ${playlist.title} on Maudio`} />
+        <meta property="og:image" content={coverUrl} />
+        <meta property="og:url" content={`https://maudio.online/playlist/${playlist.id}`} />
+        <meta property="og:site_name" content="Maudio" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content={coverUrl} />
+        <link rel="canonical" href={`https://maudio.online/playlist/${playlist.id}`} />
+      </Helmet>
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
         <Button variant="ghost" onClick={() => navigate('/playlists')} className="mb-4 text-muted-foreground hover:text-foreground" size="sm">
           <ArrowLeft className="h-4 w-4 mr-1.5" />Back
@@ -137,6 +162,9 @@ const PlaylistDetailPage = () => {
               )}
               <PlaylistFollowButton playlistId={playlist.id} followerCount={playlist.follower_count}
                 onFollowerCountChange={(c) => setPlaylist(prev => prev ? { ...prev, follower_count: c } : null)} />
+              <Button variant="outline" size="sm" onClick={handleSharePlaylist} className="gap-1.5">
+                <Share className="h-3.5 w-3.5" />Share
+              </Button>
             </div>
           </div>
         </div>
