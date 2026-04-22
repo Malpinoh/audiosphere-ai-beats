@@ -174,7 +174,8 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     if (slow) console.log('[Network] Slow connection detected, prefer lower bitrate');
 
     const MAX_RETRIES = 3;
-    const LOAD_TIMEOUT_MS = 8000;
+    const LOAD_TIMEOUT_MS = 15000;
+    const RETRY_DELAY_MS = 2000;
 
     const attemptPlay = async (attempt: number): Promise<void> => {
       try {
@@ -231,8 +232,8 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
         if (error?.name === 'AbortError' || error?.message?.includes('interrupted')) return;
         const isTimeoutOrNetwork = error?.message === 'timeout' || /network|fetch/i.test(error?.message || '');
         if (isTimeoutOrNetwork && attempt < MAX_RETRIES) {
-          console.warn(`[Playback] Attempt ${attempt} failed (${error?.message}), retrying…`);
-          await new Promise(r => setTimeout(r, 600 * attempt));
+          console.warn(`[Playback] Attempt ${attempt} failed (${error?.message}), retrying in ${RETRY_DELAY_MS}ms…`);
+          await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
           if (playbackLockRef.current !== lockId) return;
           return attemptPlay(attempt + 1);
         }
