@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useFeaturedBanners } from "@/hooks/use-featured-banners";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 export function HeroSection() {
@@ -8,6 +9,7 @@ export function HeroSection() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (paused || banners.length <= 1) return;
@@ -42,7 +44,11 @@ export function HeroSection() {
 
   return (
     <section
-      className="relative w-full overflow-hidden rounded-2xl bg-muted aspect-[16/5] min-h-[180px]"
+      className={cn(
+        "relative w-full overflow-hidden rounded-2xl bg-muted",
+        // Desktop / tablet: fixed 16:5; Mobile: auto height to show full image
+        isMobile ? "" : "aspect-[16/5] min-h-[180px]"
+      )}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={handleTouchStart}
@@ -53,18 +59,36 @@ export function HeroSection() {
         const content = (
           <img
             src={banner.image_url}
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 1280px, 1920px"
             alt={banner.title || "Featured banner"}
-            className="w-full h-full object-cover"
+            className={cn(
+              "w-full",
+              isMobile ? "h-auto object-contain" : "h-full object-cover"
+            )}
             loading={i === 0 ? "eager" : "lazy"}
+            onError={(e) => {
+              // Fallback: keep original src; just ensure layout doesn't break
+              (e.currentTarget as HTMLImageElement).style.objectFit = "contain";
+            }}
           />
         );
         return (
           <div
             key={banner.id}
             className={cn(
-              "absolute inset-0 transition-opacity duration-700",
+              isMobile
+                ? "transition-opacity duration-700"
+                : "absolute inset-0 transition-opacity duration-700",
               i === index ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
+            style={
+              isMobile
+                ? {
+                    display: i === index ? "block" : "none",
+                    width: "100%",
+                  }
+                : undefined
+            }
           >
             {banner.link_url ? (
               <a href={banner.link_url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">

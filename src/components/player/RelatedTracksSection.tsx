@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { Track } from "@/types/track-types";
+import { fetchTrack } from "@/services/track-service";
+import { toast } from "sonner";
 import { Play } from "lucide-react";
 
 interface Props {
@@ -21,6 +23,7 @@ interface SimilarTrackRow {
 export function RelatedTracksSection({ trackId }: Props) {
   const [tracks, setTracks] = useState<SimilarTrackRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const { playTrack } = useMusicPlayer();
 
   useEffect(() => {
@@ -53,6 +56,23 @@ export function RelatedTracksSection({ trackId }: Props) {
 
   if (tracks.length === 0) return null;
 
+  const handlePlay = async (t: SimilarTrackRow) => {
+    try {
+      setLoadingId(t.track_id);
+      const full = await fetchTrack(t.track_id);
+      if (!full || !full.audio_file_path) {
+        toast.error("Audio file unavailable.");
+        return;
+      }
+      playTrack(full);
+    } catch (err) {
+      console.error("Related track play failed", err);
+      toast.error("Track cannot be played.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Related Tracks</h3>
@@ -64,22 +84,8 @@ export function RelatedTracksSection({ trackId }: Props) {
           return (
             <button
               key={t.track_id}
-              onClick={() =>
-                playTrack({
-                  id: t.track_id,
-                  title: t.title,
-                  artist: t.artist,
-                  cover_art_path: t.cover_art_path,
-                  audio_file_path: "", // resolved by player; will be loaded via track service if needed
-                  genre: t.genre,
-                  mood: t.mood,
-                  play_count: t.play_count,
-                  like_count: 0,
-                  tags: [],
-                  published: true,
-                  user_id: "",
-                } as Track)
-              }
+              onClick={() => handlePlay(t)}
+              disabled={loadingId === t.track_id}
               className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 active:bg-muted transition-colors text-left"
             >
               <img src={cover} alt={t.title} className="h-12 w-12 rounded object-cover flex-shrink-0" />

@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import maudioLogo from "@/assets/maudio-logo.png";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -63,9 +64,11 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-9 h-9 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg shadow-primary/25">
-              <span className="text-primary-foreground font-bold text-sm">M</span>
-            </div>
+            <img
+              src={maudioLogo}
+              alt="Maudio"
+              className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-cover shadow-lg shadow-primary/25"
+            />
             <span className="font-bold text-xl maudio-gradient-text hidden sm:inline">
               MAUDIO
             </span>
