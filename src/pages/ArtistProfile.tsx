@@ -67,11 +67,11 @@ const ArtistProfile = () => {
         <meta property="og:title" content={artistProfile.full_name || artistProfile.username || "Artist"} />
         <meta property="og:description" content={`Discover music by ${artistProfile.full_name || artistProfile.username || "this artist"} on Maudio`} />
         <meta property="og:image" content={getAvatarImage()} />
-        <meta property="og:url" content={`https://maudio.online/artist/${artistProfile.slug || artistProfile.id}`} />
+        <meta property="og:url" content={`https://maudio.online/artist/${artistSlug || artistProfile.id}`} />
         <meta property="og:site_name" content="Maudio" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content={getAvatarImage()} />
-        <link rel="canonical" href={`https://maudio.online/artist/${artistProfile.slug || artistProfile.id}`} />
+        <link rel="canonical" href={`https://maudio.online/artist/${artistSlug || artistProfile.id}`} />
       </Helmet>
       {/* Artist Header */}
       <ArtistHeader 
