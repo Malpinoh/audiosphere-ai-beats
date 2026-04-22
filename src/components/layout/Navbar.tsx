@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, Upload, User, LogOut, BarChart3, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,8 +30,20 @@ const navLinks = [
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isFullscreenPlayerOpen, setIsFullscreenPlayerOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const open = (e as CustomEvent).detail?.open === true;
+      setIsFullscreenPlayerOpen(open);
+    };
+    window.addEventListener("fullscreen-player-change", handler);
+    return () => window.removeEventListener("fullscreen-player-change", handler);
+  }, []);
+
+  if (isFullscreenPlayerOpen) return null;
 
   const handleSignOut = async () => {
     await signOut();
@@ -39,7 +51,14 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav
+      className="sticky top-0 z-40 w-full"
+      style={{
+        backgroundColor: '#0b0f1a',
+        opacity: 1,
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+      }}
+    >
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
