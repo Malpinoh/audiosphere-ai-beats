@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { shareContent } from '@/lib/share';
+import { toast } from 'sonner';
 import { Track } from '@/types/track-types';
 import { RepeatMode, PlaybackError } from '@/contexts/music-player/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -418,7 +420,18 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     setState(prev => ({ ...prev, isShuffle: !prev.isShuffle }));
   }, []);
 
-  const shareTrack = useCallback((_trackId: string) => {}, []);
+  const shareTrack = useCallback(async (trackId: string) => {
+    const t = stateRef.current?.currentTrack;
+    const title = t && t.id === trackId
+      ? `${t.title} — ${t.artist}`
+      : "Check out this track on Maudio";
+    try {
+      await shareContent({ kind: "track", id: trackId, title, text: title });
+      toast.success("Share link copied");
+    } catch {
+      toast.error("Could not share track");
+    }
+  }, []);
 
   // Load user's existing likes and saved tracks
   useEffect(() => {
