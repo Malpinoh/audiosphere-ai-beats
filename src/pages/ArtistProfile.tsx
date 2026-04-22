@@ -117,6 +117,8 @@ const ArtistProfile = () => {
           followLoading={followLoading}
           handleToggleFollow={toggleFollow}
           tracksCount={tracks.length}
+          artistId={artistProfile.id}
+          artistName={artistProfile.full_name || artistProfile.username || undefined}
         />
         
         <ArtistStatsDisplay artistId={artistProfile.id} />
