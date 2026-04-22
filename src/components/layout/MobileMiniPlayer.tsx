@@ -44,7 +44,14 @@ const MobileMiniPlayer = () => {
           />
         </div>
 
-        <div className="flex items-center gap-3 px-3 py-2 bg-card/98 backdrop-blur-xl border-t border-border">
+        <div
+          className="flex items-center gap-3 px-3 py-2"
+          style={{
+            backgroundColor: '#0b0f1a',
+            opacity: 1,
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
           {/* Album Art */}
           <div className="flex-shrink-0">
             <img
