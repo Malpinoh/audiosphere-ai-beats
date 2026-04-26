@@ -4,6 +4,7 @@ import Footer from "./Footer";
 import MusicPlayer from "./MusicPlayer";
 import MobileMiniPlayer from "./MobileMiniPlayer";
 import MobileBottomNav from "./MobileBottomNav";
+import { NetworkStatusBanner } from "./NetworkStatusBanner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMusicPlayer } from "@/contexts/music-player";
 
@@ -27,6 +28,7 @@ const MainLayout = ({
   
   return (
     <div className="flex flex-col min-h-screen bg-background">
+      <NetworkStatusBanner />
       <Navbar />
       
       <main className="flex-1 w-full">
