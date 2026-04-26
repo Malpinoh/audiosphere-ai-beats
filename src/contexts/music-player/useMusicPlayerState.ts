@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { shareContent } from '@/lib/share';
 import { Track } from '@/types/track-types';
-import { RepeatMode, PlaybackError } from '@/contexts/music-player/types';
+import { RepeatMode, PlaybackError, PlaybackSource } from '@/contexts/music-player/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useStreamLogger } from '@/hooks/use-stream-logger';
 import { toast } from 'sonner';
@@ -37,6 +37,7 @@ interface MusicPlayerState {
   isShuffle: boolean;
   likedTracks: Set<string>;
   savedTracks: Set<string>;
+  playbackSource: PlaybackSource | null;
 }
 
 const initialState: MusicPlayerState = {
@@ -53,6 +54,7 @@ const initialState: MusicPlayerState = {
   isShuffle: false,
   likedTracks: new Set(),
   savedTracks: new Set(),
+  playbackSource: null,
 };
 
 const getValidAudioUrl = (audioFilePath: string): string => {
