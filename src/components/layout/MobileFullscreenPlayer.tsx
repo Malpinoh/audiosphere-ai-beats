@@ -33,6 +33,7 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: Props) => {
     saveTrack, unsaveTrack, isTrackSaved,
     addToQueue, shareTrack,
     playbackError, retryPlayback,
+    playbackSource,
   } = useMusicPlayer();
 
   const [isClosing, setIsClosing] = useState(false);
@@ -192,6 +193,11 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: Props) => {
           {/* Title + artist + like */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
+              {playbackSource && (
+                <p className="text-[10px] uppercase tracking-[0.12em] font-medium text-primary/80 truncate mb-0.5">
+                  Now Playing from: {playbackSource.kind === 'search' ? 'Search results' : `${playbackSource.kind.charAt(0).toUpperCase()}${playbackSource.kind.slice(1)} — ${playbackSource.name}`}
+                </p>
+              )}
               <Link
                 to={`/track/${currentTrack.id}`}
                 onClick={handleClose}
