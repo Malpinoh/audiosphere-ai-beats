@@ -90,7 +90,7 @@ export default function GenrePage() {
 
   const handlePlayAll = () => {
     if (tracks.length > 0) {
-      setQueue(tracks);
+      setQueue(tracks, { kind: 'genre', name: genre?.name || 'Genre', id: genreId });
       playTrack(tracks[0]);
     }
   };
