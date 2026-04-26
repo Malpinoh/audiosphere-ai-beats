@@ -58,7 +58,19 @@ export function usePersonalizedRecommendations(limit: number = 20) {
 
         if (rpcError) throw rpcError;
 
-        setTracks((data || []).map(formatTrack));
+        const formatted = (data || []).map(formatTrack);
+        if (formatted.length > 0) {
+          setTracks(formatted);
+        } else {
+          // Always render fallback: popular + new releases
+          const { data: fallbackData } = await supabase
+            .from('tracks')
+            .select('id, title, artist, artist_profile_id, cover_art_path, genre, mood, play_count')
+            .eq('published', true)
+            .order('play_count', { ascending: false, nullsFirst: false })
+            .limit(limit);
+          setTracks((fallbackData || []).map(t => formatTrack({ ...t, track_id: t.id, recommendation_reason: 'Popular on Maudio' })));
+        }
       } catch (err) {
         console.error('Error fetching personalized recommendations:', err);
         setError(err instanceof Error ? err : new Error('Failed to fetch recommendations'));

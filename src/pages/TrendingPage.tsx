@@ -12,7 +12,7 @@ export default function TrendingPage() {
 
   const handlePlayAll = () => {
     if (tracks.length > 0) {
-      setQueue(tracks);
+      setQueue(tracks, { kind: 'trending', name: 'Trending Now' });
       playTrack(tracks[0]);
     }
   };

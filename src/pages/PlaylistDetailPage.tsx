@@ -61,7 +61,8 @@ const PlaylistDetailPage = () => {
         .select('position, tracks (*)').eq('playlist_id', playlistId).order('position');
       if (error || !data?.length) { toast.error('No tracks to play'); return; }
       const tracks = data.map(pt => ({ ...pt.tracks as any, track_type: (pt.tracks as any)?.track_type || "single" }));
-      setQueue(tracks); playTrack(tracks[0]); toast.success('Playing playlist');
+      setQueue(tracks, { kind: 'playlist', name: playlist?.title || 'Playlist', id: playlistId });
+      playTrack(tracks[0]); toast.success('Playing playlist');
     } catch { toast.error('Failed to play'); }
   };
 

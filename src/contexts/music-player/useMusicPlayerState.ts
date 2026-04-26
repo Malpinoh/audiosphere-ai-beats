@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { shareContent } from '@/lib/share';
 import { Track } from '@/types/track-types';
-import { RepeatMode, PlaybackError } from '@/contexts/music-player/types';
+import { RepeatMode, PlaybackError, PlaybackSource } from '@/contexts/music-player/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useStreamLogger } from '@/hooks/use-stream-logger';
 import { toast } from 'sonner';
@@ -37,6 +37,7 @@ interface MusicPlayerState {
   isShuffle: boolean;
   likedTracks: Set<string>;
   savedTracks: Set<string>;
+  playbackSource: PlaybackSource | null;
 }
 
 const initialState: MusicPlayerState = {
@@ -53,6 +54,7 @@ const initialState: MusicPlayerState = {
   isShuffle: false,
   likedTracks: new Set(),
   savedTracks: new Set(),
+  playbackSource: null,
 };
 
 const getValidAudioUrl = (audioFilePath: string): string => {
@@ -296,8 +298,16 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     }
   }, []);
 
-  const setQueue = useCallback((tracks: Track[]) => {
-    setState(prev => ({ ...prev, queue: tracks }));
+  const setQueue = useCallback((tracks: Track[], source?: PlaybackSource | null) => {
+    setState(prev => ({
+      ...prev,
+      queue: tracks,
+      ...(source !== undefined ? { playbackSource: source } : {}),
+    }));
+  }, []);
+
+  const setPlaybackSource = useCallback((source: PlaybackSource | null) => {
+    setState(prev => ({ ...prev, playbackSource: source }));
   }, []);
 
   const addToQueue = useCallback((track: Track) => {
@@ -557,5 +567,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     isTrackSaved,
     shareTrack,
     audioRef,
+    playbackSource: state.playbackSource,
+    setPlaybackSource,
   };
 };
