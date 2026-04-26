@@ -27,8 +27,9 @@ const trackTypes = [
 ];
 
 const genres = [
-  "Pop", "Rock", "Hip Hop", "R&B", "Country", "Jazz", "Classical", 
-  "Electronic", "Folk", "Blues", "Reggae", "Punk", "Metal", "Indie", 
+  "Afrobeats", "Afro Fusion", "Afro Pop", "Afrobeat",
+  "Hip Hop", "R&B", "Pop", "Rock", "Country", "Jazz", "Classical",
+  "Electronic", "Folk", "Blues", "Reggae", "Punk", "Metal", "Indie",
   "Alternative", "Funk", "Soul", "Gospel", "World", "Latin", "Other"
 ];
 
