@@ -4,6 +4,25 @@ import { EqBand, EngineStatus } from "@/hooks/use-audio-engine";
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
+export type PlaybackSourceKind =
+  | 'playlist'
+  | 'album'
+  | 'artist'
+  | 'genre'
+  | 'search'
+  | 'recommended'
+  | 'trending'
+  | 'charts'
+  | 'library'
+  | 'queue'
+  | 'single';
+
+export interface PlaybackSource {
+  kind: PlaybackSourceKind;
+  name: string; // human label, e.g. "Morning Vibes"
+  id?: string;  // optional id for linking
+}
+
 export interface PlaybackError {
   type: 'network' | 'decode' | 'source' | 'timeout' | 'unknown';
   message: string;
@@ -40,7 +59,9 @@ export interface MusicPlayerContextType {
   playbackError: PlaybackError | null;
   playTrack: (track: Track) => void;
   togglePlay: () => void;
-  setQueue: (tracks: Track[]) => void;
+  setQueue: (tracks: Track[], source?: PlaybackSource | null) => void;
+  playbackSource: PlaybackSource | null;
+  setPlaybackSource: (source: PlaybackSource | null) => void;
   clearQueue: () => void;
   playNext: () => void;
   playPrevious: () => void;
