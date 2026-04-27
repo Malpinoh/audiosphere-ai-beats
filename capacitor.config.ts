@@ -5,9 +5,16 @@ const config: CapacitorConfig = {
   appId: 'app.lovable.37c241b2011b4b289680e9eaec2c83e7',
   appName: 'maudio',
   webDir: 'dist',
+  // NOTE: `server.url` is intentionally NOT set so the Android app always loads
+  // the latest compiled web bundle from `dist/` after `npx cap sync`.
+  // Re-enable only for live-reload during development.
   server: {
-    url: 'https://37c241b2-011b-4b28-9680-e9eaec2c83e7.lovableproject.com?forceHideBadge=true',
-    cleartext: true
+    androidScheme: 'https',
+    cleartext: true,
+  },
+  android: {
+    allowMixedContent: true,
+    webContentsDebuggingEnabled: true,
   },
   plugins: {
     SplashScreen: {

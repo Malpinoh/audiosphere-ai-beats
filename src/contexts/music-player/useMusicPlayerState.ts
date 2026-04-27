@@ -527,8 +527,34 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       navigator.mediaSession.setActionHandler('seekforward', () => seekTo(Math.min(state.duration, state.currentTime + 10)));
       navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
       navigator.mediaSession.setActionHandler('previoustrack', () => playPrevious());
+      try {
+        navigator.mediaSession.setActionHandler('seekto', (details: any) => {
+          if (typeof details.seekTime === 'number') seekTo(details.seekTime);
+        });
+        navigator.mediaSession.setActionHandler('stop', () => pause());
+      } catch {}
     }
   }, [play, pause, seekTo, state.currentTime, state.duration, playNext, playPrevious]);
+
+  // Keep MediaSession playback state + position in sync (lock-screen scrubber)
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
+    } catch {}
+  }, [state.isPlaying]);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !('setPositionState' in navigator.mediaSession)) return;
+    if (!state.duration || !isFinite(state.duration) || state.duration <= 0) return;
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: state.duration,
+        position: Math.min(state.currentTime, state.duration),
+        playbackRate: audioRef.current?.playbackRate || 1,
+      });
+    } catch {}
+  }, [state.currentTime, state.duration]);
 
   return {
     currentTrack: state.currentTrack,

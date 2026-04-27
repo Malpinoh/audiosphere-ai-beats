@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import MusicPlayer from "./MusicPlayer";
@@ -19,11 +19,28 @@ const MainLayout = ({
 }: MainLayoutProps) => {
   const isMobile = useIsMobile();
   const { currentTrack } = useMusicPlayer();
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
+
+  // Listen to the global fullscreen-player-change event so we can hide
+  // the bottom nav + mini player while the immersive player is open.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { open?: boolean } | undefined;
+      setFullscreenOpen(!!detail?.open);
+    };
+    window.addEventListener('fullscreen-player-change', handler);
+    // Sync initial state from data-attribute (covers SSR/late mount cases)
+    if (typeof document !== 'undefined' && document.body.dataset.fullscreenPlayer === 'open') {
+      setFullscreenOpen(true);
+    }
+    return () => window.removeEventListener('fullscreen-player-change', handler);
+  }, []);
 
   // Mobile: bottom nav (56px) + mini player when track active (~58px)
   const hasMiniPlayer = isMobile && !hidePlayer && !!currentTrack;
+  const showBottomNav = isMobile && !fullscreenOpen;
   const bottomSpacing = isMobile
-    ? hasMiniPlayer ? 'h-[116px]' : 'h-14'
+    ? fullscreenOpen ? 'h-0' : hasMiniPlayer ? 'h-[116px]' : 'h-14'
     : hidePlayer ? 'h-0' : 'h-24';
   
   return (
@@ -45,7 +62,7 @@ const MainLayout = ({
       
       {/* Footer hidden on mobile - bottom nav replaces it */}
       {!isMobile && <Footer />}
-      {isMobile && <MobileBottomNav />}
+      {showBottomNav && <MobileBottomNav />}
     </div>
   );
 };

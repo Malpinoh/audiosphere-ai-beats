@@ -110,31 +110,31 @@ export default function GenrePage() {
 
   return (
     <MainLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 md:space-y-8 px-3 sm:px-4">
         {/* Genre Header */}
-        <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${genre.gradient} p-8 text-white`}>
+        <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${genre.gradient} p-4 sm:p-6 md:p-8 text-white`}>
           <div className="relative z-10">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-                <Music className="w-8 h-8" />
+            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                <Music className="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold mb-2">{genre.name}</h1>
-                <p className="text-lg opacity-90">{genre.description}</p>
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2 truncate">{genre.name}</h1>
+                <p className="text-sm sm:text-base md:text-lg opacity-90 line-clamp-2">{genre.description}</p>
               </div>
             </div>
             
             {tracks.length > 0 && (
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 <Button 
                   onClick={handlePlayAll}
-                  size="lg"
-                  className="bg-white text-black hover:bg-white/90"
+                  size="default"
+                  className="bg-white text-black hover:bg-white/90 sm:size-lg"
                 >
                   <Play className="w-5 h-5 mr-2" />
                   Play All
                 </Button>
-                <span className="text-white/80">{tracks.length} tracks</span>
+                <span className="text-sm sm:text-base text-white/80">{tracks.length} tracks</span>
               </div>
             )}
           </div>
