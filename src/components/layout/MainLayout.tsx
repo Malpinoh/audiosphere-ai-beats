@@ -37,7 +37,7 @@ const MainLayout = ({
   }, []);
 
   // Mobile: bottom nav (56px) + mini player when track active (~58px)
-  const hasMiniPlayer = isMobile && !hidePlayer && !!currentTrack && !fullscreenOpen;
+  const hasMiniPlayer = isMobile && !hidePlayer && !!currentTrack;
   const showBottomNav = isMobile && !fullscreenOpen;
   const bottomSpacing = isMobile
     ? fullscreenOpen ? 'h-0' : hasMiniPlayer ? 'h-[116px]' : 'h-14'
