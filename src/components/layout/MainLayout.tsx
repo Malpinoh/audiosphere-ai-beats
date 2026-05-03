@@ -1,4 +1,5 @@
 import React, { ReactNode, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import MusicPlayer from "./MusicPlayer";
@@ -11,11 +12,14 @@ import { useMusicPlayer } from "@/contexts/music-player";
 interface MainLayoutProps {
   children: ReactNode;
   hidePlayer?: boolean;
+  /** Hide the global Navbar on mobile (used by Home which has its own header). */
+  hideMobileNavbar?: boolean;
 }
 
 const MainLayout = ({ 
   children, 
-  hidePlayer = false
+  hidePlayer = false,
+  hideMobileNavbar = false,
 }: MainLayoutProps) => {
   const isMobile = useIsMobile();
   const { currentTrack } = useMusicPlayer();
@@ -36,17 +40,23 @@ const MainLayout = ({
     return () => window.removeEventListener('fullscreen-player-change', handler);
   }, []);
 
-  // Mobile: bottom nav (56px) + mini player when track active (~58px)
+  // Mobile: bottom nav (56px) + safe-inset + floating mini player (~62px + 8px gap)
   const hasMiniPlayer = isMobile && !hidePlayer && !!currentTrack;
   const showBottomNav = isMobile && !fullscreenOpen;
   const bottomSpacing = isMobile
-    ? fullscreenOpen ? 'h-0' : hasMiniPlayer ? 'h-[116px]' : 'h-14'
+    ? fullscreenOpen
+      ? 'h-0'
+      : hasMiniPlayer
+        ? 'h-[136px]' // 56 nav + 8 gap + 62 card + ~10 inset
+        : 'h-14'
     : hidePlayer ? 'h-0' : 'h-24';
+
+  const showNavbar = !(isMobile && hideMobileNavbar);
   
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <NetworkStatusBanner />
-      <Navbar />
+      {showNavbar && <Navbar />}
       
       <main className="flex-1 w-full">
         {children}
