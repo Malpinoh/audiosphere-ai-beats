@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { MusicPlayerProvider } from "@/contexts/MusicPlayerContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useCapacitor } from "@/hooks/use-capacitor";
+import { NativeBootstrap } from "@/components/NativeBootstrap";
 
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
@@ -170,6 +171,7 @@ const App = () => {
             <MusicPlayerProvider>
               <Toaster />
               <Sonner />
+              <NativeBootstrap />
               <BrowserRouter>
                 <AppRoutes />
               </BrowserRouter>
