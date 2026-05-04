@@ -7,6 +7,7 @@ import { Track } from "@/types/track-types";
 import { toast } from "sonner";
 import { formatDuration } from "@/utils/formatTime";
 import { supabase } from "@/integrations/supabase/client";
+import { DownloadButton } from "@/components/offline/DownloadButton";
 
 interface TrackCardProps {
   track: Track;
@@ -214,6 +215,7 @@ export function TrackCard({ track, showArtist = true, hidePlay = false, variant 
         >
           <Plus className="h-4 w-4" />
         </Button>
+        <DownloadButton track={track} />
         <Button
           onClick={handleLikeClick}
           size="icon"

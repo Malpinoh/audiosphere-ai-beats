@@ -5,6 +5,8 @@ import { RepeatMode, PlaybackError, PlaybackSource } from '@/contexts/music-play
 import { supabase } from '@/integrations/supabase/client';
 import { useStreamLogger } from '@/hooks/use-stream-logger';
 import { toast } from 'sonner';
+import { getOfflineUri, cacheTrackInBackground } from '@/lib/offline/storage';
+import { isOnline as isNetworkOnline } from '@/lib/offline/network';
 
 const trackListeningHistory = async (userId: string, trackId: string, listenTime: number) => {
   try {
@@ -182,13 +184,27 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
 
     const attemptPlay = async (attempt: number): Promise<void> => {
       try {
-        const audioUrl = getValidAudioUrl(track.audio_file_path);
+        // Offline-aware resolution: prefer downloaded > cached > stream.
+        // If we're offline and nothing local is available, surface a clear error.
+        let audioUrl: string;
+        const localUri = await getOfflineUri(track.id).catch(() => null);
+        if (localUri) {
+          audioUrl = localUri;
+          console.log('[Playback] Using local file for', track.title);
+        } else {
+          const online = await isNetworkOnline().catch(() => true);
+          if (!online) {
+            throw new Error('Not available offline. Download this track to listen without internet.');
+          }
+          audioUrl = getValidAudioUrl(track.audio_file_path);
+        }
         lastAudioUrlRef.current = audioUrl;
         if (!audioRef.current) throw new Error('Audio element not available');
         const audio = audioRef.current;
         audio.pause();
         audio.currentTime = 0;
-        audio.crossOrigin = 'anonymous';
+        // Local file URIs (capacitor://, file://) must NOT use CORS.
+        audio.crossOrigin = audioUrl.startsWith('http') ? 'anonymous' : null;
         audio.preload = 'metadata';
         audio.src = audioUrl;
         audio.play().catch(() => {});
@@ -230,6 +246,18 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
           streamLoggedRef.current.add(track.id);
           logStream(track.id);
         }
+
+        // Auto-cache the track in the background so it plays offline next time.
+        // Skipped automatically on web and when already downloaded/cached.
+        cacheTrackInBackground({
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          album_name: track.album_name,
+          cover_art_path: track.cover_art_path,
+          audio_file_path: track.audio_file_path,
+          duration: track.duration,
+        }).catch(() => {});
       } catch (error: any) {
         if (playbackLockRef.current !== lockId) return;
         if (error?.name === 'AbortError' || error?.message?.includes('interrupted')) return;
