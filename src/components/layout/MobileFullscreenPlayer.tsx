@@ -17,6 +17,7 @@ import { RelatedTracksSection } from "@/components/player/RelatedTracksSection";
 import { QueueDrawer } from "@/components/player/QueueDrawer";
 import { PlaybackSettingsDrawer } from "@/components/player/PlaybackSettingsDrawer";
 import { toast } from "sonner";
+import { DownloadButton } from "@/components/offline/DownloadButton";
 
 interface Props {
   isOpen: boolean;
@@ -350,6 +351,7 @@ export const MobileFullscreenPlayer = ({ isOpen, onClose }: Props) => {
             >
               <Share2 className="h-5 w-5" />
             </Button>
+            <DownloadButton track={currentTrack} size="md" />
           </div>
 
           {/* Volume */}
