@@ -26,6 +26,16 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: "dark",
       backgroundColor: "#121212"
+    },
+    CapacitorSQLite: {
+      androidIsEncryption: false,
+      androidBiometric: {
+        biometricAuth: false
+      }
+    },
+    LocalNotifications: {
+      smallIcon: "ic_stat_icon_config_sample",
+      iconColor: "#7c3aed"
     }
   }
 };
