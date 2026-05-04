@@ -1339,6 +1339,7 @@ export type Database = {
         Args: { profile_id: string; user_id: string }
         Returns: boolean
       }
+      can_read_profile_role: { Args: { _profile_id: string }; Returns: boolean }
       create_artist_profile_if_not_exists: {
         Args: { artist_name: string }
         Returns: string
