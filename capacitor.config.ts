@@ -2,7 +2,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.37c241b2011b4b289680e9eaec2c83e7',
+  appId: 'com.maudio.online',
   appName: 'maudio',
   webDir: 'dist',
   // NOTE: `server.url` is intentionally NOT set so the Android app always loads
@@ -15,6 +15,7 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: true,
     webContentsDebuggingEnabled: true,
+    backgroundColor: '#121212',
   },
   plugins: {
     SplashScreen: {
