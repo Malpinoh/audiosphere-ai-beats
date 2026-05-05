@@ -2,8 +2,6 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { Bell } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export type HomeFilter = "all" | "music" | "genres" | "playlists";
 
@@ -31,8 +29,8 @@ export function MobileHomeHeader({ active, onChange }: Props) {
     <header
       className="lg:hidden sticky z-30"
       style={{
-        top: "env(safe-area-inset-top, 0px)",
-        paddingTop: "8px",
+        top: 0,
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)",
       }}
     >
       <div className="px-3">
@@ -78,25 +76,6 @@ export function MobileHomeHeader({ active, onChange }: Props) {
               );
             })}
           </nav>
-
-          {/* Notifications (coming soon) */}
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Notifications — coming soon"
-                  className="relative h-9 w-9 flex-shrink-0 rounded-full bg-muted/40 text-muted-foreground flex items-center justify-center active:scale-95 transition-transform"
-                >
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold uppercase tracking-wide bg-primary text-primary-foreground rounded-full px-1 py-px leading-none">
-                    Soon
-                  </span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Notifications coming soon</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
       </div>
     </header>
