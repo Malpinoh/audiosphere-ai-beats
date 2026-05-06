@@ -14,6 +14,7 @@ interface PlaylistCardProps {
   createdBy?: {
     name: string;
     id: string;
+    followerCount?: number;
   };
 }
 
@@ -82,10 +83,12 @@ export function PlaylistCard({
             <span className="truncate">
               {createdBy ? `By ${createdBy.name}` : 'MAUDIO Playlist'}
             </span>
-            {followerCount > 0 && (
+            {createdBy?.followerCount !== undefined && createdBy.followerCount > 0 && (
               <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
-                {followerCount}
+                {createdBy.followerCount >= 1000
+                  ? `${(createdBy.followerCount / 1000).toFixed(1)}K`
+                  : createdBy.followerCount}
               </span>
             )}
           </div>
