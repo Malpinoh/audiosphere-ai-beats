@@ -15,7 +15,7 @@ import { Link } from "react-router-dom";
 interface Playlist {
   id: string; title: string; description: string; cover: string;
   trackCount: number; followerCount: number;
-  createdBy: { name: string; id: string }; isEditorial: boolean;
+  createdBy: { name: string; id: string; followerCount?: number }; isEditorial: boolean;
 }
 
 const PlaylistsPage = () => {
