@@ -44,14 +44,14 @@ const PlaylistsPage = () => {
     try {
       setLoading(true);
       const { data: editorialData, error: editorialError } = await supabase
-        .from('playlists').select('id, title, description, cover_image_path, is_editorial, created_by, follower_count, profiles!playlists_created_by_fkey(username, full_name)')
+        .from('playlists').select('id, title, description, cover_image_path, is_editorial, created_by, follower_count, profiles!playlists_created_by_fkey(username, full_name, follower_count)')
         .eq('is_editorial', true).order('created_at', { ascending: false });
       if (editorialError) throw editorialError;
 
       let userData: any[] = [];
       if (user) {
         const { data, error } = await supabase
-          .from('playlists').select('id, title, description, cover_image_path, is_editorial, created_by, follower_count, profiles!playlists_created_by_fkey(username, full_name)')
+          .from('playlists').select('id, title, description, cover_image_path, is_editorial, created_by, follower_count, profiles!playlists_created_by_fkey(username, full_name, follower_count)')
           .eq('created_by', user.id).order('created_at', { ascending: false });
         if (error) throw error;
         userData = data || [];
