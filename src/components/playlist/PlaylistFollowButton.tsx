@@ -106,24 +106,24 @@ export function PlaylistFollowButton({
 
         if (error) {
           console.error('Error unfollowing playlist:', error);
-          toast.error('Failed to unfollow playlist');
+          toast.error(error.message || 'Failed to unfollow playlist');
           return;
         }
 
         setIsFollowing(false);
         toast.success('Playlist unfollowed');
       } else {
-        // Follow
+        // Follow (idempotent — ignore duplicate row)
         const { error } = await supabase
           .from('playlist_followers')
-          .insert({
-            playlist_id: playlistId,
-            profile_id: user.id
-          });
+          .upsert(
+            { playlist_id: playlistId, profile_id: user.id },
+            { onConflict: 'playlist_id,profile_id', ignoreDuplicates: true }
+          );
 
         if (error) {
           console.error('Error following playlist:', error);
-          toast.error('Failed to follow playlist');
+          toast.error(error.message || 'Failed to follow playlist');
           return;
         }
 
