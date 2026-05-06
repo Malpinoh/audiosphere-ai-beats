@@ -15,7 +15,7 @@ import { Link } from "react-router-dom";
 interface Playlist {
   id: string; title: string; description: string; cover: string;
   trackCount: number; followerCount: number;
-  createdBy: { name: string; id: string }; isEditorial: boolean;
+  createdBy: { name: string; id: string; followerCount?: number }; isEditorial: boolean;
 }
 
 const PlaylistsPage = () => {
@@ -34,7 +34,11 @@ const PlaylistsPage = () => {
         description: playlist.description || "A curated playlist",
         cover: playlist.cover_image_path || "https://picsum.photos/id/1062/300/300",
         trackCount: count || 0, followerCount: playlist.follower_count || 0,
-        createdBy: { name: playlist.profiles?.full_name || playlist.profiles?.username || "MAUDIO Editorial", id: playlist.created_by || "editorial" },
+        createdBy: {
+          name: playlist.profiles?.full_name || playlist.profiles?.username || "MAUDIO Editorial",
+          id: playlist.created_by || "editorial",
+          followerCount: playlist.profiles?.follower_count || 0,
+        },
         isEditorial: playlist.is_editorial,
       };
     }));
@@ -44,14 +48,14 @@ const PlaylistsPage = () => {
     try {
       setLoading(true);
       const { data: editorialData, error: editorialError } = await supabase
-        .from('playlists').select('id, title, description, cover_image_path, is_editorial, created_by, follower_count, profiles!playlists_created_by_fkey(username, full_name)')
+        .from('playlists').select('id, title, description, cover_image_path, is_editorial, created_by, follower_count, profiles!playlists_created_by_fkey(username, full_name, follower_count)')
         .eq('is_editorial', true).order('created_at', { ascending: false });
       if (editorialError) throw editorialError;
 
       let userData: any[] = [];
       if (user) {
         const { data, error } = await supabase
-          .from('playlists').select('id, title, description, cover_image_path, is_editorial, created_by, follower_count, profiles!playlists_created_by_fkey(username, full_name)')
+          .from('playlists').select('id, title, description, cover_image_path, is_editorial, created_by, follower_count, profiles!playlists_created_by_fkey(username, full_name, follower_count)')
           .eq('created_by', user.id).order('created_at', { ascending: false });
         if (error) throw error;
         userData = data || [];
