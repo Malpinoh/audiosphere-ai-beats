@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { shareContent } from "@/lib/share";
 import { PlaylistManager } from "@/components/playlist/PlaylistManager";
 import { PlaylistFollowButton } from "@/components/playlist/PlaylistFollowButton";
+import { SavePlaylistButton } from "@/components/playlist/SavePlaylistButton";
 import { PlaylistEditModal } from "@/components/playlist/PlaylistEditModal";
 import { useMusicPlayer } from "@/contexts/music-player";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +20,7 @@ import MAudioLogo from "@/assets/maudio-logo.svg";
 interface PlaylistDetails {
   id: string; title: string; description: string; cover_image_path: string;
   is_editorial: boolean; created_by: string; creator_name: string;
-  track_count: number; follower_count: number;
+  track_count: number; follower_count: number; creator_follower_count: number;
 }
 
 const PlaylistDetailPage = () => {
@@ -40,7 +41,7 @@ const PlaylistDetailPage = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase.from('playlists')
-        .select('id, title, description, cover_image_path, is_editorial, created_by, follower_count, profiles!playlists_created_by_fkey(username, full_name)')
+        .select('id, title, description, cover_image_path, is_editorial, created_by, follower_count, profiles!playlists_created_by_fkey(username, full_name, follower_count)')
         .eq('id', playlistId).single();
       if (error) { toast.error('Failed to load playlist'); navigate('/playlists'); return; }
 
@@ -50,6 +51,7 @@ const PlaylistDetailPage = () => {
         cover_image_path: data.cover_image_path || '', is_editorial: data.is_editorial,
         created_by: data.created_by, creator_name: data.profiles?.full_name || data.profiles?.username || 'Unknown',
         track_count: count || 0, follower_count: data.follower_count || 0,
+        creator_follower_count: (data.profiles as any)?.follower_count || 0,
       });
     } catch { toast.error('Failed to load playlist'); navigate('/playlists'); } finally { setLoading(false); }
   };
@@ -145,7 +147,11 @@ const PlaylistDetailPage = () => {
               <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-foreground`}>{playlist.title}</h1>
             </div>
             {playlist.description && <p className="text-muted-foreground text-sm">{playlist.description}</p>}
-            <p className="text-xs text-muted-foreground">By {playlist.creator_name} · {playlist.track_count} tracks</p>
+            <p className="text-xs text-muted-foreground">
+              By {playlist.creator_name}
+              {playlist.creator_follower_count > 0 && ` · ${playlist.creator_follower_count.toLocaleString()} followers`}
+              {` · ${playlist.track_count} tracks`}
+            </p>
 
             <div className={`flex ${isMobile ? 'justify-center' : ''} items-center gap-2 flex-wrap`}>
               <Button onClick={playAllTracks} className="maudio-gradient-bg gap-1.5" size="sm" disabled={playlist.track_count === 0}>
@@ -163,6 +169,7 @@ const PlaylistDetailPage = () => {
               )}
               <PlaylistFollowButton playlistId={playlist.id} followerCount={playlist.follower_count}
                 onFollowerCountChange={(c) => setPlaylist(prev => prev ? { ...prev, follower_count: c } : null)} />
+              <SavePlaylistButton playlistId={playlist.id} />
               <Button variant="outline" size="sm" onClick={handleSharePlaylist} className="gap-1.5">
                 <Share className="h-3.5 w-3.5" />Share
               </Button>
