@@ -34,7 +34,11 @@ const PlaylistsPage = () => {
         description: playlist.description || "A curated playlist",
         cover: playlist.cover_image_path || "https://picsum.photos/id/1062/300/300",
         trackCount: count || 0, followerCount: playlist.follower_count || 0,
-        createdBy: { name: playlist.profiles?.full_name || playlist.profiles?.username || "MAUDIO Editorial", id: playlist.created_by || "editorial" },
+        createdBy: {
+          name: playlist.profiles?.full_name || playlist.profiles?.username || "MAUDIO Editorial",
+          id: playlist.created_by || "editorial",
+          followerCount: playlist.profiles?.follower_count || 0,
+        },
         isEditorial: playlist.is_editorial,
       };
     }));
