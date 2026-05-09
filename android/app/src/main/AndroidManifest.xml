@@ -34,6 +34,29 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!--
+          Override the music-controls plugin receiver registration with the
+          fully-qualified class name. The plugin's bundled manifest uses
+          ".MusicControlsBroadcastReceiver" which Android resolves against
+          the host app package (com.maudio.online), so the broadcasts are
+          never received and the notification buttons do nothing. Re-declaring
+          it here with the full path fixes play/pause/next on the lock screen.
+        -->
+        <receiver
+            android:name="com.ingageco.capacitormusiccontrols.MusicControlsBroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="music-controls-previous" />
+                <action android:name="music-controls-pause" />
+                <action android:name="music-controls-play" />
+                <action android:name="music-controls-next" />
+                <action android:name="music-controls-media-button" />
+                <action android:name="music-controls-destroy" />
+                <action android:name="android.intent.action.HEADSET_PLUG" />
+                <action android:name="android.bluetooth.headset.profile.action.CONNECTION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
     </application>
 
     <!-- Permissions -->
