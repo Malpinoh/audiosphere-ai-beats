@@ -74,6 +74,15 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Disable browser pull-to-refresh / rubber-band so the Capacitor app
+       behaves like a native app instead of a web view. */
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    touch-action: pan-x pan-y;
+  }
+  html {
+    overscroll-behavior-y: none;
   }
   
   /* Custom scrollbar */
