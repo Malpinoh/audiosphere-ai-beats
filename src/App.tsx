@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useCapacitor } from "@/hooks/use-capacitor";
 import { NativeBootstrap } from "@/components/NativeBootstrap";
 import { AnimatedSplash } from "@/components/AnimatedSplash";
+import { SwipeNavigator } from "@/components/layout/SwipeNavigator";
 
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
@@ -175,6 +176,7 @@ const App = () => {
               <NativeBootstrap />
               <AnimatedSplash />
               <BrowserRouter>
+                <SwipeNavigator />
                 <AppRoutes />
               </BrowserRouter>
             </MusicPlayerProvider>

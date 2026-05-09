@@ -146,14 +146,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
-    // Redirect based on role
-    if (role === 'artist') {
-      window.location.href = '/artist-dashboard';
-    } else if (role === 'admin') {
-      window.location.href = '/admin';
-    } else {
-      window.location.href = '/';
-    }
+    // Use History API push instead of full page reload so the Capacitor
+    // app feels native (no white flash, no WebView refresh).
+    const target = role === 'artist' ? '/artist-dashboard'
+                 : role === 'admin'  ? '/admin'
+                 : '/';
+    window.history.pushState({}, '', target);
+    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   const value = {
