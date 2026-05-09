@@ -45,8 +45,7 @@
         -->
         <receiver
             android:name="com.ingageco.capacitormusiccontrols.MusicControlsBroadcastReceiver"
-            android:exported="false"
-            tools:replace="android:name">
+            android:exported="false">
             <intent-filter>
                 <action android:name="music-controls-previous" />
                 <action android:name="music-controls-pause" />
