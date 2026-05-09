@@ -9,6 +9,7 @@ import { MusicPlayerProvider } from "@/contexts/MusicPlayerContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useCapacitor } from "@/hooks/use-capacitor";
 import { NativeBootstrap } from "@/components/NativeBootstrap";
+import { AnimatedSplash } from "@/components/AnimatedSplash";
 
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
@@ -172,6 +173,7 @@ const App = () => {
               <Toaster />
               <Sonner />
               <NativeBootstrap />
+              <AnimatedSplash />
               <BrowserRouter>
                 <AppRoutes />
               </BrowserRouter>
