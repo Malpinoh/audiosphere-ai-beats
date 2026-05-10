@@ -3,7 +3,7 @@
 project_id = "qkpjlfcpncvvjyzfolag"
 
 [functions.audio-processor]
-verify_jwt = false
+verify_jwt = true
 
 [api]
 port = 54321
@@ -13,11 +13,14 @@ max_rows = 1000
 
 [functions]
 [functions.update-regional-playlists]
-verify_jwt = false
+verify_jwt = true
 
 [functions.geo-location]
 verify_jwt = false
 
 [functions.process-payout]
+verify_jwt = true
+
+[functions.storage-setup]
 verify_jwt = true
 
