@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { MusicPlayerProvider } from "@/contexts/MusicPlayerContext";
+import { MusicPlayerProvider } from "@/contexts/music-player";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useCapacitor } from "@/hooks/use-capacitor";
 import { NativeBootstrap } from "@/components/NativeBootstrap";
