@@ -11,12 +11,10 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.session.MediaSession;
+import android.app.Notification;
 import android.os.Build;
 
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
-import androidx.media.app.NotificationCompat.MediaStyle;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -80,7 +78,7 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
 
     @PluginMethod
     public void destroy(PluginCall call) {
-        NotificationManagerCompat.from(getContext()).cancel(NOTIFICATION_ID);
+        getNotificationManager().cancel(NOTIFICATION_ID);
         call.resolve();
     }
 
@@ -91,7 +89,7 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
         instance.notifyListeners("controlsNotification", event);
         instance.bridge.triggerJSEvent("controlsNotification", "document", event.toString());
         if (ACTION_DESTROY.equals(action)) {
-            NotificationManagerCompat.from(instance.getContext()).cancel(NOTIFICATION_ID);
+            instance.getNotificationManager().cancel(NOTIFICATION_ID);
         }
     }
 
@@ -103,25 +101,28 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
         openIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         PendingIntent contentIntent = PendingIntent.getActivity(context, 0, openIntent, pendingFlags());
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+        Notification.Builder builder = Build.VERSION.SDK_INT >= 26
+                ? new Notification.Builder(context, CHANNEL_ID)
+                : new Notification.Builder(context);
+        builder
                 .setSmallIcon(android.R.drawable.ic_media_play)
                 .setContentTitle(lastInfo.getString("track", "MAUDIO"))
                 .setContentText(lastInfo.getString("artist", "Now playing"))
                 .setContentIntent(contentIntent)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
+                .setPriority(Notification.PRIORITY_LOW)
                 .setOnlyAlertOnce(true)
                 .setOngoing(isPlaying)
                 .addAction(android.R.drawable.ic_media_previous, "", actionIntent(ACTION_PREVIOUS))
                 .addAction(isPlaying ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play, "", actionIntent(isPlaying ? ACTION_PAUSE : ACTION_PLAY))
                 .addAction(android.R.drawable.ic_media_next, "", actionIntent(ACTION_NEXT))
                 .addAction(android.R.drawable.ic_menu_close_clear_cancel, "", actionIntent(ACTION_DESTROY))
-                .setStyle(new MediaStyle().setShowActionsInCompactView(0, 1, 2).setMediaSession(mediaSession.getSessionToken()));
+                .setStyle(new Notification.MediaStyle().setShowActionsInCompactView(0, 1, 2).setMediaSession(mediaSession.getSessionToken()));
 
         Bitmap cover = loadCover(lastInfo.getString("cover", ""));
         if (cover != null) builder.setLargeIcon(cover);
         Notification notification = builder.build();
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification);
+        getNotificationManager().notify(NOTIFICATION_ID, notification);
     }
 
     private PendingIntent actionIntent(String action) {
@@ -143,6 +144,10 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
         channel.setDescription("Playback controls");
         NotificationManager manager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
         manager.createNotificationChannel(channel);
+    }
+
+    private NotificationManager getNotificationManager() {
+        return (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
     private Bitmap loadCover(String coverUrl) {
