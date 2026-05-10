@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import logo from "@/assets/maudio-logo.svg";
+import logo from "@/assets/maudio-logo.png";
 import { isNative } from "@/lib/native";
 
 /**
@@ -19,8 +19,8 @@ export function AnimatedSplash() {
         .then(({ SplashScreen }) => SplashScreen.hide({ fadeOutDuration: 200 }))
         .catch(() => {});
     }
-    const fadeT = setTimeout(() => setFading(true), 1500);
-    const hideT = setTimeout(() => setVisible(false), 1900);
+    const fadeT = setTimeout(() => setFading(true), 2200);
+    const hideT = setTimeout(() => setVisible(false), 2700);
     return () => { clearTimeout(fadeT); clearTimeout(hideT); };
   }, []);
 
@@ -34,12 +34,16 @@ export function AnimatedSplash() {
     >
       {/* Pulsing glow behind logo */}
       <div className="relative flex items-center justify-center">
-        <div className="absolute h-40 w-40 rounded-full bg-[#7c3aed]/30 blur-3xl animate-ping" />
+        <div className="absolute h-56 w-56 rounded-full bg-[#7c3aed]/30 blur-3xl animate-ping" />
         <div
-          className="relative text-white"
+          className="relative"
           style={{ animation: "splashPop 700ms cubic-bezier(.2,.9,.3,1.2) both" }}
         >
-          <img src={logo} alt="MAUDIO" className="h-16 w-auto drop-shadow-[0_0_20px_rgba(124,58,237,0.6)]" />
+          <img
+            src={logo}
+            alt="MAUDIO"
+            className="h-40 w-40 rounded-full drop-shadow-[0_0_30px_rgba(124,58,237,0.7)]"
+          />
         </div>
       </div>
 
