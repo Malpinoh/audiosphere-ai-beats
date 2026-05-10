@@ -7,7 +7,10 @@
  *
  * Action events arrive on the global `controlsNotification` window event.
  */
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+import { requestNotificationPermission } from "@/lib/native";
+
+const MaudioPlaybackNotification = registerPlugin<any>("MaudioPlaybackNotification");
 
 const isAndroidNative = (): boolean => {
   try {
@@ -21,6 +24,12 @@ let _listenersAttached = false;
 async function getPlugin(): Promise<any | null> {
   if (!isAndroidNative()) return null;
   if (_plugin) return _plugin;
+  try {
+    if (Capacitor.isPluginAvailable("MaudioPlaybackNotification")) {
+      _plugin = MaudioPlaybackNotification;
+      return _plugin;
+    }
+  } catch {}
   try {
     const mod: any = await import("capacitor-music-controls-plugin");
     _plugin = mod.CapacitorMusicControls || mod.default || null;
@@ -43,6 +52,7 @@ export interface MediaInfo {
 
 /** Show or update the persistent media notification + lock-screen controls. */
 export async function showMediaControls(info: MediaInfo): Promise<void> {
+  try { await requestNotificationPermission(); } catch {}
   const p = await getPlugin();
   if (!p) return;
   try {
