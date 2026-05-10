@@ -39,8 +39,46 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
+
+    // --- AUTH GUARD ---
+    // Require a valid Supabase JWT and verify the caller owns the track
+    // (or is an admin) before allowing any quality-variant manipulation.
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { trackId, audioFilePath, generateQualities = ['normal', 'high'] }: ProcessingRequest = await req.json();
+
+    // Verify the caller owns the track or is an admin
+    const { data: trackRow, error: trackErr } = await supabase
+      .from('tracks')
+      .select('user_id')
+      .eq('id', trackId)
+      .maybeSingle();
+    if (trackErr || !trackRow) {
+      return new Response(JSON.stringify({ success: false, error: 'Track not found' }), {
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (trackRow.user_id !== user.id) {
+      const { data: prof } = await supabase
+        .from('profiles').select('role').eq('id', user.id).maybeSingle();
+      if (!prof || prof.role !== 'admin') {
+        return new Response(JSON.stringify({ success: false, error: 'Forbidden' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
     
     console.log(`Processing audio for track ${trackId}, file: ${audioFilePath}`);
     console.log(`Requested qualities: ${generateQualities.join(', ')}`);
