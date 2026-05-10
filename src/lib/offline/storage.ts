@@ -175,11 +175,21 @@ async function fetchAndWrite(kind: "download" | "cache", trackId: string, remote
   await ensureDir(kind);
   const { dirName, directory } = dirFor(kind);
   const filePath = `${dirName}/${trackId}.mp3`;
-  const res = await fetch(remoteUrl);
+  let res: Response;
+  try {
+    res = await fetch(remoteUrl, { mode: "cors" });
+  } catch (e: any) {
+    throw new Error(`Network error fetching audio: ${e?.message || e}`);
+  }
   if (!res.ok) throw new Error(`Download failed: HTTP ${res.status}`);
   const buf = await res.arrayBuffer();
+  if (!buf || buf.byteLength === 0) throw new Error("Empty audio file received");
   const data = arrayBufferToBase64(buf);
-  await Filesystem.writeFile({ path: filePath, data, directory, recursive: true });
+  try {
+    await Filesystem.writeFile({ path: filePath, data, directory, recursive: true });
+  } catch (e: any) {
+    throw new Error(`Could not save file: ${e?.message || e}`);
+  }
   const uriRes = await Filesystem.getUri({ path: filePath, directory });
   return { filePath, size: buf.byteLength, localUri: Capacitor.convertFileSrc(uriRes.uri) };
 }
