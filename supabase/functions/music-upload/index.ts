@@ -105,14 +105,15 @@ async function ensureUserProfile(userId: string): Promise<boolean> {
       return false;
     }
 
-    // Create profile for the user
+    // Create profile for the user with the LEAST privileged default role.
+    // SECURITY: never auto-promote API key holders to admin here.
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
         id: userId,
-        username: user.email?.split('@')[0] || 'admin',
-        full_name: user.user_metadata?.full_name || 'Admin User',
-        role: 'admin',
+        username: user.email?.split('@')[0] || `user_${userId.slice(0, 8)}`,
+        full_name: user.user_metadata?.full_name || 'New User',
+        role: 'user',
         created_at: new Date().toISOString()
       });
 
