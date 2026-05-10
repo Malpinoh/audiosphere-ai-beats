@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { FeaturedTracks } from "@/components/sections/FeaturedSection";
@@ -10,10 +10,20 @@ import { TopChartsSection } from "@/components/sections/TopChartsSection";
 import { SearchBar } from "@/components/layout/SearchBar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileHomeHeader, type HomeFilter } from "@/components/layout/MobileHomeHeader";
+import { OfflineHomeSection } from "@/components/sections/OfflineHomeSection";
+import { isOnline as checkOnline, onNetworkChange } from "@/lib/offline/network";
 
 const Index = () => {
   const isMobile = useIsMobile();
   const [filter, setFilter] = useState<HomeFilter>("all");
+  const [online, setOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
+
+  useEffect(() => {
+    let detach = () => {};
+    checkOnline().then(setOnline).catch(() => {});
+    onNetworkChange((on) => setOnline(on)).then((d) => { detach = d; });
+    return () => { detach(); };
+  }, []);
 
   // Section visibility per filter (mobile only). Desktop always shows everything.
   const show = (f: HomeFilter) => !isMobile || filter === "all" || filter === f;
@@ -28,6 +38,10 @@ const Index = () => {
             <SearchBar className="w-full" placeholder="Search songs, artists, genres..." />
           )}
 
+          {!online ? (
+            <OfflineHomeSection />
+          ) : (
+          <>
           {/* Hero only on All */}
           {show("all") && <HeroSection />}
 
@@ -42,6 +56,8 @@ const Index = () => {
             {show("genres") && <BrowseByGenre />}
             {show("playlists") && <FeaturedPlaylists />}
           </div>
+          </>
+          )}
         </div>
       </div>
     </MainLayout>
