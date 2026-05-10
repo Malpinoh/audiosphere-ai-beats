@@ -11,7 +11,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.session.MediaSession;
-import android.app.Notification;
 import android.os.Build;
 
 import androidx.core.content.ContextCompat;
@@ -52,7 +51,7 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
     @PluginMethod
     public void create(PluginCall call) {
         lastInfo = call.getData();
-        isPlaying = lastInfo.getBool("isPlaying", false);
+        isPlaying = lastInfo.getBoolean("isPlaying", false);
         showNotification();
         call.resolve();
     }
