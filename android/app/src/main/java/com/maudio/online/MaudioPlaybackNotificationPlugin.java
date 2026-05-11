@@ -1,6 +1,5 @@
 package com.maudio.online;
 
-import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -139,8 +138,8 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
 
     private void updateMediaSession(Bitmap cover) {
         if (mediaSession == null || lastInfo == null) return;
-        long durationMs = Math.max(0, Math.round(lastInfo.getDouble("duration", 0.0) * 1000));
-        long elapsedMs = Math.max(0, Math.round(lastInfo.getDouble("elapsed", 0.0) * 1000));
+        long durationMs = Math.max(0, Math.round(lastInfo.optDouble("duration", 0.0) * 1000));
+        long elapsedMs = Math.max(0, Math.round(lastInfo.optDouble("elapsed", 0.0) * 1000));
         MediaMetadata.Builder metadata = new MediaMetadata.Builder()
                 .putString(MediaMetadata.METADATA_KEY_TITLE, lastInfo.getString("track", "MAUDIO"))
                 .putString(MediaMetadata.METADATA_KEY_ARTIST, lastInfo.getString("artist", "Now playing"))
