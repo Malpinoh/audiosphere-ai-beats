@@ -1,19 +1,18 @@
 package com.maudio.online;
 
-import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaMetadata;
 import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.os.Build;
-
-import androidx.core.content.ContextCompat;
+import android.util.Log;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -21,12 +20,15 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import androidx.core.content.ContextCompat;
+
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
 @CapacitorPlugin(name = "MaudioPlaybackNotification")
 public class MaudioPlaybackNotificationPlugin extends Plugin {
+    private static final String TAG = "MAUDIOPlayback";
     private static final int NOTIFICATION_ID = 7824;
     private static final String CHANNEL_ID = "maudio_playback";
     private static final String ACTION_PLAY = "music-controls-play";
@@ -45,6 +47,7 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
         instance = this;
         createNotificationChannel();
         mediaSession = new MediaSession(getContext(), "MAUDIO playback");
+        mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
         mediaSession.setActive(true);
     }
 
@@ -52,7 +55,7 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
     public void create(PluginCall call) {
         lastInfo = call.getData();
         isPlaying = lastInfo.getBoolean("isPlaying", false);
-        showNotification();
+        startPlaybackService();
         call.resolve();
     }
 
@@ -61,7 +64,7 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
         isPlaying = call.getBoolean("isPlaying", isPlaying);
         if (lastInfo != null) {
             lastInfo.put("isPlaying", isPlaying);
-            showNotification();
+            startPlaybackService();
         }
         call.resolve();
     }
@@ -71,12 +74,17 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
         if (lastInfo != null) {
             lastInfo.put("elapsed", call.getDouble("elapsed", 0.0));
             isPlaying = call.getBoolean("isPlaying", isPlaying);
+            lastInfo.put("isPlaying", isPlaying);
+            startPlaybackService();
         }
         call.resolve();
     }
 
     @PluginMethod
     public void destroy(PluginCall call) {
+        try {
+            getContext().stopService(new Intent(getContext(), MaudioPlaybackNotificationService.class));
+        } catch (Exception ignored) {}
         getNotificationManager().cancel(NOTIFICATION_ID);
         call.resolve();
     }
@@ -92,8 +100,20 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
         }
     }
 
+    private void startPlaybackService() {
+        if (lastInfo == null) return;
+        try {
+            Intent intent = MaudioPlaybackNotificationService.createIntent(getContext(), lastInfo, isPlaying);
+            ContextCompat.startForegroundService(getContext(), intent);
+        } catch (SecurityException e) {
+            Log.w(TAG, "Android refused playback foreground service permission", e);
+        } catch (Exception e) {
+            Log.w(TAG, "Unable to start playback foreground service", e);
+        }
+    }
+
     private void showNotification() {
-        if (lastInfo == null || !canPostNotifications()) return;
+        if (lastInfo == null) return;
         Context context = getContext();
         Intent openIntent = new Intent(context, MainActivity.class);
         openIntent.setAction(Intent.ACTION_MAIN);
@@ -103,25 +123,62 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
         Notification.Builder builder = Build.VERSION.SDK_INT >= 26
                 ? new Notification.Builder(context, CHANNEL_ID)
                 : new Notification.Builder(context);
+        Bitmap cover = loadCover(lastInfo.getString("cover", ""));
+        updateMediaSession(cover);
+
         builder
                 .setSmallIcon(android.R.drawable.ic_media_play)
                 .setContentTitle(lastInfo.getString("track", "MAUDIO"))
                 .setContentText(lastInfo.getString("artist", "Now playing"))
                 .setContentIntent(contentIntent)
+                .setDeleteIntent(actionIntent(ACTION_DESTROY))
+                .setCategory(Notification.CATEGORY_TRANSPORT)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setPriority(Notification.PRIORITY_LOW)
                 .setOnlyAlertOnce(true)
+                .setShowWhen(false)
                 .setOngoing(isPlaying)
-                .addAction(android.R.drawable.ic_media_previous, "", actionIntent(ACTION_PREVIOUS))
-                .addAction(isPlaying ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play, "", actionIntent(isPlaying ? ACTION_PAUSE : ACTION_PLAY))
-                .addAction(android.R.drawable.ic_media_next, "", actionIntent(ACTION_NEXT))
-                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "", actionIntent(ACTION_DESTROY))
+                .addAction(android.R.drawable.ic_media_previous, "Previous", actionIntent(ACTION_PREVIOUS))
+                .addAction(isPlaying ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play, isPlaying ? "Pause" : "Play", actionIntent(isPlaying ? ACTION_PAUSE : ACTION_PLAY))
+                .addAction(android.R.drawable.ic_media_next, "Next", actionIntent(ACTION_NEXT))
+                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Close", actionIntent(ACTION_DESTROY))
                 .setStyle(new Notification.MediaStyle().setShowActionsInCompactView(0, 1, 2).setMediaSession(mediaSession.getSessionToken()));
 
-        Bitmap cover = loadCover(lastInfo.getString("cover", ""));
         if (cover != null) builder.setLargeIcon(cover);
         Notification notification = builder.build();
-        getNotificationManager().notify(NOTIFICATION_ID, notification);
+        try {
+            getNotificationManager().notify(NOTIFICATION_ID, notification);
+        } catch (SecurityException e) {
+            Log.w(TAG, "Notification permission denied by Android", e);
+        } catch (Exception e) {
+            Log.w(TAG, "Unable to show playback notification", e);
+        }
+    }
+
+    private void updateMediaSession(Bitmap cover) {
+        if (mediaSession == null || lastInfo == null) return;
+        long durationMs = Math.max(0, Math.round(lastInfo.optDouble("duration", 0.0) * 1000));
+        long elapsedMs = Math.max(0, Math.round(lastInfo.optDouble("elapsed", 0.0) * 1000));
+        MediaMetadata.Builder metadata = new MediaMetadata.Builder()
+                .putString(MediaMetadata.METADATA_KEY_TITLE, lastInfo.getString("track", "MAUDIO"))
+                .putString(MediaMetadata.METADATA_KEY_ARTIST, lastInfo.getString("artist", "Now playing"))
+                .putString(MediaMetadata.METADATA_KEY_ALBUM, lastInfo.getString("album", ""));
+        if (durationMs > 0) metadata.putLong(MediaMetadata.METADATA_KEY_DURATION, durationMs);
+        if (cover != null) metadata.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, cover);
+        mediaSession.setMetadata(metadata.build());
+
+        long actions = PlaybackState.ACTION_PLAY
+                | PlaybackState.ACTION_PAUSE
+                | PlaybackState.ACTION_PLAY_PAUSE
+                | PlaybackState.ACTION_SKIP_TO_PREVIOUS
+                | PlaybackState.ACTION_SKIP_TO_NEXT
+                | PlaybackState.ACTION_STOP
+                | PlaybackState.ACTION_SEEK_TO;
+        mediaSession.setPlaybackState(new PlaybackState.Builder()
+                .setActions(actions)
+                .setState(isPlaying ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED, elapsedMs, 1.0f)
+                .build());
+        mediaSession.setActive(true);
     }
 
     private PendingIntent actionIntent(String action) {
@@ -131,10 +188,6 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
 
     private int pendingFlags() {
         return PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
-    }
-
-    private boolean canPostNotifications() {
-        return Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(getContext(), Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void createNotificationChannel() {
