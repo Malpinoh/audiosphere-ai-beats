@@ -24,6 +24,11 @@ let _listenersAttached = false;
 async function getPlugin(): Promise<any | null> {
   if (!isAndroidNative()) return null;
   if (_plugin) return _plugin;
+  // Custom MAUDIO native plugin is registered manually in MainActivity. On
+  // Capacitor Android, isPluginAvailable can be false for manually registered
+  // plugins before the web proxy list is hydrated, so use the proxy directly.
+  _plugin = MaudioPlaybackNotification;
+  return _plugin;
   try {
     if (Capacitor.isPluginAvailable("MaudioPlaybackNotification")) {
       _plugin = MaudioPlaybackNotification;
