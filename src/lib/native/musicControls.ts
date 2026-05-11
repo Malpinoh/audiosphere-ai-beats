@@ -29,20 +29,6 @@ async function getPlugin(): Promise<any | null> {
   // plugins before the web proxy list is hydrated, so use the proxy directly.
   _plugin = MaudioPlaybackNotification;
   return _plugin;
-  try {
-    if (Capacitor.isPluginAvailable("MaudioPlaybackNotification")) {
-      _plugin = MaudioPlaybackNotification;
-      return _plugin;
-    }
-  } catch {}
-  try {
-    const mod: any = await import("capacitor-music-controls-plugin");
-    _plugin = mod.CapacitorMusicControls || mod.default || null;
-    return _plugin;
-  } catch (e) {
-    console.warn("[musicControls] plugin not available", e);
-    return null;
-  }
 }
 
 export interface MediaInfo {
