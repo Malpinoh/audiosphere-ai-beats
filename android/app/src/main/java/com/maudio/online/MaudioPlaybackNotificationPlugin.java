@@ -20,6 +20,8 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import androidx.core.content.ContextCompat;
+
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -53,7 +55,7 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
     public void create(PluginCall call) {
         lastInfo = call.getData();
         isPlaying = lastInfo.getBoolean("isPlaying", false);
-        showNotification();
+        startPlaybackService();
         call.resolve();
     }
 
@@ -62,7 +64,7 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
         isPlaying = call.getBoolean("isPlaying", isPlaying);
         if (lastInfo != null) {
             lastInfo.put("isPlaying", isPlaying);
-            showNotification();
+            startPlaybackService();
         }
         call.resolve();
     }
@@ -72,12 +74,17 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
         if (lastInfo != null) {
             lastInfo.put("elapsed", call.getDouble("elapsed", 0.0));
             isPlaying = call.getBoolean("isPlaying", isPlaying);
+            lastInfo.put("isPlaying", isPlaying);
+            startPlaybackService();
         }
         call.resolve();
     }
 
     @PluginMethod
     public void destroy(PluginCall call) {
+        try {
+            getContext().stopService(new Intent(getContext(), MaudioPlaybackNotificationService.class));
+        } catch (Exception ignored) {}
         getNotificationManager().cancel(NOTIFICATION_ID);
         call.resolve();
     }
@@ -90,6 +97,18 @@ public class MaudioPlaybackNotificationPlugin extends Plugin {
         instance.bridge.triggerJSEvent("controlsNotification", "document", event.toString());
         if (ACTION_DESTROY.equals(action)) {
             instance.getNotificationManager().cancel(NOTIFICATION_ID);
+        }
+    }
+
+    private void startPlaybackService() {
+        if (lastInfo == null) return;
+        try {
+            Intent intent = MaudioPlaybackNotificationService.createIntent(getContext(), lastInfo, isPlaying);
+            ContextCompat.startForegroundService(getContext(), intent);
+        } catch (SecurityException e) {
+            Log.w(TAG, "Android refused playback foreground service permission", e);
+        } catch (Exception e) {
+            Log.w(TAG, "Unable to start playback foreground service", e);
         }
     }
 
