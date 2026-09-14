@@ -52,7 +52,7 @@ export function FloatingComments({ comments, isPlaying }: FloatingCommentsProps)
         {visibleComments.map((comment, index) => (
           <div
             key={comment.key}
-            className="absolute animate-fade-in bg-black/80 backdrop-blur-sm rounded-lg p-3 max-w-xs pointer-events-none"
+            className="absolute animate-fade-in bg-overlay/80 backdrop-blur-sm rounded-lg p-3 max-w-xs pointer-events-none"
             style={{
               top: `${20 + (index * 15)}%`,
               right: `${10 + Math.random() * 20}%`,
@@ -68,7 +68,7 @@ export function FloatingComments({ comments, isPlaying }: FloatingCommentsProps)
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1 mb-1">
-                  <span className="text-xs font-medium text-white truncate">
+                  <span className="text-xs font-medium text-overlay-foreground truncate">
                     {comment.username}
                   </span>
                   {comment.is_verified && (

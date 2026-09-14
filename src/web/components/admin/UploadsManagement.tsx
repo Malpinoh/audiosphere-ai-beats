@@ -290,7 +290,7 @@ export function UploadsManagement() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleApproveUpload(upload.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                          className="bg-green-600 hover:bg-green-700 text-overlay-foreground"
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Approve

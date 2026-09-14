@@ -47,7 +47,7 @@ export function PlaylistCard({
           
           {/* Editorial badge */}
           {isEditorial && (
-            <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-md px-2 py-1">
+            <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-overlay/60 backdrop-blur-sm rounded-md px-2 py-1">
               <img 
                 src={MAudioLogo} 
                 alt="MAUDIO" 
@@ -68,7 +68,7 @@ export function PlaylistCard({
           </div>
 
           {/* Track count badge */}
-          <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm text-xs font-medium">
+          <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-md bg-overlay/60 backdrop-blur-sm text-xs font-medium">
             <Music className="h-3 w-3" />
             {trackCount}
           </div>

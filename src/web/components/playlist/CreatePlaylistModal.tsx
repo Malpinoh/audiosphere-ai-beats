@@ -108,45 +108,45 @@ export function CreatePlaylistModal({ onPlaylistCreated }: CreatePlaylistModalPr
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-maudio-dark border-white/10">
         <DialogHeader>
-          <DialogTitle className="text-white">Create New Playlist</DialogTitle>
+          <DialogTitle className="text-overlay-foreground">Create New Playlist</DialogTitle>
           <DialogDescription className="text-gray-400">
             Create a new editorial playlist to showcase music.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-white">Title *</Label>
+            <Label htmlFor="title" className="text-overlay-foreground">Title *</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter playlist title..."
-              className="bg-white/5 border-white/10 text-white"
+              className="bg-overlay-foreground/5 border-white/10 text-overlay-foreground"
               required
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-white">Description</Label>
+            <Label htmlFor="description" className="text-overlay-foreground">Description</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Enter playlist description..."
-              className="bg-white/5 border-white/10 text-white"
+              className="bg-overlay-foreground/5 border-white/10 text-overlay-foreground"
               rows={3}
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="cover" className="text-white">Cover Image</Label>
+            <Label htmlFor="cover" className="text-overlay-foreground">Cover Image</Label>
             <div className="flex items-center gap-2">
               <Input
                 id="cover"
                 type="file"
                 accept="image/*"
                 onChange={(e) => setCoverFile(e.target.files?.[0] || null)}
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-overlay-foreground/5 border-white/10 text-overlay-foreground"
               />
               {coverFile && (
                 <Button
@@ -154,7 +154,7 @@ export function CreatePlaylistModal({ onPlaylistCreated }: CreatePlaylistModalPr
                   variant="ghost"
                   size="sm"
                   onClick={() => setCoverFile(null)}
-                  className="text-gray-400 hover:text-white"
+                  className="text-gray-400 hover:text-overlay-foreground"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -167,7 +167,7 @@ export function CreatePlaylistModal({ onPlaylistCreated }: CreatePlaylistModalPr
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="border-white/20 text-white hover:bg-white/10"
+              className="border-white/20 text-overlay-foreground hover:bg-overlay-foreground/10"
             >
               Cancel
             </Button>

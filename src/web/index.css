@@ -41,6 +41,7 @@
     --ring: 187 85% 43%;
 
     --overlay: 240 24% 6%;
+    --overlay-foreground: 0 0% 100%;
 
     /* Brand gradients & elevation */
     --gradient-brand: linear-gradient(135deg, hsl(263 83% 58%), hsl(187 85% 53%));
@@ -102,6 +103,7 @@
     --ring: 187 85% 53%;
 
     --overlay: 240 30% 3%;
+    --overlay-foreground: 0 0% 100%;
 
     --gradient-brand: linear-gradient(135deg, hsl(263 85% 66%), hsl(187 85% 53%));
     --gradient-surface: linear-gradient(180deg, hsl(240 20% 10%), hsl(240 24% 6%));

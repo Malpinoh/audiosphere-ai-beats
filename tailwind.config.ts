@@ -40,7 +40,10 @@ export default {
 					DEFAULT: 'hsl(var(--success))',
 					foreground: 'hsl(var(--success-foreground))'
 				},
-				overlay: 'hsl(var(--overlay))',
+				overlay: {
+					DEFAULT: 'hsl(var(--overlay))',
+					foreground: 'hsl(var(--overlay-foreground))'
+				},
 				chart: {
 					1: 'hsl(var(--chart-1))',
 					2: 'hsl(var(--chart-2))',

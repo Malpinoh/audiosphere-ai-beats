@@ -51,7 +51,7 @@ export function ArtistCard({ id, slug, name, image, followers, tracks, isVerifie
           {/* Verified badge */}
           {isVerified && (
             <div className="absolute bottom-1 right-1/2 translate-x-8 bg-primary rounded-full p-1">
-              <BadgeCheck className="h-4 w-4 text-white" />
+              <BadgeCheck className="h-4 w-4 text-overlay-foreground" />
             </div>
           )}
         </div>

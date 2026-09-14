@@ -54,10 +54,10 @@ export default function PromotePage() {
         </div>
         
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 border-purple-500/30">
+          <Card className="bg-primary/10 border-primary/30">
             <CardContent className="p-6 flex items-start">
-              <div className="mr-4 rounded-full bg-purple-500/20 p-3">
-                <TrendingUp className="h-6 w-6 text-purple-500" />
+              <div className="mr-4 rounded-full bg-primary/20 p-3">
+                <TrendingUp className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <h3 className="font-semibold text-lg mb-1">Boost Your Reach</h3>

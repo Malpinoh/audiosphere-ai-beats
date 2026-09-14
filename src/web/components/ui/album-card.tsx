@@ -74,12 +74,12 @@ export function AlbumCard({
           </div>
 
           {/* Type badge */}
-          <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm text-xs font-medium uppercase">
+          <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-overlay/60 backdrop-blur-sm text-xs font-medium uppercase">
             {type}
           </div>
 
           {/* Track count badge */}
-          <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm text-xs font-medium">
+          <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-md bg-overlay/60 backdrop-blur-sm text-xs font-medium">
             <Music className="h-3 w-3" />
             {tracks.length}
           </div>

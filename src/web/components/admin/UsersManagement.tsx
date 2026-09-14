@@ -147,7 +147,7 @@ export function UsersManagement() {
     const variants: Record<UserRole, string> = {
       admin: "bg-red-500",
       support: "bg-blue-500", 
-      artist: "bg-purple-500",
+      artist: "bg-primary",
       distributor: "bg-green-500",
       editorial: "bg-orange-500",
       user: "bg-gray-500"

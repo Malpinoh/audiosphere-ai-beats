@@ -66,7 +66,7 @@ export function ArtistStatsDisplay({ artistId }: ArtistStatsDisplayProps) {
   const stats = [
     { icon: Users, value: realTimeStats.followerCount, label: "Followers", color: "text-primary" },
     { icon: Play, value: realTimeStats.totalPlays, label: "Total Plays", color: "text-green-500" },
-    { icon: Calendar, value: realTimeStats.monthlyListeners, label: "Monthly Listeners", color: "text-purple-500" },
+    { icon: Calendar, value: realTimeStats.monthlyListeners, label: "Monthly Listeners", color: "text-primary" },
     { icon: Music, value: tracks.length, label: "Tracks", color: "text-pink-500" },
   ];
 

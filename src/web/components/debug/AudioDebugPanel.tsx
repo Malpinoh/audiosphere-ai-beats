@@ -77,18 +77,18 @@ export function AudioDebugPanel() {
   }, []);
 
   return (
-    <Card className="bg-black/40 border-white/10">
+    <Card className="bg-overlay/40 border-white/10">
       <CardHeader>
-        <CardTitle className="text-white">Audio Debug Panel</CardTitle>
+        <CardTitle className="text-overlay-foreground">Audio Debug Panel</CardTitle>
         <Button onClick={fetchTracks} disabled={loading} size="sm">
           {loading ? 'Loading...' : 'Refresh Tracks'}
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {currentTrack && (
-          <div className="p-3 bg-purple-900/20 rounded-lg">
-            <h4 className="text-white font-medium">Currently Playing</h4>
-            <p className="text-white/60 text-sm">{currentTrack.title} by {currentTrack.artist}</p>
+          <div className="p-3 bg-primary/10 rounded-lg">
+            <h4 className="text-overlay-foreground font-medium">Currently Playing</h4>
+            <p className="text-overlay-foreground/60 text-sm">{currentTrack.title} by {currentTrack.artist}</p>
             <div className="flex gap-2 mt-2">
               <Badge variant={isPlaying ? "default" : "secondary"}>
                 {isPlaying ? 'Playing' : 'Paused'}
@@ -101,15 +101,15 @@ export function AudioDebugPanel() {
         )}
         
         <div className="space-y-2">
-          <h4 className="text-white font-medium">Recent Tracks ({tracks.length})</h4>
+          <h4 className="text-overlay-foreground font-medium">Recent Tracks ({tracks.length})</h4>
           {tracks.map((track) => {
             const result = testResults[track.id];
             return (
-              <div key={track.id} className="p-3 bg-white/5 rounded-lg">
+              <div key={track.id} className="p-3 bg-overlay-foreground/5 rounded-lg">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className="text-white text-sm font-medium">{track.title}</p>
-                    <p className="text-white/60 text-xs">{track.artist}</p>
+                    <p className="text-overlay-foreground text-sm font-medium">{track.title}</p>
+                    <p className="text-overlay-foreground/60 text-xs">{track.artist}</p>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -144,16 +144,16 @@ export function AudioDebugPanel() {
                       )}
                     </div>
                     {result.contentType && (
-                      <p className="text-white/60">Type: {result.contentType}</p>
+                      <p className="text-overlay-foreground/60">Type: {result.contentType}</p>
                     )}
                     {result.contentLength && (
-                      <p className="text-white/60">Size: {Math.round(parseInt(result.contentLength) / 1024)} KB</p>
+                      <p className="text-overlay-foreground/60">Size: {Math.round(parseInt(result.contentLength) / 1024)} KB</p>
                     )}
                     {result.error && (
                       <p className="text-red-400">Error: {result.error}</p>
                     )}
                     {result.url && (
-                      <p className="text-white/40 break-all text-xs">URL: {result.url}</p>
+                      <p className="text-overlay-foreground/40 break-all text-xs">URL: {result.url}</p>
                     )}
                   </div>
                 )}

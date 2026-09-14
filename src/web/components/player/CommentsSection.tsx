@@ -35,8 +35,8 @@ export function CommentsSection({ comments, loading, onAddComment }: CommentsSec
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center gap-2 p-4 border-b border-white/10">
-        <MessageSquare className="h-5 w-5 text-white" />
-        <h3 className="font-medium text-white">Comments ({comments.length})</h3>
+        <MessageSquare className="h-5 w-5 text-overlay-foreground" />
+        <h3 className="font-medium text-overlay-foreground">Comments ({comments.length})</h3>
       </div>
 
       <ScrollArea className="flex-1 p-4">
@@ -62,7 +62,7 @@ export function CommentsSection({ comments, loading, onAddComment }: CommentsSec
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium text-white">
+                    <span className="text-sm font-medium text-overlay-foreground">
                       {comment.username}
                     </span>
                     {comment.is_verified && (
@@ -89,7 +89,7 @@ export function CommentsSection({ comments, loading, onAddComment }: CommentsSec
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Add a comment..."
-              className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+              className="flex-1 bg-overlay-foreground/10 border-white/20 text-overlay-foreground placeholder:text-gray-400"
               maxLength={500}
             />
             <Button 

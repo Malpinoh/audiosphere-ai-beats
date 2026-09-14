@@ -149,7 +149,7 @@ export function PlaylistFollowButton({
         size="sm"
         className={isFollowing 
           ? "maudio-gradient-bg" 
-          : "border-white/20 text-white hover:bg-white/10"
+          : "border-white/20 text-overlay-foreground hover:bg-overlay-foreground/10"
         }
       >
         {isFollowing ? (

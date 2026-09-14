@@ -54,9 +54,9 @@ export function ArtistProfileEditor() {
   }
 
   return (
-    <Card className="bg-black/40 border-white/10 backdrop-blur-sm">
+    <Card className="bg-overlay/40 border-white/10 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="text-white">Edit Artist Profile</CardTitle>
+        <CardTitle className="text-overlay-foreground">Edit Artist Profile</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-col items-center gap-4">
@@ -68,51 +68,51 @@ export function ArtistProfileEditor() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-white mb-2">
+            <label className="block text-sm font-medium text-overlay-foreground mb-2">
               Full Name
             </label>
             <Input
               value={formData.full_name}
               onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
               placeholder="Your artist name"
-              className="bg-white/10 border-white/20 text-white"
+              className="bg-overlay-foreground/10 border-white/20 text-overlay-foreground"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-white mb-2">
+            <label className="block text-sm font-medium text-overlay-foreground mb-2">
               Username
             </label>
             <Input
               value={formData.username}
               onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
               placeholder="@username"
-              className="bg-white/10 border-white/20 text-white"
+              className="bg-overlay-foreground/10 border-white/20 text-overlay-foreground"
             />
           </div>
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="block text-sm font-medium text-overlay-foreground mb-2">
             Bio
           </label>
           <Textarea
             value={formData.bio}
             onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
             placeholder="Tell your fans about yourself..."
-            className="bg-white/10 border-white/20 text-white min-h-[100px]"
+            className="bg-overlay-foreground/10 border-white/20 text-overlay-foreground min-h-[100px]"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-white mb-2">
+          <label className="block text-sm font-medium text-overlay-foreground mb-2">
             Website
           </label>
           <Input
             value={formData.website}
             onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
             placeholder="https://yourwebsite.com"
-            className="bg-white/10 border-white/20 text-white"
+            className="bg-overlay-foreground/10 border-white/20 text-overlay-foreground"
           />
         </div>
         
