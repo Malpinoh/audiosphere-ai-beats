@@ -197,10 +197,10 @@ export function useArtistProfile(artistSlugOrId?: string) {
       } else {
         const { error } = await supabase
           .from('followers')
-          .insert({
-            follower_id: user.id,
-            artist_id: artistProfile.id
-          });
+          .upsert(
+            { follower_id: user.id, artist_id: artistProfile.id },
+            { onConflict: 'follower_id,artist_id', ignoreDuplicates: true }
+          );
           
         if (error) throw error;
         setIsFollowing(true);

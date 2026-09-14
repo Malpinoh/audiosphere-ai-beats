@@ -499,7 +499,9 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      const { error } = await supabase.from('likes').insert({ user_id: user.id, track_id: trackId });
+      const { error } = await supabase
+        .from('likes')
+        .upsert({ user_id: user.id, track_id: trackId }, { onConflict: 'user_id,track_id', ignoreDuplicates: true });
       if (error) { console.error('Error liking track:', error); return false; }
       setState(prev => ({ ...prev, likedTracks: new Set([...prev.likedTracks, trackId]) }));
       return true;
@@ -525,7 +527,9 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      const { error } = await supabase.from('saved_tracks').insert({ user_id: user.id, track_id: trackId });
+      const { error } = await supabase
+        .from('saved_tracks')
+        .upsert({ user_id: user.id, track_id: trackId }, { onConflict: 'user_id,track_id', ignoreDuplicates: true });
       if (error) { console.error('Error saving track:', error); return false; }
       setState(prev => ({ ...prev, savedTracks: new Set([...prev.savedTracks, trackId]) }));
       return true;
@@ -579,14 +583,28 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     }
   }, [state.currentTrack]);
 
-  // Load user's existing likes and saved tracks
+  // Load user's existing likes and saved tracks (and keep them in sync with auth)
   useEffect(() => {
-    const loadUserPreferences = async () => {
+    let cancelled = false;
+
+    const loadUserPreferences = async (userId?: string | null) => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data: likes } = await supabase.from('likes').select('track_id').eq('user_id', user.id);
-        const { data: savedTracks } = await supabase.from('saved_tracks').select('track_id').eq('user_id', user.id);
+        let uid = userId;
+        if (uid === undefined) {
+          const { data: { user } } = await supabase.auth.getUser();
+          uid = user?.id ?? null;
+        }
+        if (!uid) {
+          if (!cancelled) {
+            setState(prev => ({ ...prev, likedTracks: new Set<string>(), savedTracks: new Set<string>() }));
+          }
+          return;
+        }
+        const [{ data: likes }, { data: savedTracks }] = await Promise.all([
+          supabase.from('likes').select('track_id').eq('user_id', uid),
+          supabase.from('saved_tracks').select('track_id').eq('user_id', uid),
+        ]);
+        if (cancelled) return;
         setState(prev => ({
           ...prev,
           likedTracks: new Set(likes?.map(like => like.track_id) || []),
@@ -594,7 +612,17 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
         }));
       } catch (error) { console.error('Error loading user preferences:', error); }
     };
+
     loadUserPreferences();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      loadUserPreferences(session?.user?.id ?? null);
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
