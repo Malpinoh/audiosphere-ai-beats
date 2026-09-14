@@ -392,13 +392,13 @@ export function UploadForm() {
                             key={type.value}
                             className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                               field.value === type.value
-                                ? "border-purple-500 bg-purple-500/10"
+                                ? "border-primary bg-primary/10"
                                 : "border-white/20 hover:border-white/40"
                             }`}
                             onClick={() => field.onChange(type.value)}
                           >
                             <div className="flex items-center space-x-3">
-                              <Icon className="h-6 w-6 text-purple-400" />
+                              <Icon className="h-6 w-6 text-primary" />
                               <span className="text-overlay-foreground font-medium">{type.label}</span>
                             </div>
                           </div>
@@ -786,7 +786,7 @@ export function UploadForm() {
               <Button
                 type="submit"
                 disabled={isUploading || !audioFile || !coverArt || !apiKey}
-                className="bg-purple-600 hover:bg-purple-700 text-overlay-foreground px-8"
+                className="bg-primary hover:bg-primary/90 text-overlay-foreground px-8"
               >
                 {isUploading ? (
                   <>
@@ -806,7 +806,7 @@ export function UploadForm() {
               <div className="mt-4">
                 <div className="w-full bg-overlay-foreground/20 rounded-full h-2">
                   <div 
-                    className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>

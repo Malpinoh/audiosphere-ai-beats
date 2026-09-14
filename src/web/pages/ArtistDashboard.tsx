@@ -23,7 +23,7 @@ export default function ArtistDashboard() {
   
   return (
     <MainLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900/50 via-purple-900/50 to-slate-900/50">
+      <div className="min-h-screen bg-background">
         <div className="container py-8">
           <div className="mb-8 text-center">
             <h1 className="text-4xl font-bold mb-4 text-overlay-foreground">Artist Dashboard</h1>

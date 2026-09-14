@@ -83,8 +83,8 @@ export default function TrendingPage() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                <Play className="w-4 h-4 text-purple-600" />
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Play className="w-4 h-4 text-primary" />
               </div>
               <div>
                 <h3 className="font-medium">Recency</h3>

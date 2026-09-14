@@ -29,12 +29,12 @@ export function AnimatedSplash() {
   return (
     <div
       aria-hidden="true"
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#121212] transition-opacity duration-400 ${fading ? "opacity-0" : "opacity-100"}`}
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background transition-opacity duration-400 ${fading ? "opacity-0" : "opacity-100"}`}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       {/* Pulsing glow behind logo */}
       <div className="relative flex items-center justify-center">
-        <div className="absolute h-56 w-56 rounded-full bg-[#7c3aed]/30 blur-3xl animate-ping" />
+        <div className="absolute h-56 w-56 rounded-full bg-primary/30 blur-3xl animate-ping" />
         <div
           className="relative"
           style={{ animation: "splashPop 700ms cubic-bezier(.2,.9,.3,1.2) both" }}
@@ -52,7 +52,7 @@ export function AnimatedSplash() {
         {[0, 1, 2, 3, 4, 5, 6].map((i) => (
           <span
             key={i}
-            className="w-1.5 rounded-full bg-gradient-to-t from-[#7c3aed] to-[#a855f7]"
+            className="w-1.5 rounded-full bg-gradient-brand"
             style={{
               animation: `splashBar 900ms ${i * 90}ms ease-in-out infinite alternate`,
               height: "30%",

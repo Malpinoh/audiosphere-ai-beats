@@ -10,7 +10,7 @@ const ServiceInfoPage = () => {
     <MainLayout>
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold mb-4 maudio-gradient-text">
             How MAUDIO Works
           </h1>
           <p className="text-gray-300 text-lg max-w-2xl mx-auto">
@@ -22,21 +22,21 @@ const ServiceInfoPage = () => {
           <Card className="maudio-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-purple-400" />
+                <Users className="h-5 w-5 text-primary" />
                 Monthly Listeners
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-purple-400" />
+                  <Calendar className="h-4 w-4 text-primary" />
                   <span className="text-sm text-gray-300">Updates every 28th of the month</span>
                 </div>
                 <p className="text-gray-300 text-sm">
                   Artist monthly listener counts are automatically calculated based on unique listeners 
                   from the past 30 days. This metric updates precisely at 2:00 AM UTC on the 28th of every month.
                 </p>
-                <Badge variant="outline" className="text-purple-400 border-purple-400">
+                <Badge variant="outline" className="text-primary border-primary">
                   Automated System
                 </Badge>
               </div>
@@ -143,8 +143,8 @@ const ServiceInfoPage = () => {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
               <div className="text-center p-4">
-                <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-3">
-                  <Music className="h-6 w-6 text-purple-400" />
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-3">
+                  <Music className="h-6 w-6 text-primary" />
                 </div>
                 <h4 className="font-semibold mb-2">Music Streaming</h4>
                 <p className="text-sm text-gray-300">

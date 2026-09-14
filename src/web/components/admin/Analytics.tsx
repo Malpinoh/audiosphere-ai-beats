@@ -136,7 +136,7 @@ export function Analytics() {
             value: trackCount?.toLocaleString() || "0", 
             change: "+5.8%", 
             timeframe: "from last month", 
-            icon: <Music className="h-4 w-4 text-purple-500" />
+            icon: <Music className="h-4 w-4 text-primary" />
           },
           { 
             title: "New Uploads", 

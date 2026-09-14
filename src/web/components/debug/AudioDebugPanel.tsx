@@ -86,7 +86,7 @@ export function AudioDebugPanel() {
       </CardHeader>
       <CardContent className="space-y-4">
         {currentTrack && (
-          <div className="p-3 bg-purple-900/20 rounded-lg">
+          <div className="p-3 bg-primary/10 rounded-lg">
             <h4 className="text-overlay-foreground font-medium">Currently Playing</h4>
             <p className="text-overlay-foreground/60 text-sm">{currentTrack.title} by {currentTrack.artist}</p>
             <div className="flex gap-2 mt-2">
