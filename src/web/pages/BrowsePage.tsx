@@ -170,7 +170,7 @@ const BrowsePage = () => {
                   }}
                 >
                   <div className={`bg-gradient-to-br ${moodGradients[mood.toLowerCase()] || 'from-primary to-secondary'} h-28 sm:h-36 flex items-center justify-center rounded-2xl`}>
-                    <h3 className="text-lg font-bold text-white drop-shadow-md">{mood}</h3>
+                    <h3 className="text-lg font-bold text-overlay-foreground drop-shadow-md">{mood}</h3>
                   </div>
                 </div>
               ))}

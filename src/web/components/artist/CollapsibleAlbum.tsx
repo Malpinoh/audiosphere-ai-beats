@@ -24,7 +24,7 @@ export function CollapsibleAlbum({ album }: CollapsibleAlbumProps) {
 
 
   return (
-    <div className="bg-black/20 rounded-lg overflow-hidden hover:bg-black/30 transition-colors">
+    <div className="bg-overlay/20 rounded-lg overflow-hidden hover:bg-overlay/30 transition-colors">
       {/* Album Header */}
       <div 
         className="flex items-center gap-4 p-4 cursor-pointer"
@@ -36,11 +36,11 @@ export function CollapsibleAlbum({ album }: CollapsibleAlbumProps) {
           className="w-16 h-16 rounded-lg object-cover"
         />
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-white truncate">{album.name}</h3>
-          <p className="text-sm text-white/60 capitalize">{album.type}</p>
-          <p className="text-xs text-white/40">{album.tracks.length} tracks</p>
+          <h3 className="font-semibold text-overlay-foreground truncate">{album.name}</h3>
+          <p className="text-sm text-overlay-foreground/60 capitalize">{album.type}</p>
+          <p className="text-xs text-overlay-foreground/40">{album.tracks.length} tracks</p>
         </div>
-        <div className="text-white/60">
+        <div className="text-overlay-foreground/60">
           {isExpanded ? (
             <ChevronDown className="h-5 w-5" />
           ) : (
@@ -57,26 +57,26 @@ export function CollapsibleAlbum({ album }: CollapsibleAlbumProps) {
             .map((track) => (
             <div 
               key={track.id}
-              className="flex items-center gap-3 p-2 rounded hover:bg-white/5 cursor-pointer group"
+              className="flex items-center gap-3 p-2 rounded hover:bg-overlay-foreground/5 cursor-pointer group"
               onClick={() => handleTrackPlay(track)}
             >
               {/* Track Number / Play Button */}
               <div className="w-6 flex items-center justify-center">
-                <span className="text-white/40 text-sm group-hover:opacity-0 transition-opacity">
+                <span className="text-overlay-foreground/40 text-sm group-hover:opacity-0 transition-opacity">
                   {track.track_number || '—'}
                 </span>
                 <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Play className="h-3 w-3 text-white" />
+                  <Play className="h-3 w-3 text-overlay-foreground" />
                 </div>
               </div>
 
               {/* Track Info */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-white truncate">{track.title}</p>
+                <p className="text-sm text-overlay-foreground truncate">{track.title}</p>
               </div>
 
               {/* Duration */}
-              <span className="text-xs text-white/40">
+              <span className="text-xs text-overlay-foreground/40">
                 {track.duration ? formatDuration(track.duration) : '0:00'}
               </span>
             </div>

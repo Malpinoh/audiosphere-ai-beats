@@ -21,10 +21,10 @@ export default function TrendingPage() {
     <MainLayout>
       <div className="space-y-8">
         {/* Trending Header */}
-        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 p-8 text-white">
+        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 p-8 text-overlay-foreground">
           <div className="relative z-10">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-overlay-foreground/20 flex items-center justify-center">
                 <Flame className="w-8 h-8" />
               </div>
               <div>
@@ -43,18 +43,18 @@ export default function TrendingPage() {
                 <Button 
                   onClick={handlePlayAll}
                   size="lg"
-                  className="bg-white text-black hover:bg-white/90"
+                  className="bg-white text-black hover:bg-overlay-foreground/90"
                 >
                   <Play className="w-5 h-5 mr-2" />
                   Play All
                 </Button>
-                <span className="text-white/80">{tracks.length} trending tracks</span>
+                <span className="text-overlay-foreground/80">{tracks.length} trending tracks</span>
               </div>
             )}
           </div>
           
           {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute inset-0 bg-overlay/20" />
         </div>
 
         {/* Trending Info */}
@@ -132,7 +132,7 @@ export default function TrendingPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {tracks.map((track, index) => (
                 <div key={track.id} className="relative">
-                  <div className="absolute -top-2 -left-2 w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold z-10">
+                  <div className="absolute -top-2 -left-2 w-8 h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center text-overlay-foreground text-sm font-bold z-10">
                     {index + 1}
                   </div>
                   <TrackCard

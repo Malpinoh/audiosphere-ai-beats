@@ -193,11 +193,11 @@ export function PlaylistManager({ playlistId, isOwner, showManager = true }: Pla
     <div className="space-y-6">
       {isOwner && (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <h3 className="text-lg font-semibold text-white">Manage Tracks</h3>
+          <h3 className="text-lg font-semibold text-overlay-foreground">Manage Tracks</h3>
           <Button
             onClick={() => setShowAddTracks(!showAddTracks)}
             variant="outline"
-            className="border-white/20 text-white hover:bg-white/10"
+            className="border-white/20 text-overlay-foreground hover:bg-overlay-foreground/10"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Tracks
@@ -206,15 +206,15 @@ export function PlaylistManager({ playlistId, isOwner, showManager = true }: Pla
       )}
 
       {showAddTracks && isOwner && (
-        <div className="bg-white/5 rounded-lg p-4 space-y-3">
-          <h4 className="font-medium text-white">Available Tracks</h4>
+        <div className="bg-overlay-foreground/5 rounded-lg p-4 space-y-3">
+          <h4 className="font-medium text-overlay-foreground">Available Tracks</h4>
           <div className="max-h-60 overflow-y-auto space-y-2">
             {availableTracks.filter(track => 
               !tracks.some(pt => pt.track_id === track.id)
             ).map((track) => (
-              <div key={track.id} className="flex items-center justify-between p-2 bg-white/5 rounded">
+              <div key={track.id} className="flex items-center justify-between p-2 bg-overlay-foreground/5 rounded">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{track.title}</p>
+                  <p className="text-sm font-medium text-overlay-foreground truncate">{track.title}</p>
                   <p className="text-xs text-gray-400 truncate">{track.artist}</p>
                 </div>
                 <Button
@@ -231,7 +231,7 @@ export function PlaylistManager({ playlistId, isOwner, showManager = true }: Pla
       )}
 
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-white">
+        <h3 className="text-lg font-semibold text-overlay-foreground">
           Playlist Tracks ({tracks.length})
         </h3>
         
@@ -253,14 +253,14 @@ export function PlaylistManager({ playlistId, isOwner, showManager = true }: Pla
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className={`flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/10 ${
+                          className={`flex items-center gap-3 p-3 bg-overlay-foreground/5 rounded-lg border border-white/10 ${
                             snapshot.isDragging ? 'shadow-lg' : ''
                           }`}
                         >
                           {isOwner && (
                             <div
                               {...provided.dragHandleProps}
-                              className="cursor-grab text-gray-400 hover:text-white"
+                              className="cursor-grab text-gray-400 hover:text-overlay-foreground"
                             >
                               <GripVertical className="h-4 w-4" />
                             </div>
@@ -273,7 +273,7 @@ export function PlaylistManager({ playlistId, isOwner, showManager = true }: Pla
                               onClick={() => playTrack(playlistTrack.track)}
                               className="text-left w-full hover:text-primary transition-colors group"
                             >
-                              <p className="font-medium text-white truncate group-hover:text-primary">
+                              <p className="font-medium text-overlay-foreground truncate group-hover:text-primary">
                                 {playlistTrack.track.title}
                               </p>
                               <p className="text-sm text-gray-400 truncate">

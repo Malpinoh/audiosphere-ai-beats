@@ -143,8 +143,8 @@ const AlbumPage = () => {
       <MainLayout>
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
           <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-white mb-4">Album Not Found</h1>
-            <p className="text-white/60">The album you're looking for doesn't exist or has been removed.</p>
+            <h1 className="text-2xl font-bold text-overlay-foreground mb-4">Album Not Found</h1>
+            <p className="text-overlay-foreground/60">The album you're looking for doesn't exist or has been removed.</p>
           </div>
         </div>
       </MainLayout>
@@ -168,16 +168,16 @@ const AlbumPage = () => {
           
           <div className="flex-1 space-y-4">
             <div>
-              <p className="text-sm text-white/60 uppercase tracking-wide">
+              <p className="text-sm text-overlay-foreground/60 uppercase tracking-wide">
                 {album.type}
               </p>
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+              <h1 className="text-4xl md:text-5xl font-bold text-overlay-foreground mb-2">
                 {album.name}
               </h1>
-              <p className="text-xl text-white/80">{album.artist}</p>
+              <p className="text-xl text-overlay-foreground/80">{album.artist}</p>
             </div>
             
-            <div className="flex items-center gap-2 text-sm text-white/60">
+            <div className="flex items-center gap-2 text-sm text-overlay-foreground/60">
               <Calendar className="h-4 w-4" />
               <span>{album.releaseDate ? new Date(album.releaseDate).getFullYear() : 'Unknown'}</span>
               <span>•</span>
@@ -191,13 +191,13 @@ const AlbumPage = () => {
             </div>
 
             {album.description && (
-              <p className="text-white/70 max-w-2xl">{album.description}</p>
+              <p className="text-overlay-foreground/70 max-w-2xl">{album.description}</p>
             )}
             
             <div className="flex items-center gap-4 pt-4">
               <Button 
                 onClick={handlePlayAlbum}
-                className="bg-primary hover:bg-primary/90 text-white px-8 py-3 text-base"
+                className="bg-primary hover:bg-primary/90 text-overlay-foreground px-8 py-3 text-base"
               >
                 <Play className="h-5 w-5 mr-2" />
                 Play {album.type}
@@ -215,8 +215,8 @@ const AlbumPage = () => {
         </div>
 
         {/* Track List */}
-        <div className="bg-black/20 rounded-lg p-6">
-          <div className="grid grid-cols-[40px_1fr_100px] gap-4 text-sm text-white/60 mb-4 pb-2 border-b border-white/10">
+        <div className="bg-overlay/20 rounded-lg p-6">
+          <div className="grid grid-cols-[40px_1fr_100px] gap-4 text-sm text-overlay-foreground/60 mb-4 pb-2 border-b border-white/10">
             <span>#</span>
             <span>Title</span>
             <span>Duration</span>
@@ -230,7 +230,7 @@ const AlbumPage = () => {
               return (
                 <div 
                   key={track.id}
-                  className="grid grid-cols-[40px_1fr_100px] gap-4 items-center p-2 rounded hover:bg-white/5 cursor-pointer group"
+                  className="grid grid-cols-[40px_1fr_100px] gap-4 items-center p-2 rounded hover:bg-overlay-foreground/5 cursor-pointer group"
                   onClick={() => handleTrackPlay(track)}
                 >
                   <div className="flex items-center justify-center">
@@ -242,11 +242,11 @@ const AlbumPage = () => {
                       </div>
                     ) : (
                       <>
-                        <span className="text-white/60 group-hover:opacity-0 transition-opacity">
+                        <span className="text-overlay-foreground/60 group-hover:opacity-0 transition-opacity">
                           {track.track_number || index + 1}
                         </span>
                         <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Play className="h-4 w-4 text-white" />
+                          <Play className="h-4 w-4 text-overlay-foreground" />
                         </div>
                       </>
                     )}
@@ -262,14 +262,14 @@ const AlbumPage = () => {
                       className="w-10 h-10 rounded object-cover"
                     />
                     <div className="min-w-0">
-                      <p className={`font-medium truncate ${isCurrentTrack ? 'text-primary' : 'text-white'}`}>
+                      <p className={`font-medium truncate ${isCurrentTrack ? 'text-primary' : 'text-overlay-foreground'}`}>
                         {track.title}
                       </p>
-                      <p className="text-sm text-white/60 truncate">{track.artist}</p>
+                      <p className="text-sm text-overlay-foreground/60 truncate">{track.artist}</p>
                     </div>
                   </div>
                   
-                  <span className="text-white/60 text-sm">
+                  <span className="text-overlay-foreground/60 text-sm">
                     {formatTime(track.duration)}
                   </span>
                 </div>

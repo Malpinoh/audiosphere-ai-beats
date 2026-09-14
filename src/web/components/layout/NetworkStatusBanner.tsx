@@ -39,7 +39,7 @@ export function NetworkStatusBanner() {
         "fixed left-1/2 -translate-x-1/2 z-[60] h-9 w-9 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 animate-fade-in",
         "bottom-[calc(env(safe-area-inset-bottom)+140px)] md:bottom-[calc(env(safe-area-inset-bottom)+104px)]",
         online
-          ? "bg-emerald-600 text-white"
+          ? "bg-emerald-600 text-overlay-foreground"
           : "bg-destructive text-destructive-foreground"
       )}
       aria-label={online ? "Back online" : "Offline"}

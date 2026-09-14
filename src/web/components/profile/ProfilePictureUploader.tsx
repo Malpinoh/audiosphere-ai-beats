@@ -109,7 +109,7 @@ export function ProfilePictureUploader({ size = 'md' }: ProfilePictureUploaderPr
           />
           <AvatarFallback>{profile?.full_name?.[0] || 'U'}</AvatarFallback>
         </Avatar>
-        <div className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1">
+        <div className="absolute bottom-0 right-0 bg-primary text-overlay-foreground rounded-full p-1">
           <Camera className="w-4 h-4" />
         </div>
       </label>

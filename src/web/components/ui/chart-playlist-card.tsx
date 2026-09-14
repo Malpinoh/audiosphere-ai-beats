@@ -94,8 +94,8 @@ export const ChartPlaylistCard = ({
                   e.currentTarget.src = '/placeholder.svg';
                 }}
               />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Play className="h-4 w-4 text-white" />
+              <div className="absolute inset-0 bg-overlay/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Play className="h-4 w-4 text-overlay-foreground" />
               </div>
             </div>
 

@@ -111,7 +111,7 @@ export function TrackCard({ track, showArtist = true, hidePlay = false, variant 
                 onClick={handleAddToQueue}
                 size="icon"
                 variant="secondary"
-                className="h-7 w-7 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm border-0"
+                className="h-7 w-7 rounded-full bg-overlay/60 hover:bg-overlay/80 backdrop-blur-sm border-0"
               >
                 <Plus className="h-3.5 w-3.5" />
               </Button>
@@ -119,7 +119,7 @@ export function TrackCard({ track, showArtist = true, hidePlay = false, variant 
                 onClick={handleLikeClick}
                 size="icon"
                 variant="secondary"
-                className="h-7 w-7 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm border-0"
+                className="h-7 w-7 rounded-full bg-overlay/60 hover:bg-overlay/80 backdrop-blur-sm border-0"
               >
                 <Heart className={`h-3.5 w-3.5 ${liked ? 'fill-secondary text-secondary' : ''}`} />
               </Button>
@@ -127,7 +127,7 @@ export function TrackCard({ track, showArtist = true, hidePlay = false, variant 
 
             {/* Duration badge */}
             {track.duration && track.duration > 0 && (
-              <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-sm text-xs font-medium text-white">
+              <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-overlay/70 backdrop-blur-sm text-xs font-medium text-overlay-foreground">
                 {formatDuration(track.duration)}
               </div>
             )}
@@ -169,9 +169,9 @@ export function TrackCard({ track, showArtist = true, hidePlay = false, variant 
           />
           
           {!hidePlay && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+            <div className="absolute inset-0 flex items-center justify-center bg-overlay/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
               {!hasAudioUrl ? (
-                <AlertCircle className="h-4 w-4 text-white" />
+                <AlertCircle className="h-4 w-4 text-overlay-foreground" />
               ) : (
                 <Button 
                   onClick={handlePlayClick}

@@ -36,8 +36,8 @@ export function GenreCard({ id, name, image, color = "from-primary to-secondary"
         {/* Background pattern */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(255,255,255,0.3),transparent_50%)]" />
-          <div className="absolute bottom-0 right-0 w-32 h-32 bg-black/10 rounded-full translate-x-8 translate-y-8" />
-          <div className="absolute top-0 left-0 w-20 h-20 bg-white/10 rounded-full -translate-x-6 -translate-y-6" />
+          <div className="absolute bottom-0 right-0 w-32 h-32 bg-overlay/10 rounded-full translate-x-8 translate-y-8" />
+          <div className="absolute top-0 left-0 w-20 h-20 bg-overlay-foreground/10 rounded-full -translate-x-6 -translate-y-6" />
         </div>
         
         {/* Optional image overlay */}
@@ -60,9 +60,9 @@ export function GenreCard({ id, name, image, color = "from-primary to-secondary"
           
           {/* Genre info */}
           <div>
-            <h3 className="text-xl font-bold text-white drop-shadow-md">{name}</h3>
+            <h3 className="text-xl font-bold text-overlay-foreground drop-shadow-md">{name}</h3>
             {trackCount !== undefined && (
-              <p className="text-white/80 text-sm mt-1 flex items-center gap-1">
+              <p className="text-overlay-foreground/80 text-sm mt-1 flex items-center gap-1">
                 <Music2 className="h-3 w-3" />
                 {trackCount.toLocaleString()} tracks
               </p>
@@ -71,7 +71,7 @@ export function GenreCard({ id, name, image, color = "from-primary to-secondary"
         </div>
         
         {/* Hover glow effect */}
-        <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors duration-300" />
+        <div className="absolute inset-0 bg-overlay-foreground/0 group-hover:bg-overlay-foreground/5 transition-colors duration-300" />
       </div>
     </Link>
   );

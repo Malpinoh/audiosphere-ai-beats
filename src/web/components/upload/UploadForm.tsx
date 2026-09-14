@@ -339,20 +339,20 @@ export function UploadForm() {
             <CardContent className="space-y-2 text-xs">
               {debugInfo.track && (
                 <div>
-                  <p className="text-white"><strong>Track ID:</strong> {debugInfo.track.id}</p>
-                  <p className="text-white/60"><strong>Published:</strong> {debugInfo.track.published ? 'Yes' : 'No'}</p>
+                  <p className="text-overlay-foreground"><strong>Track ID:</strong> {debugInfo.track.id}</p>
+                  <p className="text-overlay-foreground/60"><strong>Published:</strong> {debugInfo.track.published ? 'Yes' : 'No'}</p>
                 </div>
               )}
               {debugInfo.audio_file_url && (
                 <div>
-                  <p className="text-white/60"><strong>Audio URL:</strong></p>
-                  <p className="text-white/40 break-all">{debugInfo.audio_file_url}</p>
+                  <p className="text-overlay-foreground/60"><strong>Audio URL:</strong></p>
+                  <p className="text-overlay-foreground/40 break-all">{debugInfo.audio_file_url}</p>
                 </div>
               )}
               {debugInfo.cover_art_url && (
                 <div>
-                  <p className="text-white/60"><strong>Cover URL:</strong></p>
-                  <p className="text-white/40 break-all">{debugInfo.cover_art_url}</p>
+                  <p className="text-overlay-foreground/60"><strong>Cover URL:</strong></p>
+                  <p className="text-overlay-foreground/40 break-all">{debugInfo.cover_art_url}</p>
                 </div>
               )}
             </CardContent>
@@ -372,8 +372,8 @@ export function UploadForm() {
         {/* Track Type Selection */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-white">Track Type</CardTitle>
-            <CardDescription className="text-white/60">
+            <CardTitle className="text-overlay-foreground">Track Type</CardTitle>
+            <CardDescription className="text-overlay-foreground/60">
               Choose what type of music you're uploading
             </CardDescription>
           </CardHeader>
@@ -399,7 +399,7 @@ export function UploadForm() {
                           >
                             <div className="flex items-center space-x-3">
                               <Icon className="h-6 w-6 text-purple-400" />
-                              <span className="text-white font-medium">{type.label}</span>
+                              <span className="text-overlay-foreground font-medium">{type.label}</span>
                             </div>
                           </div>
                         );
@@ -416,7 +416,7 @@ export function UploadForm() {
         {/* Basic Information */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-white">Basic Information</CardTitle>
+            <CardTitle className="text-overlay-foreground">Basic Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -425,12 +425,12 @@ export function UploadForm() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">
+                    <FormLabel className="text-overlay-foreground">
                       {watchTrackType === 'single' ? 'Track Title' : 
                        watchTrackType === 'ep' ? 'EP Title' : 'Album Title'}
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} className="bg-black/40 border-white/20 text-white" />
+                      <Input {...field} className="bg-overlay/40 border-white/20 text-overlay-foreground" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -442,9 +442,9 @@ export function UploadForm() {
                 name="artist"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Artist Name</FormLabel>
+                    <FormLabel className="text-overlay-foreground">Artist Name</FormLabel>
                     <FormControl>
-                      <Input {...field} className="bg-black/40 border-white/20 text-white" />
+                      <Input {...field} className="bg-overlay/40 border-white/20 text-overlay-foreground" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -460,9 +460,9 @@ export function UploadForm() {
                   name="albumName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white">Album/EP Name</FormLabel>
+                      <FormLabel className="text-overlay-foreground">Album/EP Name</FormLabel>
                       <FormControl>
-                        <Input {...field} className="bg-black/40 border-white/20 text-white" />
+                        <Input {...field} className="bg-overlay/40 border-white/20 text-overlay-foreground" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -474,14 +474,14 @@ export function UploadForm() {
                   name="trackNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white">Track Number</FormLabel>
+                      <FormLabel className="text-overlay-foreground">Track Number</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           min="1"
                           {...field}
                           onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                          className="bg-black/40 border-white/20 text-white" 
+                          className="bg-overlay/40 border-white/20 text-overlay-foreground" 
                         />
                       </FormControl>
                       <FormMessage />
@@ -494,14 +494,14 @@ export function UploadForm() {
                   name="totalTracks"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white">Total Tracks</FormLabel>
+                      <FormLabel className="text-overlay-foreground">Total Tracks</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           min="1"
                           {...field}
                           onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                          className="bg-black/40 border-white/20 text-white" 
+                          className="bg-overlay/40 border-white/20 text-overlay-foreground" 
                         />
                       </FormControl>
                       <FormMessage />
@@ -517,10 +517,10 @@ export function UploadForm() {
                 name="genre"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Genre</FormLabel>
+                    <FormLabel className="text-overlay-foreground">Genre</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className="bg-black/40 border-white/20 text-white">
+                        <SelectTrigger className="bg-overlay/40 border-white/20 text-overlay-foreground">
                           <SelectValue placeholder="Select genre" />
                         </SelectTrigger>
                       </FormControl>
@@ -542,7 +542,7 @@ export function UploadForm() {
                 name="mood"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Mood</FormLabel>
+                    <FormLabel className="text-overlay-foreground">Mood</FormLabel>
                     <FormControl>
                       <MoodSelector value={field.value} onChange={field.onChange} />
                     </FormControl>
@@ -557,15 +557,15 @@ export function UploadForm() {
         {/* File Uploads */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-white">File Uploads</CardTitle>
-            <CardDescription className="text-white/60">
+            <CardTitle className="text-overlay-foreground">File Uploads</CardTitle>
+            <CardDescription className="text-overlay-foreground/60">
               Upload your audio file (up to 100MB) and cover art
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">Audio File</label>
+                <label className="block text-sm font-medium text-overlay-foreground mb-2">Audio File</label>
                 <FileUploader
                   accept="audio/*"
                   maxSize={100}
@@ -594,7 +594,7 @@ export function UploadForm() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-white mb-2">Cover Art</label>
+                <label className="block text-sm font-medium text-overlay-foreground mb-2">Cover Art</label>
                 <FileUploader
                   accept="image/*"
                   maxSize={10}
@@ -610,7 +610,7 @@ export function UploadForm() {
         {/* Additional Information */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-white">Additional Information</CardTitle>
+            <CardTitle className="text-overlay-foreground">Additional Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -618,11 +618,11 @@ export function UploadForm() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">Description</FormLabel>
+                  <FormLabel className="text-overlay-foreground">Description</FormLabel>
                   <FormControl>
                     <Textarea 
                       {...field} 
-                      className="bg-black/40 border-white/20 text-white min-h-[100px]"
+                      className="bg-overlay/40 border-white/20 text-overlay-foreground min-h-[100px]"
                       placeholder="Tell us about this track..."
                     />
                   </FormControl>
@@ -636,11 +636,11 @@ export function UploadForm() {
               name="lyrics"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">Lyrics (Optional)</FormLabel>
+                  <FormLabel className="text-overlay-foreground">Lyrics (Optional)</FormLabel>
                   <FormControl>
                     <Textarea 
                       {...field} 
-                      className="bg-black/40 border-white/20 text-white min-h-[150px]"
+                      className="bg-overlay/40 border-white/20 text-overlay-foreground min-h-[150px]"
                       placeholder="Enter song lyrics here..."
                     />
                   </FormControl>
@@ -654,7 +654,7 @@ export function UploadForm() {
               name="tags"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white">Tags</FormLabel>
+                  <FormLabel className="text-overlay-foreground">Tags</FormLabel>
                   <FormControl>
                     <TagInput
                       tags={field.value}
@@ -671,8 +671,8 @@ export function UploadForm() {
         {/* AI Analysis */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-white">AI Analysis (Optional)</CardTitle>
-            <CardDescription className="text-white/60">
+            <CardTitle className="text-overlay-foreground">AI Analysis (Optional)</CardTitle>
+            <CardDescription className="text-overlay-foreground/60">
               Use AI to automatically analyze your music and suggest metadata
             </CardDescription>
           </CardHeader>
@@ -683,8 +683,8 @@ export function UploadForm() {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border border-white/20 p-4">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base text-white">Enable AI Analysis</FormLabel>
-                    <div className="text-sm text-white/60">
+                    <FormLabel className="text-base text-overlay-foreground">Enable AI Analysis</FormLabel>
+                    <div className="text-sm text-overlay-foreground/60">
                       Automatically analyze audio content and suggest genre, mood, and tags
                     </div>
                   </div>
@@ -706,7 +706,7 @@ export function UploadForm() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border border-white/20 p-3">
                       <div className="space-y-0.5">
-                        <FormLabel className="text-sm text-white">Override Genre</FormLabel>
+                        <FormLabel className="text-sm text-overlay-foreground">Override Genre</FormLabel>
                       </div>
                       <FormControl>
                         <Switch
@@ -724,7 +724,7 @@ export function UploadForm() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border border-white/20 p-3">
                       <div className="space-y-0.5">
-                        <FormLabel className="text-sm text-white">Override Mood</FormLabel>
+                        <FormLabel className="text-sm text-overlay-foreground">Override Mood</FormLabel>
                       </div>
                       <FormControl>
                         <Switch
@@ -742,7 +742,7 @@ export function UploadForm() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border border-white/20 p-3">
                       <div className="space-y-0.5">
-                        <FormLabel className="text-sm text-white">Override Tags</FormLabel>
+                        <FormLabel className="text-sm text-overlay-foreground">Override Tags</FormLabel>
                       </div>
                       <FormControl>
                         <Switch
@@ -774,8 +774,8 @@ export function UploadForm() {
                       />
                     </FormControl>
                     <div className="space-y-1">
-                      <FormLabel className="text-white">Publish immediately</FormLabel>
-                      <div className="text-sm text-white/60">
+                      <FormLabel className="text-overlay-foreground">Publish immediately</FormLabel>
+                      <div className="text-sm text-overlay-foreground/60">
                         Make this {watchTrackType} available to the public
                       </div>
                     </div>
@@ -786,7 +786,7 @@ export function UploadForm() {
               <Button
                 type="submit"
                 disabled={isUploading || !audioFile || !coverArt || !apiKey}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-8"
+                className="bg-purple-600 hover:bg-purple-700 text-overlay-foreground px-8"
               >
                 {isUploading ? (
                   <>
@@ -804,13 +804,13 @@ export function UploadForm() {
 
             {isUploading && (
               <div className="mt-4">
-                <div className="w-full bg-white/20 rounded-full h-2">
+                <div className="w-full bg-overlay-foreground/20 rounded-full h-2">
                   <div 
                     className="bg-purple-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-xs text-white/60 mt-1">
+                <div className="flex justify-between text-xs text-overlay-foreground/60 mt-1">
                   <span>Processing upload...</span>
                   <span>{uploadProgress}%</span>
                 </div>

@@ -112,10 +112,10 @@ export default function GenrePage() {
     <MainLayout>
       <div className="space-y-6 md:space-y-8 px-3 sm:px-4">
         {/* Genre Header */}
-        <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${genre.gradient} p-4 sm:p-6 md:p-8 text-white`}>
+        <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${genre.gradient} p-4 sm:p-6 md:p-8 text-overlay-foreground`}>
           <div className="relative z-10">
             <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-overlay-foreground/20 flex items-center justify-center flex-shrink-0">
                 <Music className="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
               <div className="min-w-0">
@@ -129,18 +129,18 @@ export default function GenrePage() {
                 <Button 
                   onClick={handlePlayAll}
                   size="default"
-                  className="bg-white text-black hover:bg-white/90 sm:size-lg"
+                  className="bg-white text-black hover:bg-overlay-foreground/90 sm:size-lg"
                 >
                   <Play className="w-5 h-5 mr-2" />
                   Play All
                 </Button>
-                <span className="text-sm sm:text-base text-white/80">{tracks.length} tracks</span>
+                <span className="text-sm sm:text-base text-overlay-foreground/80">{tracks.length} tracks</span>
               </div>
             )}
           </div>
           
           {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute inset-0 bg-overlay/20" />
         </div>
 
         {/* Sort Options */}
