@@ -7,7 +7,13 @@ const SUPABASE_URL = "https://qkpjlfcpncvvjyzfolag.supabase.co";
 export type ShareKind = "track" | "artist" | "playlist";
 
 export function buildShareUrl(kind: ShareKind, id: string): string {
-  return `${SUPABASE_URL}/functions/v1/og-preview/${kind}/${encodeURIComponent(id)}`;
+  const base = `${SUPABASE_URL}/functions/v1/og-preview/${kind}/${encodeURIComponent(id)}`;
+  // Pass the current deployment origin so humans land back on the site they
+  // shared from (Vercel / Lovable / custom domain) instead of a fixed domain.
+  if (typeof window !== "undefined" && window.location?.protocol === "https:") {
+    return `${base}?s=${encodeURIComponent(window.location.origin)}`;
+  }
+  return base;
 }
 
 interface SharePayload {

@@ -24,6 +24,13 @@ export interface AlbumSummary {
   tracks: Track[];
 }
 
+export interface SearchResults {
+  tracks: Track[];
+  artists: any[];
+  albums: AlbumSummary[];
+  playlists: any[];
+}
+
 export interface MusicRepository {
   // Tracks
   getTracks(filter?: TracksFilter): Promise<Track[]>;
@@ -45,6 +52,7 @@ export interface MusicRepository {
 
   // Discovery
   search(term: string, limit?: number): Promise<Track[]>;
+  searchAll(term: string, limit?: number): Promise<SearchResults>;
   getRecommendations(userId?: string | null, limit?: number): Promise<Track[]>;
   getSimilarTracks(trackId: string, limit?: number): Promise<Track[]>;
 
@@ -174,6 +182,58 @@ export function createMusicRepository(storage: StorageManager): MusicRepository 
       return decorate(
         await fetchTracksQuery({ published: true, searchTerm: term, limit }),
       );
+    },
+
+    async searchAll(term, limit = 20) {
+      const q = term?.trim();
+      if (!q) return { tracks: [], artists: [], albums: [], playlists: [] };
+
+      const [tracks, artistsRes, playlistsRes] = await Promise.all([
+        this.search(q, limit),
+        supabase
+          .from("profiles")
+          .select("id, username, full_name, avatar_url, slug, is_verified, follower_count")
+          .or(`full_name.ilike.%${q}%,username.ilike.%${q}%`)
+          .limit(limit),
+        supabase
+          .from("playlists")
+          .select("*")
+          .ilike("title", `%${q}%`)
+          .limit(limit),
+      ]);
+
+      const artists = (artistsRes.data || []).map((a: any) => ({
+        ...a,
+        avatar: storage.artistImageUrl(a.avatar_url),
+      }));
+
+      const playlists = (playlistsRes.data || []).map((p: any) => ({
+        ...p,
+        cover: storage.coverUrl(p.cover_image_path),
+      }));
+
+      // Albums are derived from matching tracks that belong to a release.
+      const albumMap = new Map<string, AlbumSummary>();
+      for (const t of tracks) {
+        if (!t.album_name) continue;
+        const key = `${t.album_name}::${t.artist}`;
+        const entry = albumMap.get(key);
+        if (entry) {
+          entry.tracks.push(t);
+          entry.track_count = entry.tracks.length;
+        } else {
+          albumMap.set(key, {
+            album_name: t.album_name,
+            artist: t.artist,
+            artist_profile_id: t.artist_profile_id,
+            cover_art_path: t.cover_art_path,
+            track_count: 1,
+            tracks: [t],
+          });
+        }
+      }
+
+      return { tracks, artists, albums: Array.from(albumMap.values()), playlists };
     },
 
     async getRecommendations(userId, limit = 20) {
