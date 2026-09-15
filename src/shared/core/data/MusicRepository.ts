@@ -24,6 +24,13 @@ export interface AlbumSummary {
   tracks: Track[];
 }
 
+export interface SearchResults {
+  tracks: Track[];
+  artists: any[];
+  albums: AlbumSummary[];
+  playlists: any[];
+}
+
 export interface MusicRepository {
   // Tracks
   getTracks(filter?: TracksFilter): Promise<Track[]>;
