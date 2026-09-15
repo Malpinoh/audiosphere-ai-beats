@@ -45,6 +45,7 @@ export interface MusicRepository {
 
   // Discovery
   search(term: string, limit?: number): Promise<Track[]>;
+  searchAll(term: string, limit?: number): Promise<SearchResults>;
   getRecommendations(userId?: string | null, limit?: number): Promise<Track[]>;
   getSimilarTracks(trackId: string, limit?: number): Promise<Track[]>;
 
