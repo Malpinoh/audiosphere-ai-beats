@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@web/components/ui/button";
-import { Heart, HeartOff } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import { supabase } from "@shared/integrations/supabase/client";
 import { useAuth } from "@web/contexts/AuthContext";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface PlaylistFollowButtonProps {
   playlistId: string;
@@ -11,134 +12,91 @@ interface PlaylistFollowButtonProps {
   onFollowerCountChange: (newCount: number) => void;
 }
 
-export function PlaylistFollowButton({ 
-  playlistId, 
-  followerCount, 
-  onFollowerCountChange 
+export function PlaylistFollowButton({
+  playlistId,
+  followerCount,
+  onFollowerCountChange,
 }: PlaylistFollowButtonProps) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user) {
-      checkFollowStatus();
+  const refreshFollowerCount = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('playlists')
+      .select('follower_count')
+      .eq('id', playlistId)
+      .maybeSingle();
+    if (!error && data) onFollowerCountChange(data.follower_count || 0);
+  }, [playlistId, onFollowerCountChange]);
+
+  const checkFollowStatus = useCallback(async () => {
+    if (!user) { setIsFollowing(false); return; }
+    const { data, error } = await supabase
+      .from('playlist_followers')
+      .select('id')
+      .eq('playlist_id', playlistId)
+      .eq('profile_id', user.id)
+      .maybeSingle();
+    if (error) {
+      console.error('Error checking playlist follow status:', error);
+      return;
     }
+    setIsFollowing(!!data);
   }, [user, playlistId]);
 
-  // Real-time subscription for follower count
+  useEffect(() => { checkFollowStatus(); }, [checkFollowStatus]);
+
   useEffect(() => {
     const channel = supabase
       .channel(`playlist-followers-${playlistId}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'playlist_followers',
-          filter: `playlist_id=eq.${playlistId}`
-        },
-        () => {
-          // Refresh follower count when changes occur
-          refreshFollowerCount();
-        }
+        { event: '*', schema: 'public', table: 'playlist_followers', filter: `playlist_id=eq.${playlistId}` },
+        () => { refreshFollowerCount(); }
       )
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [playlistId]);
-
-  const checkFollowStatus = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('playlist_followers')
-        .select('id')
-        .eq('playlist_id', playlistId)
-        .eq('profile_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking follow status:', error);
-        return;
-      }
-
-      setIsFollowing(!!data);
-    } catch (error) {
-      console.error('Error checking follow status:', error);
-    }
-  };
-
-  const refreshFollowerCount = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('playlists')
-        .select('follower_count')
-        .eq('id', playlistId)
-        .single();
-
-      if (!error && data) {
-        onFollowerCountChange(data.follower_count || 0);
-      }
-    } catch (error) {
-      console.error('Error refreshing follower count:', error);
-    }
-  };
+    return () => { supabase.removeChannel(channel); };
+  }, [playlistId, refreshFollowerCount]);
 
   const toggleFollow = async () => {
     if (!user) {
-      toast.error('Please log in to follow playlists');
+      toast.error('Sign in to follow playlists', { duration: 2500 });
+      navigate('/auth');
       return;
     }
 
     setLoading(true);
+    // Optimistic UI — reverted if the request fails.
+    const next = !isFollowing;
+    setIsFollowing(next);
     try {
-      if (isFollowing) {
-        // Unfollow
+      if (!next) {
         const { error } = await supabase
           .from('playlist_followers')
           .delete()
           .eq('playlist_id', playlistId)
           .eq('profile_id', user.id);
-
-        if (error) {
-          console.error('Error unfollowing playlist:', error);
-          toast.error(error.message || 'Failed to unfollow playlist');
-          return;
-        }
-
-        setIsFollowing(false);
-        toast.success('Playlist unfollowed');
+        if (error) throw error;
+        toast.success('Unfollowed playlist', { duration: 2500 });
       } else {
-        // Follow (idempotent — ignore duplicate row)
         const { error } = await supabase
           .from('playlist_followers')
-          .upsert(
-            { playlist_id: playlistId, profile_id: user.id },
-            { onConflict: 'playlist_id,profile_id', ignoreDuplicates: true }
-          );
-
-        if (error) {
-          console.error('Error following playlist:', error);
-          toast.error(error.message || 'Failed to follow playlist');
-          return;
-        }
-
-        setIsFollowing(true);
-        toast.success('Playlist followed');
+          .insert({ playlist_id: playlistId, profile_id: user.id });
+        // 23505 = already following; treat as success (idempotent).
+        if (error && error.code !== '23505') throw error;
+        toast.success('Following playlist', { duration: 2500 });
       }
-    } catch (error) {
-      console.error('Error toggling follow:', error);
-      toast.error('Something went wrong');
+      await refreshFollowerCount();
+    } catch (error: any) {
+      console.error('Error toggling playlist follow:', error);
+      setIsFollowing(!next);
+      toast.error("Couldn't update follow — please try again", { duration: 2500 });
     } finally {
       setLoading(false);
     }
   };
-
-  if (!user) return null;
 
   return (
     <div className="flex items-center gap-2">
@@ -147,22 +105,16 @@ export function PlaylistFollowButton({
         disabled={loading}
         variant={isFollowing ? "default" : "outline"}
         size="sm"
-        className={isFollowing 
-          ? "maudio-gradient-bg" 
-          : "border-white/20 text-overlay-foreground hover:bg-overlay-foreground/10"
-        }
+        aria-pressed={isFollowing}
+        aria-label={isFollowing ? "Unfollow playlist" : "Follow playlist"}
+        className={`gap-1.5 ${isFollowing ? "maudio-gradient-bg" : ""}`}
       >
-        {isFollowing ? (
-          <>
-            <Heart className="h-4 w-4 mr-2 fill-current" />
-            Following
-          </>
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <>
-            <HeartOff className="h-4 w-4 mr-2" />
-            Follow
-          </>
+          <Heart className={`h-4 w-4 ${isFollowing ? "fill-current" : ""}`} />
         )}
+        {isFollowing ? "Following" : "Follow"}
       </Button>
       <span className="text-sm text-muted-foreground">
         {followerCount} follower{followerCount !== 1 ? 's' : ''}
