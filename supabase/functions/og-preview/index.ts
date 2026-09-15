@@ -9,8 +9,25 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const SITE = Deno.env.get("MAUDIO_SITE_URL") ?? "https://maudio.online";
-const DEFAULT_IMAGE = `${SITE}/maudio-logo.png`;
+const DEFAULT_SITE = Deno.env.get("MAUDIO_SITE_URL") ?? "https://maudio.online";
+const DEFAULT_IMAGE = `${DEFAULT_SITE}/maudio-logo.png`;
+
+// Hosts allowed as a redirect target when the app passes its own origin (?s=).
+// Keeps share links working on any MAUDIO deployment (Vercel, Lovable, custom).
+const ALLOWED_HOSTS = [/(^|\.)maudio\.online$/i, /(^|\.)vercel\.app$/i, /(^|\.)lovable\.app$/i];
+
+function resolveSite(reqUrl: URL): string {
+  const raw = reqUrl.searchParams.get("s");
+  if (!raw) return DEFAULT_SITE;
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "https:") return DEFAULT_SITE;
+    if (!ALLOWED_HOSTS.some((re) => re.test(u.hostname))) return DEFAULT_SITE;
+    return u.origin;
+  } catch {
+    return DEFAULT_SITE;
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,7 +63,7 @@ interface OgData {
   siteName: string;
 }
 
-async function loadTrack(id: string): Promise<OgData | null> {
+async function loadTrack(id: string, SITE: string): Promise<OgData | null> {
   const { data, error } = await supabase
     .from("tracks")
     .select("id, title, artist, cover_art_path")
@@ -64,7 +81,7 @@ async function loadTrack(id: string): Promise<OgData | null> {
   };
 }
 
-async function loadArtist(slugOrId: string): Promise<OgData | null> {
+async function loadArtist(slugOrId: string, SITE: string): Promise<OgData | null> {
   // Try slug first, then id
   let { data } = await supabase
     .from("profiles")
@@ -93,7 +110,7 @@ async function loadArtist(slugOrId: string): Promise<OgData | null> {
   };
 }
 
-async function loadPlaylist(id: string): Promise<OgData | null> {
+async function loadPlaylist(id: string, SITE: string): Promise<OgData | null> {
   const { data } = await supabase
     .from("playlists")
     .select("id, title, description, cover_image_path")
@@ -150,7 +167,7 @@ ${refresh}
 </html>`;
 }
 
-function notFoundHtml(): string {
+function notFoundHtml(SITE: string): string {
   return `<!DOCTYPE html><html><head><title>Not found · Maudio</title>
 <meta property="og:title" content="Maudio" />
 <meta property="og:description" content="Stream and discover music on Maudio" />
@@ -168,6 +185,7 @@ Deno.serve(async (req) => {
   const idx = url.pathname.indexOf("/og-preview");
   const tail = idx >= 0 ? url.pathname.slice(idx + "/og-preview".length) : url.pathname;
   const parts = tail.split("/").filter(Boolean);
+  const SITE = resolveSite(url);
   const ua = req.headers.get("user-agent") ?? "";
   const isBot = BOT_RE.test(ua);
 
@@ -179,20 +197,20 @@ Deno.serve(async (req) => {
 
   try {
     if (parts.length < 2) {
-      return new Response(notFoundHtml(), { status: 404, headers: htmlHeaders });
+      return new Response(notFoundHtml(SITE), { status: 404, headers: htmlHeaders });
     }
     const [type, id] = parts;
     let data: OgData | null = null;
-    if (type === "track") data = await loadTrack(id);
-    else if (type === "artist") data = await loadArtist(id);
-    else if (type === "playlist") data = await loadPlaylist(id);
+    if (type === "track") data = await loadTrack(id, SITE);
+    else if (type === "artist") data = await loadArtist(id, SITE);
+    else if (type === "playlist") data = await loadPlaylist(id, SITE);
 
     if (!data) {
-      return new Response(notFoundHtml(), { status: 404, headers: htmlHeaders });
+      return new Response(notFoundHtml(SITE), { status: 404, headers: htmlHeaders });
     }
     return new Response(renderHtml(data, isBot), { status: 200, headers: htmlHeaders });
   } catch (err) {
     console.error("og-preview error", err);
-    return new Response(notFoundHtml(), { status: 500, headers: htmlHeaders });
+    return new Response(notFoundHtml(SITE), { status: 500, headers: htmlHeaders });
   }
 });
