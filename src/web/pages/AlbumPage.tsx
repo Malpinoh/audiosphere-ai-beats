@@ -1,138 +1,152 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import MainLayout from "@web/components/layout/MainLayout";
 import { supabase } from "@shared/integrations/supabase/client";
-import { formatTracks } from "@shared/services/track-service";
+import { useServices } from "@shared/core";
 import { Track } from "@shared/types/track-types";
 import { useMusicPlayer } from "@web/contexts/music-player";
 import { Button } from "@web/components/ui/button";
-import { Play, Heart, MoreHorizontal, Calendar } from "lucide-react";
+import { Play, Pause, Calendar, Disc3, Shuffle } from "lucide-react";
+import { Artwork } from "@web/components/ui/artwork";
+import { TrackCard } from "@web/components/ui/track-card";
+import { EmptyState } from "@web/components/ui/empty-state";
+import { ErrorState } from "@web/components/ui/error-state";
+import { ListSkeleton } from "@web/components/ui/loading-states";
 import { Skeleton } from "@web/components/ui/skeleton";
 import { formatTime } from "@shared/utils/formatTime";
 
 interface Album {
   name: string;
   artist: string;
-  type: 'album' | 'ep';
+  artistProfileId?: string | null;
+  type: "album" | "ep" | "single";
   coverArt: string;
   tracks: Track[];
-  totalTracks: number;
   releaseDate?: string;
   description?: string;
 }
 
 const AlbumPage = () => {
   const { albumId } = useParams<{ albumId: string }>();
+  const { storage } = useServices();
   const [album, setAlbum] = useState<Album | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const { setQueue, playTrack, currentTrack, isPlaying, togglePlay } = useMusicPlayer();
 
-  useEffect(() => {
-    if (albumId) {
-      fetchAlbum();
-    }
-  }, [albumId]);
-
-  const fetchAlbum = async () => {
+  const fetchAlbum = useCallback(async () => {
+    if (!albumId) return;
+    const decoded = decodeURIComponent(albumId);
     try {
       setLoading(true);
-      
-      // First try to fetch by album name (decoded from URL)
-      const decodedAlbumId = decodeURIComponent(albumId || '');
-      
-      let tracks: any[] | null = null;
-      let error: any = null;
-      
-      // Try fetching by album name first
-      const albumNameQuery = await supabase
-        .from('tracks')
-        .select('*')
-        .eq('album_name', decodedAlbumId)
-        .eq('published', true);
-      
-      if (albumNameQuery.data && albumNameQuery.data.length > 0) {
-        tracks = albumNameQuery.data;
-      } else {
-        // If no results by album name, try by ID (only if it looks like a UUID)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (uuidRegex.test(decodedAlbumId)) {
-          const idQuery = await supabase
-            .from('tracks')
-            .select('*')
-            .eq('id', decodedAlbumId)
-            .eq('published', true);
-          
-          tracks = idQuery.data;
-          error = idQuery.error;
-        } else {
-          error = albumNameQuery.error;
-        }
+      setFailed(false);
+
+      let rows: any[] | null = null;
+      const byName = await supabase
+        .from("tracks")
+        .select("*")
+        .eq("album_name", decoded)
+        .eq("published", true);
+      if (byName.error) throw byName.error;
+
+      if (byName.data?.length) {
+        rows = byName.data;
+      } else if (
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decoded)
+      ) {
+        const byId = await supabase
+          .from("tracks")
+          .select("*")
+          .eq("id", decoded)
+          .eq("published", true);
+        if (byId.error) throw byId.error;
+        rows = byId.data;
       }
 
-      if (error) throw error;
-
-      if (tracks && tracks.length > 0) {
-        const formattedTracks = formatTracks(tracks);
-        const firstTrack = formattedTracks[0];
-        
-        const albumData: Album = {
-          name: firstTrack.album_name || firstTrack.title,
-          artist: firstTrack.artist,
-          type: firstTrack.track_type as 'album' | 'ep',
-          coverArt: firstTrack.cover_art_path?.startsWith('http') 
-            ? firstTrack.cover_art_path 
-            : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${firstTrack.cover_art_path}`,
-          tracks: formattedTracks.sort((a, b) => (a.track_number || 0) - (b.track_number || 0)),
-          totalTracks: firstTrack.total_tracks || formattedTracks.length,
-          releaseDate: firstTrack.uploaded_at,
-          description: firstTrack.description
-        };
-        
-        setAlbum(albumData);
+      if (!rows?.length) {
+        setAlbum(null);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching album:', error);
+
+      const tracks = rows
+        .map((t) => ({
+          ...t,
+          track_type: ["single", "ep", "album"].includes(t.track_type) ? t.track_type : "single",
+          cover: storage.coverUrl(t.cover_art_path),
+          audioUrl: storage.audioUrl(t.audio_file_path),
+        }))
+        .sort((a, b) => (a.track_number || 0) - (b.track_number || 0)) as Track[];
+
+      const first = tracks[0];
+      setAlbum({
+        name: first.album_name || first.title,
+        artist: first.artist,
+        artistProfileId: first.artist_profile_id,
+        type: (first.track_type as Album["type"]) || "single",
+        coverArt: storage.coverUrl(first.cover_art_path),
+        tracks,
+        releaseDate: first.uploaded_at,
+        description: first.description,
+      });
+    } catch (err) {
+      console.error("Error fetching album:", err);
+      setFailed(true);
     } finally {
       setLoading(false);
     }
-  };
+  }, [albumId, storage]);
+
+  useEffect(() => {
+    fetchAlbum();
+  }, [fetchAlbum]);
+
+  const albumIsPlaying =
+    !!album && isPlaying && album.tracks.some((t) => t.id === currentTrack?.id);
 
   const handlePlayAlbum = () => {
-    if (!album) return;
-    setQueue(album.tracks);
-    if (album.tracks.length > 0) {
-      playTrack(album.tracks[0]);
-    }
-  };
-
-  const handleTrackPlay = (track: Track) => {
-    const isCurrentTrack = currentTrack?.id === track.id;
-    if (isCurrentTrack) {
+    if (!album?.tracks.length) return;
+    if (albumIsPlaying) {
       togglePlay();
-    } else {
-      playTrack(track);
+      return;
     }
+    setQueue(album.tracks, { kind: "album", name: album.name } as any);
+    playTrack(album.tracks[0]);
   };
 
-  const totalDuration = album?.tracks.reduce((acc, track) => acc + (track.duration || 0), 0) || 0;
+  const handleShuffle = () => {
+    if (!album?.tracks.length) return;
+    const shuffled = [...album.tracks].sort(() => Math.random() - 0.5);
+    setQueue(shuffled, { kind: "album", name: album.name } as any);
+    playTrack(shuffled[0]);
+  };
+
+  const totalDuration = album?.tracks.reduce((acc, t) => acc + (t.duration || 0), 0) || 0;
 
   if (loading) {
     return (
       <MainLayout>
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-          <div className="flex flex-col md:flex-row gap-8 mb-8">
-            <Skeleton className="w-64 h-64 rounded-lg" />
-            <div className="flex-1 space-y-4">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-4 w-64" />
-              <div className="flex gap-4">
-                <Skeleton className="h-10 w-24" />
-                <Skeleton className="h-10 w-10" />
-                <Skeleton className="h-10 w-10" />
-              </div>
+        <div className="max-w-5xl mx-auto px-4 md:px-6 py-8 space-y-8">
+          <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+            <Skeleton className="w-40 h-40 md:w-56 md:h-56 rounded-2xl mx-auto md:mx-0" />
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-9 w-2/3" />
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-11 w-36 rounded-full" />
             </div>
           </div>
+          <ListSkeleton rows={6} />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (failed) {
+    return (
+      <MainLayout>
+        <div className="max-w-5xl mx-auto px-4 md:px-6 py-12">
+          <ErrorState message="We couldn't load this release right now." onRetry={fetchAlbum} />
         </div>
       </MainLayout>
     );
@@ -141,11 +155,14 @@ const AlbumPage = () => {
   if (!album) {
     return (
       <MainLayout>
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-overlay-foreground mb-4">Album Not Found</h1>
-            <p className="text-overlay-foreground/60">The album you're looking for doesn't exist or has been removed.</p>
-          </div>
+        <div className="max-w-5xl mx-auto px-4 md:px-6 py-12">
+          <EmptyState
+            icon={Disc3}
+            title="Release not found"
+            description="This album or EP doesn't exist, or it isn't published anymore."
+            actionLabel="Browse music"
+            onAction={() => { window.location.href = "/browse"; }}
+          />
         </div>
       </MainLayout>
     );
@@ -153,130 +170,76 @@ const AlbumPage = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        {/* Album Header */}
-        <div className="flex flex-col md:flex-row gap-8 mb-8">
-          <img 
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-10">
+        <header className="flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8 text-center md:text-left mb-8">
+          <Artwork
             src={album.coverArt}
-            alt={album.name}
-            className="w-64 h-64 rounded-lg object-cover shadow-xl"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = 'https://picsum.photos/300/300';
-            }}
+            alt={`${album.name} cover art`}
+            shape="rounded"
+            className="w-44 h-44 md:w-56 md:h-56 shadow-elevated flex-shrink-0"
           />
-          
-          <div className="flex-1 space-y-4">
-            <div>
-              <p className="text-sm text-overlay-foreground/60 uppercase tracking-wide">
-                {album.type}
-              </p>
-              <h1 className="text-4xl md:text-5xl font-bold text-overlay-foreground mb-2">
-                {album.name}
-              </h1>
-              <p className="text-xl text-overlay-foreground/80">{album.artist}</p>
-            </div>
-            
-            <div className="flex items-center gap-2 text-sm text-overlay-foreground/60">
-              <Calendar className="h-4 w-4" />
-              <span>{album.releaseDate ? new Date(album.releaseDate).getFullYear() : 'Unknown'}</span>
-              <span>•</span>
-              <span>{album.tracks.length} tracks</span>
+          <div className="flex-1 min-w-0 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+              {album.type}
+            </p>
+            <h1 className="text-3xl md:text-5xl font-bold text-foreground break-words">
+              {album.name}
+            </h1>
+            {album.artistProfileId ? (
+              <Link
+                to={`/artist/${album.artistProfileId}`}
+                className="inline-block text-lg text-muted-foreground hover:text-primary"
+              >
+                {album.artist}
+              </Link>
+            ) : (
+              <p className="text-lg text-muted-foreground">{album.artist}</p>
+            )}
+
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground">
+              <Calendar aria-hidden="true" className="h-4 w-4" />
+              <span>{album.releaseDate ? new Date(album.releaseDate).getFullYear() : "—"}</span>
+              <span aria-hidden="true">•</span>
+              <span>{album.tracks.length} {album.tracks.length === 1 ? "track" : "tracks"}</span>
               {totalDuration > 0 && (
                 <>
-                  <span>•</span>
+                  <span aria-hidden="true">•</span>
                   <span>{formatTime(totalDuration)}</span>
                 </>
               )}
             </div>
 
             {album.description && (
-              <p className="text-overlay-foreground/70 max-w-2xl">{album.description}</p>
+              <p className="text-sm text-muted-foreground max-w-2xl">{album.description}</p>
             )}
-            
-            <div className="flex items-center gap-4 pt-4">
-              <Button 
+
+            <div className="flex items-center justify-center md:justify-start gap-3 pt-2">
+              <Button
                 onClick={handlePlayAlbum}
-                className="bg-primary hover:bg-primary/90 text-overlay-foreground px-8 py-3 text-base"
+                className="rounded-full px-7 h-11 font-semibold gap-2"
+                aria-label={albumIsPlaying ? "Pause release" : "Play release"}
               >
-                <Play className="h-5 w-5 mr-2" />
-                Play {album.type}
+                {albumIsPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 fill-current" />}
+                {albumIsPlaying ? "Pause" : "Play"}
               </Button>
-              
-              <Button variant="outline" size="icon" className="h-12 w-12">
-                <Heart className="h-5 w-5" />
-              </Button>
-              
-              <Button variant="ghost" size="icon" className="h-12 w-12">
-                <MoreHorizontal className="h-5 w-5" />
+              <Button
+                variant="outline"
+                onClick={handleShuffle}
+                className="rounded-full h-11 px-5 gap-2"
+                aria-label="Shuffle release"
+              >
+                <Shuffle className="h-4 w-4" />
+                Shuffle
               </Button>
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Track List */}
-        <div className="bg-overlay/20 rounded-lg p-6">
-          <div className="grid grid-cols-[40px_1fr_100px] gap-4 text-sm text-overlay-foreground/60 mb-4 pb-2 border-b border-white/10">
-            <span>#</span>
-            <span>Title</span>
-            <span>Duration</span>
-          </div>
-          
-          <div className="space-y-2">
-            {album.tracks.map((track, index) => {
-              const isCurrentTrack = currentTrack?.id === track.id;
-              const isCurrentPlaying = isCurrentTrack && isPlaying;
-              
-              return (
-                <div 
-                  key={track.id}
-                  className="grid grid-cols-[40px_1fr_100px] gap-4 items-center p-2 rounded hover:bg-overlay-foreground/5 cursor-pointer group"
-                  onClick={() => handleTrackPlay(track)}
-                >
-                  <div className="flex items-center justify-center">
-                    {isCurrentPlaying ? (
-                      <div className="h-4 w-4 text-primary">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                      </div>
-                    ) : (
-                      <>
-                        <span className="text-overlay-foreground/60 group-hover:opacity-0 transition-opacity">
-                          {track.track_number || index + 1}
-                        </span>
-                        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Play className="h-4 w-4 text-overlay-foreground" />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img 
-                      src={track.cover_art_path?.startsWith('http') 
-                        ? track.cover_art_path 
-                        : `https://qkpjlfcpncvvjyzfolag.supabase.co/storage/v1/object/public/cover_art/${track.cover_art_path}`
-                      }
-                      alt={track.title}
-                      className="w-10 h-10 rounded object-cover"
-                    />
-                    <div className="min-w-0">
-                      <p className={`font-medium truncate ${isCurrentTrack ? 'text-primary' : 'text-overlay-foreground'}`}>
-                        {track.title}
-                      </p>
-                      <p className="text-sm text-overlay-foreground/60 truncate">{track.artist}</p>
-                    </div>
-                  </div>
-                  
-                  <span className="text-overlay-foreground/60 text-sm">
-                    {formatTime(track.duration)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <section aria-label="Track list" className="space-y-0.5">
+          {album.tracks.map((track) => (
+            <TrackCard key={track.id} track={track} variant="list" />
+          ))}
+        </section>
       </div>
     </MainLayout>
   );
