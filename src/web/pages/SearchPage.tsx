@@ -148,7 +148,7 @@ const SearchPage = () => {
             <SearchIcon aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               ref={inputRef}
-              type="search"
+              type="text"
               value={term}
               onChange={(e) => setTerm(e.target.value)}
               placeholder="Songs, artists, albums or playlists"

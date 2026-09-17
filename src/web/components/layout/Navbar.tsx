@@ -23,6 +23,7 @@ import maudioLogo from "@web/assets/maudio-logo.png";
 
 const navLinks = [
   { to: "/", label: "Home" },
+  { to: "/search", label: "Search" },
   { to: "/browse", label: "Browse" },
   { to: "/artists", label: "Artists" },
   { to: "/charts", label: "Charts" },
