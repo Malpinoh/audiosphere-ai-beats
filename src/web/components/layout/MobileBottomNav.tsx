@@ -11,7 +11,7 @@ const MobileBottomNav = () => {
 
   const navItems = [
     { to: "/", label: "Home", icon: Home },
-    { to: "/browse", label: "Browse", icon: Search },
+    { to: "/search", label: "Search", icon: Search },
     { to: "/library", label: "Library", icon: Library },
     { to: user ? "/account-settings" : "/auth", label: "Profile", icon: User },
   ];
