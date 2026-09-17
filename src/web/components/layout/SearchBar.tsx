@@ -16,7 +16,7 @@ export const SearchBar = ({ className = "", placeholder = "Search tracks, artist
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      navigate(`/browse?search=${encodeURIComponent(searchTerm.trim())}`);
+      navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
     }
   };
 

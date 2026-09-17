@@ -26,6 +26,7 @@ import ApiDocumentation from "./pages/ApiDocumentation";
 import NotFound from "./pages/NotFound";
 import TrackPage from "./pages/TrackPage";
 import BrowsePage from "./pages/BrowsePage";
+import SearchPage from "./pages/SearchPage";
 import ChartsPage from "./pages/ChartsPage";
 import PlaylistsPage from "./pages/PlaylistsPage";
 import ReportPage from "./pages/ReportPage";
@@ -123,6 +124,7 @@ const AppRoutes = () => {
         } 
       />
       <Route path="/api/docs" element={<ApiDocumentation />} />
+      <Route path="/search" element={<SearchPage />} />
       <Route path="/browse" element={<BrowsePage />} /> 
       <Route path="/charts" element={<ChartsPage />} />
       <Route path="/playlists" element={<PlaylistsPage />} />
