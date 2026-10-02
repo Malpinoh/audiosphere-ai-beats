@@ -59,6 +59,12 @@ export function useArtistProfile(artistSlugOrId?: string) {
           
         if (error) throw error;
         
+        // Artist not found — let the page render its not-found state
+        if (!data) {
+          setArtistProfile(null);
+          return;
+        }
+        
         // Map the database response to our interface
         const mappedProfile: ArtistProfile = {
           id: data.id,
