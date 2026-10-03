@@ -69,31 +69,31 @@ export function useArtistProfile(artistSlugOrId?: string) {
         
         // Map the database response to our interface
         const mappedProfile: ArtistProfile = {
-          id: data.id,
-          username: data.username,
-          full_name: data.full_name,
-          avatar_url: data.avatar_url,
-          bio: data.bio,
-          website: data.website,
-          follower_count: data.follower_count || 0,
-          monthly_listeners: data.monthly_listeners || 0,
-          is_verified: data.is_verified || false,
-          role: data.role,
-          claimable: data.claimable || false,
+          id: (data as any).id,
+          username: (data as any).username,
+          full_name: (data as any).full_name,
+          avatar_url: (data as any).avatar_url,
+          bio: (data as any).bio,
+          website: (data as any).website,
+          follower_count: (data as any).follower_count || 0,
+          monthly_listeners: (data as any).monthly_listeners || 0,
+          is_verified: (data as any).is_verified || false,
+          role: (data as any).role,
+          claimable: (data as any).claimable || false,
           slug: (data as any).slug ?? null,
           cover_image_path: (data as any).cover_image_path ?? null,
-          auto_created: data.auto_created || false
+          auto_created: (data as any).auto_created || false
         };
         
         setArtistProfile(mappedProfile);
         
         // Check if current user is following this artist
-        if (user && data && data.id !== user.id) {
+        if (user && data && (data as any).id !== user.id) {
           const { data: followData } = await supabase
             .from('followers')
             .select('*')
             .eq('follower_id', user.id)
-            .eq('artist_id', data.id)
+            .eq('artist_id', (data as any).id)
             .maybeSingle();
             
           setIsFollowing(!!followData);
