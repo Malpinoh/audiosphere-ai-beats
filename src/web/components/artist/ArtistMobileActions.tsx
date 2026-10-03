@@ -13,6 +13,7 @@ interface ArtistMobileActionsProps {
   tracksCount: number;
   artistId?: string;
   artistName?: string;
+  tracks?: any[];
 }
 
 export const ArtistMobileActions = ({
@@ -22,14 +23,13 @@ export const ArtistMobileActions = ({
   tracksCount,
   artistId,
   artistName,
+  tracks = [],
 }: ArtistMobileActionsProps) => {
-  const { setQueue, playTrack } = useMusicPlayer();
+  const { playTracks } = useMusicPlayer();
   const { artistSlug } = useParams<{ artistSlug: string }>();
   
-  // This would need actual implementation with the tracks data
   const handlePlayAll = () => {
-    // Implementation would depend on the available tracks
-    console.log("Play all tracks from this artist");
+    playTracks(tracks, 0, { kind: "artist", name: artistName || "Artist", id: artistId });
   };
 
   const handleShare = async () => {
@@ -50,7 +50,7 @@ export const ArtistMobileActions = ({
 
   return (
     <div className="flex md:hidden items-center gap-2 mb-6">
-      {tracksCount > 0 && (
+      {tracks.some((t) => t?.audio_file_path) && (
         <Button className="gap-2 maudio-gradient-bg flex-1" onClick={handlePlayAll}>
           <Play className="h-4 w-4" />
           Play All

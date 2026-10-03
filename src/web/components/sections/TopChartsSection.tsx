@@ -13,7 +13,7 @@ type Period = "daily" | "weekly";
 export const TopChartsSection = () => {
   const [period, setPeriod] = useState<Period>("weekly");
   const { location } = useUserLocation();
-  const { setQueue, playTrack } = useMusicPlayer();
+  const { playTracks } = useMusicPlayer();
 
   const { tracks: globalTracks, loading: globalLoading } = useTracks({
     chartType: "global",
@@ -33,10 +33,9 @@ export const TopChartsSection = () => {
     catch { return code; }
   };
 
-  const playList = (list: any[]) => {
+  const playList = (list: any[], name: string) => {
     if (!list.length) return;
-    setQueue(list);
-    playTrack(list[0]);
+    playTracks(list, 0, { kind: "charts", name });
   };
 
   const Loading = () => (
@@ -105,7 +104,7 @@ export const TopChartsSection = () => {
               icon={<Globe className="h-5 w-5" />}
               gradientFrom="from-blue-500"
               gradientTo="to-purple-600"
-              onPlay={() => playList(globalTracks)}
+              onPlay={() => playList(globalTracks, `Global ${period} chart`)}
               onViewAll={() => {}}
             />
           )}
@@ -118,7 +117,7 @@ export const TopChartsSection = () => {
               icon={<MapPin className="h-5 w-5" />}
               gradientFrom="from-green-500"
               gradientTo="to-emerald-600"
-              onPlay={() => playList(regionTracks)}
+              onPlay={() => playList(regionTracks, `${formatRegionName(location?.country)} ${period} chart`)}
               onViewAll={() => {}}
             />
           )}

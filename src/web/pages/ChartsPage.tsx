@@ -86,6 +86,8 @@ const ChartsPage = () => {
     : { chartType: 'regional', chartPeriod, region: selectedRegion, limit: 100 };
 
   const { tracks, loading } = useTracks(filter);
+  const { playTracks } = useMusicPlayer();
+  const chartLabel = `${chartType === 'global' ? 'Global' : formatRegionName(selectedRegion)} ${chartPeriod === 'daily' ? 'Daily' : 'Weekly'}`;
 
   useEffect(() => {
     if (!loadingRegions && regions.length > 0 && !selectedRegion && !location) {
@@ -93,11 +95,11 @@ const ChartsPage = () => {
     }
   }, [loadingRegions, regions, selectedRegion, location]);
 
-  const formatRegionName = (code: string) => {
+  function formatRegionName(code: string) {
     if (!code) return 'Global';
     const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
     try { return regionNames.of(code); } catch { return code; }
-  };
+  }
 
   return (
     <MainLayout>
@@ -180,7 +182,16 @@ const ChartsPage = () => {
           <Badge variant="outline" className="text-sm">
             {chartType === 'global' ? 'Global' : formatRegionName(selectedRegion)} · {chartPeriod === 'daily' ? 'Daily' : 'Weekly'} Top 100
           </Badge>
-          <Badge variant="secondary" className="text-xs">
+          <Button
+            size="sm"
+            className="ml-auto gap-1.5"
+            disabled={loading || tracks.length === 0}
+            onClick={() => playTracks(tracks as any, 0, { kind: 'charts', name: `${chartLabel} chart` })}
+          >
+            <Play className="h-3.5 w-3.5" />
+            Play All
+          </Button>
+          <Badge variant="secondary" className="text-xs order-first sm:order-none">
             <TrendingUp className="h-3 w-3 mr-1" />
             Live
           </Badge>
