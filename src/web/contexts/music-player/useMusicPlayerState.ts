@@ -190,7 +190,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     }
   }, []);
 
-  const playTrack = useCallback(async (track: Track) => {
+  const playTrack = useCallback(async (track: Track, queueOverride?: Track[], sourceOverride?: PlaybackSource | null) => {
     if (!track?.audio_file_path) {
       console.error('No audio file path provided for track:', track);
       handleAudioError(new Error('No audio file path'), 'playTrack');
@@ -202,7 +202,10 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       isLoading: true,
       playbackError: null,
       currentTrack: track,
-      queue: prev.queue.some(t => t.id === track.id) ? prev.queue : [track, ...prev.queue]
+      queue: queueOverride
+        ? queueOverride
+        : prev.queue.some(t => t.id === track.id) ? prev.queue : [track, ...prev.queue],
+      ...(sourceOverride !== undefined ? { playbackSource: sourceOverride } : {}),
     }));
 
     // ---- Native Media3 path (Android) ----
@@ -210,7 +213,9 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       try {
         await nativePlayer.requestNotificationPermission();
 
-        const prevQueue = stateRef.current.queue;
+        // Use the explicit queue when provided (atomic Play All) so we never
+        // read a stale React queue that hasn't committed yet.
+        const prevQueue = queueOverride ?? stateRef.current.queue;
         const queue = prevQueue.some(t => t.id === track.id) ? prevQueue : [track, ...prevQueue];
         const resolved = (await Promise.all(queue.map(toNativeTrack))).filter(Boolean) as NativeTrack[];
         const startIndex = Math.max(0, resolved.findIndex(t => t.id === track.id));
@@ -435,6 +440,15 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
       ...(source !== undefined ? { playbackSource: source } : {}),
     }));
   }, []);
+
+  /** Atomically load a full list into the player and start at `startIndex`. */
+  const playTracks = useCallback((tracks: Track[], startIndex = 0, source?: PlaybackSource | null) => {
+    const playable = (tracks || []).filter(t => t && t.id && t.audio_file_path);
+    if (playable.length === 0) return;
+    const wanted = tracks[startIndex];
+    const idx = Math.max(0, wanted ? playable.findIndex(t => t.id === wanted.id) : 0);
+    playTrack(playable[idx], playable, source);
+  }, [playTrack]);
 
   const setPlaybackSource = useCallback((source: PlaybackSource | null) => {
     setState(prev => ({ ...prev, playbackSource: source }));
@@ -828,6 +842,7 @@ export const useMusicPlayerState = (externalAudioRef?: React.RefObject<HTMLAudio
     playTrack,
     togglePlay,
     setQueue,
+    playTracks,
     clearQueue,
     playNext,
     playPrevious,

@@ -60,6 +60,8 @@ export interface MusicPlayerContextType {
   playTrack: (track: Track) => void;
   togglePlay: () => void;
   setQueue: (tracks: Track[], source?: PlaybackSource | null) => void;
+  /** Atomically queue `tracks` and start at `startIndex` (web + native). */
+  playTracks: (tracks: Track[], startIndex?: number, source?: PlaybackSource | null) => void;
   playbackSource: PlaybackSource | null;
   setPlaybackSource: (source: PlaybackSource | null) => void;
   clearQueue: () => void;

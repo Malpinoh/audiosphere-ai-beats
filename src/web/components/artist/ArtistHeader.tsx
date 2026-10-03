@@ -3,6 +3,9 @@ import { Heart, Users, Music, Share, Loader2, CheckCircle } from "lucide-react";
 import { Avatar } from "@web/components/ui/avatar";
 import { Button } from "@web/components/ui/button";
 import type { ArtistProfile } from "@web/hooks/use-artist-profile";
+import { useMusicPlayer } from "@web/contexts/music-player";
+import { shareContent } from "@shared/lib/share";
+import { toast } from "sonner";
 
 interface ArtistHeaderProps {
   artist: ArtistProfile;
@@ -11,6 +14,7 @@ interface ArtistHeaderProps {
   handleToggleFollow: () => Promise<void>;
   getAvatarImage: () => string;
   tracksCount: number;
+  tracks?: any[];
 }
 
 export const ArtistHeader = ({
@@ -19,8 +23,19 @@ export const ArtistHeader = ({
   followLoading,
   handleToggleFollow,
   getAvatarImage,
-  tracksCount
+  tracksCount,
+  tracks = [],
 }: ArtistHeaderProps) => {
+  const { playTracks } = useMusicPlayer();
+  const playable = tracks.some((t) => t?.audio_file_path);
+  const handlePlayAll = () =>
+    playTracks(tracks, 0, { kind: "artist", name: artist.full_name || "Artist", id: artist.id });
+  const handleShare = async () => {
+    try {
+      await shareContent({ kind: "artist", id: artist.slug || artist.id, title: artist.full_name || "Artist on Maudio", text: `Discover music by ${artist.full_name} on Maudio` });
+      toast.success("Share link copied");
+    } catch { toast.error("Could not share"); }
+  };
   const formatFollowers = (count: number) => {
     if (count >= 1000000) {
       return `${(count / 1000000).toFixed(1)}M`;
@@ -78,8 +93,8 @@ export const ArtistHeader = ({
           </div>
           
           <div className="hidden md:flex items-center gap-3">
-            {tracksCount > 0 && (
-              <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 rounded-full font-semibold">
+            {playable && (
+              <Button onClick={handlePlayAll} aria-label="Play all tracks" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-3 rounded-full font-semibold">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                 </svg>
@@ -103,7 +118,7 @@ export const ArtistHeader = ({
               )}
               {isFollowing ? "Following" : "Follow"}
             </Button>
-            <Button variant="outline" size="icon" className="rounded-full border-border text-foreground hover:bg-muted">
+            <Button variant="outline" size="icon" onClick={handleShare} aria-label="Share artist" className="rounded-full border-border text-foreground hover:bg-muted">
               <Share className="h-4 w-4" />
             </Button>
           </div>

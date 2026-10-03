@@ -81,6 +81,7 @@ const ArtistProfile = () => {
         handleToggleFollow={toggleFollow}
         getAvatarImage={getAvatarImage}
         tracksCount={tracks.length}
+        tracks={tracks as any}
       />
       
       {/* Claim Profile Banner */}
@@ -117,6 +118,7 @@ const ArtistProfile = () => {
           followLoading={followLoading}
           handleToggleFollow={toggleFollow}
           tracksCount={tracks.length}
+        tracks={tracks as any}
           artistId={artistProfile.id}
           artistName={artistProfile.full_name || artistProfile.username || undefined}
         />

@@ -104,80 +104,22 @@ export function ArtistClaimsManagement() {
     setProcessing(true);
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Not authenticated');
-      }
+      // Single transactional server-side call — no browser fallback.
+      const fn = reviewAction === 'approve' ? 'approve_artist_claim' : 'reject_artist_claim';
+      const { error } = await (supabase.rpc as any)(fn, {
+        claim_id: selectedClaim.id,
+        admin_notes: reviewNotes.trim() || null,
+      });
+      if (error) throw error;
 
-      // Update the claim status
-      const { error: claimError } = await supabase
-        .from('artist_claims')
-        .update({
-          claim_status: reviewAction,
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: user.id
-        })
-        .eq('id', selectedClaim.id);
-
-      if (claimError) {
-        throw claimError;
-      }
-
-      // If approved, transfer the artist profile ownership using the database function
-      if (reviewAction === 'approve') {
-        try {
-          // Call the database function to handle the complex profile transfer
-          const { data, error: functionError } = await supabase.rpc('approve_artist_claim', {
-            claim_id: selectedClaim.id,
-            admin_id: user.id
-          });
-
-          if (functionError) {
-            console.warn('Database function not available, using fallback method:', functionError);
-            
-            // Fallback: Manual profile transfer
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .update({
-                claimable: false,
-                auto_created: false,
-                role: 'artist'
-              })
-              .eq('id', selectedClaim.artist_profile_id);
-
-            if (profileError) {
-              console.error('Error updating profile:', profileError);
-            }
-
-            // Update tracks to point to the claiming user
-            const { error: tracksError } = await supabase
-              .from('tracks')
-              .update({
-                user_id: selectedClaim.claimant_user_id,
-                artist_profile_id: selectedClaim.claimant_user_id
-              })
-              .eq('artist_profile_id', selectedClaim.artist_profile_id);
-
-            if (tracksError) {
-              console.error('Error updating tracks:', tracksError);
-            }
-          } else {
-            console.log('Artist claim approved successfully via database function');
-          }
-        } catch (error) {
-          console.error('Error in approval process:', error);
-          toast.error("Claim approved but there may have been issues with profile transfer");
-        }
-      }
-
-      toast.success(`Claim ${reviewAction}d successfully`);
+      toast.success(reviewAction === 'approve' ? 'Claim approved — artist now manages this page' : 'Claim rejected');
       setReviewModalOpen(false);
       setSelectedClaim(null);
       setReviewNotes("");
       fetchClaims();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing claim:', error);
-      toast.error("Failed to process claim");
+      toast.error(error?.message ? `Could not ${reviewAction} claim: ${error.message}` : "Failed to process claim");
     } finally {
       setProcessing(false);
     }

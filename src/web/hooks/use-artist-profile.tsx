@@ -16,6 +16,8 @@ export interface ArtistProfile {
   role: string;
   claimable?: boolean;
   auto_created?: boolean;
+  slug?: string | null;
+  cover_image_path?: string | null;
 }
 
 export function useArtistProfile(artistSlugOrId?: string) {
@@ -39,7 +41,7 @@ export function useArtistProfile(artistSlugOrId?: string) {
         
         let { data, error } = await supabase
           .from('profiles')
-          .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role, claimable, auto_created, slug')
+          .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role, claimable, auto_created, slug, cover_image_path')
           .eq(isUUID ? 'id' : 'slug', targetArtistSlugOrId)
           .maybeSingle();
           
@@ -47,7 +49,7 @@ export function useArtistProfile(artistSlugOrId?: string) {
         if (!data && !error && !isUUID) {
           const { data: nameData, error: nameError } = await supabase
             .from('profiles')
-            .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role, claimable, auto_created, slug')
+            .select('id, username, full_name, avatar_url, bio, website, follower_count, monthly_listeners, is_verified, role, claimable, auto_created, slug, cover_image_path')
             .or(`username.ilike.${targetArtistSlugOrId},full_name.ilike.${targetArtistSlugOrId}`)
             .eq('role', 'artist')
             .limit(1)
@@ -78,6 +80,8 @@ export function useArtistProfile(artistSlugOrId?: string) {
           is_verified: data.is_verified || false,
           role: data.role,
           claimable: data.claimable || false,
+          slug: (data as any).slug ?? null,
+          cover_image_path: (data as any).cover_image_path ?? null,
           auto_created: data.auto_created || false
         };
         
