@@ -89,7 +89,9 @@ export function ArtistClaimModal({
 
       if (error) {
         console.error('Error creating claim:', error);
-        toast.error('Failed to submit claim');
+        toast.error(error.code === '23505'
+          ? 'You already have a claim for this artist'
+          : /claimed|own account/i.test(error.message) ? error.message : 'Failed to submit claim');
         return;
       }
 

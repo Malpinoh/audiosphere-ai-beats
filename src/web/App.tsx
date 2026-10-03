@@ -35,6 +35,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ContactUs from "./pages/ContactUs";
 import ArtistDashboard from "./pages/ArtistDashboard";
+import { useManagedArtists } from "@web/hooks/use-artist-account";
 import PromotePage from "./pages/PromotePage";
 import ServiceInfoPage from "./pages/ServiceInfoPage";
 import LibraryPage from "./pages/LibraryPage";
@@ -62,13 +63,11 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Protected route component for artist access
 const ArtistRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, profile, loading } = useAuth();
-  
-  // Show nothing while loading auth state
-  if (loading) return null;
-  
-  // If not logged in or not an artist, redirect to home
-  if (!user || !profile || profile.role !== 'artist') {
+  const { user, loading } = useAuth();
+  const { managed, loading: mLoading } = useManagedArtists();
+  if (loading || (user && mLoading)) return null;
+  // Access requires an approved artist-profile relationship
+  if (!user || managed.length === 0) {
     return <Navigate to="/" replace />;
   }
   
