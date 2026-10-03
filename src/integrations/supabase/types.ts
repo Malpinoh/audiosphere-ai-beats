@@ -128,6 +128,69 @@ export type Database = {
           },
         ]
       }
+      artist_profile_managers: {
+        Row: {
+          artist_profile_id: string
+          claim_id: string | null
+          created_at: string
+          id: string
+          manager_role: string
+          user_id: string
+        }
+        Insert: {
+          artist_profile_id: string
+          claim_id?: string | null
+          created_at?: string
+          id?: string
+          manager_role?: string
+          user_id: string
+        }
+        Update: {
+          artist_profile_id?: string
+          claim_id?: string | null
+          created_at?: string
+          id?: string
+          manager_role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_profile_managers_artist_profile_id_fkey"
+            columns: ["artist_profile_id"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
+          {
+            foreignKeyName: "artist_profile_managers_artist_profile_id_fkey"
+            columns: ["artist_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "artist_profile_managers_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "artist_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "artist_profile_managers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
+          {
+            foreignKeyName: "artist_profile_managers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           content: string
@@ -629,6 +692,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           claimable: boolean | null
+          cover_image_path: string | null
           created_at: string | null
           follower_count: number | null
           full_name: string | null
@@ -645,6 +709,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           claimable?: boolean | null
+          cover_image_path?: string | null
           created_at?: string | null
           follower_count?: number | null
           full_name?: string | null
@@ -661,6 +726,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           claimable?: boolean | null
+          cover_image_path?: string | null
           created_at?: string | null
           follower_count?: number | null
           full_name?: string | null
@@ -1360,7 +1426,7 @@ export type Database = {
         Returns: string
       }
       approve_artist_claim: {
-        Args: { admin_id: string; claim_id: string }
+        Args: { admin_notes?: string; claim_id: string }
         Returns: boolean
       }
       calculate_trending_scores: { Args: never; Returns: undefined }
@@ -1510,8 +1576,20 @@ export type Database = {
       }
       increment_play_count: { Args: { track_uuid: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      is_artist_manager: {
+        Args: { _artist_profile_id: string; _user_id?: string }
+        Returns: boolean
+      }
       is_following_playlist: {
         Args: { p_playlist_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      my_artist_claim_status: {
+        Args: { _artist_profile_id: string }
+        Returns: string
+      }
+      reject_artist_claim: {
+        Args: { admin_notes?: string; claim_id: string }
         Returns: boolean
       }
       reorder_playlist_tracks: {
