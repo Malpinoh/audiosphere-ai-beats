@@ -28,7 +28,7 @@ export function ArtistProfileEditor({ artistProfileId }: Props) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
+      const { data, error }: any = await (supabase as any)
         .from("profiles")
         .select("full_name, username, bio, website, avatar_url, cover_image_path")
         .eq("id", artistProfileId)
