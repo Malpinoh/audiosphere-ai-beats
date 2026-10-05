@@ -6,6 +6,7 @@ import type { ArtistProfile } from "@web/hooks/use-artist-profile";
 import { useMusicPlayer } from "@web/contexts/music-player";
 import { shareContent } from "@shared/lib/share";
 import { toast } from "sonner";
+import { useServices } from "@shared/core";
 
 interface ArtistHeaderProps {
   artist: ArtistProfile;
@@ -27,6 +28,8 @@ export const ArtistHeader = ({
   tracks = [],
 }: ArtistHeaderProps) => {
   const { playTracks } = useMusicPlayer();
+  const { storage } = useServices();
+  const coverUrl = artist.cover_image_path ? storage.coverUrl(artist.cover_image_path) : null;
   const playable = tracks.some((t) => t?.audio_file_path);
   const handlePlayAll = () =>
     playTracks(tracks, 0, { kind: "artist", name: artist.full_name || "Artist", id: artist.id });
@@ -47,8 +50,14 @@ export const ArtistHeader = ({
 
   return (
     <div className="relative h-[260px] md:h-[400px] overflow-hidden bg-gradient-to-br from-primary/30 via-primary/20 to-accent/30">
-      {/* Background blur effect */}
-      <div className="absolute inset-0 bg-background/40 backdrop-blur-sm"></div>
+      {coverUrl ? (
+        <>
+          <img src={coverUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"></div>
+        </>
+      ) : (
+        <div className="absolute inset-0 bg-background/40 backdrop-blur-sm"></div>
+      )}
       
       {/* Artist Info */}
       <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
