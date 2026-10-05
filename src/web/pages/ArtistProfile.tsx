@@ -14,8 +14,11 @@ import { ArtistClaimModal } from "@web/components/artist/ArtistClaimModal";
 import { useIsMobile } from "@web/hooks/use-mobile";
 import { useAuth } from "@web/contexts/AuthContext";
 import { Button } from "@web/components/ui/button";
-import { Crown } from "lucide-react";
-import { useState } from "react";
+import { Crown, Settings2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "@shared/integrations/supabase/client";
+import { useManagedArtists } from "@web/hooks/use-artist-account";
 
 const ArtistProfile = () => {
   const { artistSlug } = useParams<{ artistSlug: string }>();
@@ -32,6 +35,15 @@ const ArtistProfile = () => {
   } = useArtistProfile(artistSlug);
   
   const { tracks, loading: tracksLoading } = useArtistTracks(artistProfile?.id || '');
+  const { managed } = useManagedArtists();
+  const isManager = !!artistProfile && managed.some((m) => m.artist_profile_id === artistProfile.id);
+  const [claimStatus, setClaimStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !artistProfile?.id) { setClaimStatus(null); return; }
+    (supabase.rpc as any)("my_artist_claim_status", { _artist_profile_id: artistProfile.id })
+      .then(({ data, error }: any) => { if (error) console.error(error); setClaimStatus(data ?? null); });
+  }, [user, artistProfile?.id]);
 
   const getAvatarImage = () => {
     if (artistProfile?.avatar_url) return artistProfile.avatar_url;
@@ -84,28 +96,37 @@ const ArtistProfile = () => {
         tracks={tracks as any}
       />
       
-      {/* Claim Profile Banner */}
-      {canClaimProfile() && (
+      {/* Claim / manage banner */}
+      {isManager ? (
+        <div className="mx-3 md:mx-4 mb-3 md:mb-4 flex items-center justify-between gap-3 rounded-md border border-primary/40 bg-primary/10 p-3 md:p-4">
+          <p className="text-sm font-medium">You manage this artist page</p>
+          <Button asChild size="sm"><Link to="/artist-dashboard"><Settings2 className="h-4 w-4 mr-1" />Manage Artist Page</Link></Button>
+        </div>
+      ) : claimStatus === "pending" ? (
+        <div className="mx-3 md:mx-4 mb-3 md:mb-4 rounded-md border border-border bg-muted/40 p-3 md:p-4">
+          <p className="text-sm font-medium">Claim under review</p>
+          <p className="text-xs text-muted-foreground">We'll let you know once MAUDIO has reviewed your evidence.</p>
+        </div>
+      ) : claimStatus === "rejected" ? (
+        <div className="mx-3 md:mx-4 mb-3 md:mb-4 rounded-md border border-border bg-muted/40 p-3 md:p-4">
+          <p className="text-sm font-medium">Your claim wasn't approved</p>
+          <p className="text-xs text-muted-foreground">Contact MAUDIO support if you believe this is a mistake.</p>
+        </div>
+      ) : canClaimProfile() && (
         <div className="bg-accent/20 border-l-4 border-primary p-3 md:p-4 mx-3 md:mx-4 mb-3 md:mb-4 rounded-r-md">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center min-w-0">
               <Crown className="h-5 w-5 text-primary mr-2 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">
-                  Is this your artist profile?
-                </p>
+                <p className="text-sm font-medium text-foreground">Are you this artist?</p>
                 <p className="text-xs text-muted-foreground hidden sm:block">
-                  This profile was automatically created. Claim it to manage your music and profile.
+                  Claim this page to manage your profile, images and dashboard.
                 </p>
               </div>
             </div>
-            <Button
-              onClick={() => setClaimModalOpen(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground flex-shrink-0"
-              size="sm"
-            >
+            <Button onClick={() => setClaimModalOpen(true)} size="sm" className="flex-shrink-0">
               <Crown className="h-4 w-4 mr-1" />
-              Claim
+              Claim this Artist Page
             </Button>
           </div>
         </div>

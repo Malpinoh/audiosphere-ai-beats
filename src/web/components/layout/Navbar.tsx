@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, Upload, User, LogOut, BarChart3, Settings } from "lucide-react";
 import { useAuth } from "@web/contexts/AuthContext";
+import { useManagedArtists } from "@web/hooks/use-artist-account";
 import { SearchBar } from "@web/components/layout/SearchBar";
 import { ThemeToggle } from "@web/components/ThemeToggle";
 import { Button } from "@web/components/ui/button";
@@ -34,6 +35,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isFullscreenPlayerOpen, setIsFullscreenPlayerOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
+  const { managed } = useManagedArtists();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -146,15 +148,25 @@ const Navbar = () => {
                             Upload Music
                           </Link>
                         )}
-                        {profile?.role === 'artist' && (
-                          <Link 
-                            to="/artist-dashboard" 
-                            className="flex items-center gap-3 text-foreground hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-muted"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
-                            <BarChart3 className="h-5 w-5" />
-                            Dashboard
-                          </Link>
+                        {managed.length > 0 && (
+                          <>
+                            <Link 
+                              to="/artist-dashboard" 
+                              className="flex items-center gap-3 text-foreground hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-muted"
+                              onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                              <BarChart3 className="h-5 w-5" />
+                              Artist Dashboard
+                            </Link>
+                            <Link 
+                              to={`/artist/${managed[0].artist_profile_id}`}
+                              className="flex items-center gap-3 text-foreground hover:text-primary transition-colors py-3 px-4 rounded-lg hover:bg-muted"
+                              onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                              <User className="h-5 w-5" />
+                              My Artist Page
+                            </Link>
+                          </>
                         )}
                         {profile?.role === 'admin' && (
                           <Link 
@@ -231,13 +243,21 @@ const Navbar = () => {
                         </Link>
                       </DropdownMenuItem>
                     )}
-                    {profile?.role === 'artist' && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/artist-dashboard" className="cursor-pointer">
-                          <BarChart3 className="mr-2 h-4 w-4" />
-                          <span>Dashboard</span>
-                        </Link>
-                      </DropdownMenuItem>
+                    {managed.length > 0 && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link to="/artist-dashboard" className="cursor-pointer">
+                            <BarChart3 className="mr-2 h-4 w-4" />
+                            <span>Artist Dashboard</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to={`/artist/${managed[0].artist_profile_id}`} className="cursor-pointer">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>My Artist Page</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
                     )}
                     {profile?.role === 'admin' && (
                       <DropdownMenuItem asChild>

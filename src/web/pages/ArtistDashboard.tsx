@@ -1,6 +1,4 @@
-
-import { useAuth } from "@web/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import MainLayout from "@web/components/layout/MainLayout";
 import { DashboardHeader } from "@web/components/dashboard/DashboardHeader";
 import { QuickStats } from "@web/components/dashboard/QuickStats";
@@ -9,61 +7,49 @@ import { InsightsSection } from "@web/components/dashboard/InsightsSection";
 import { PromotionSection } from "@web/components/dashboard/PromotionSection";
 import { ArtistProfileEditor } from "@web/components/artist/ArtistProfileEditor";
 import { EarningsDashboard } from "@web/components/royalty/EarningsDashboard";
-import { Card, CardContent, CardHeader, CardTitle } from "@web/components/ui/card";
+import { Button } from "@web/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@web/components/ui/tabs";
-import { DollarSign, BarChart3 } from "lucide-react";
+import { DollarSign, BarChart3, ExternalLink } from "lucide-react";
+import { useManagedArtists } from "@web/hooks/use-artist-account";
 
 export default function ArtistDashboard() {
-  const { user, profile } = useAuth();
-  
-  // Redirect non-artists
-  if (!user || !profile || profile.role !== 'artist') {
-    return <Navigate to="/" replace />;
-  }
-  
+  const { managed } = useManagedArtists();
+  const artistId = managed[0]?.artist_profile_id;
+  if (!artistId) return null; // route guard already redirects non-managers
+
   return (
     <MainLayout>
-      <div className="min-h-screen bg-background">
-        <div className="container py-8">
-          <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold mb-4 text-overlay-foreground">Artist Dashboard</h1>
-            <p className="text-lg text-overlay-foreground/60">Manage your music and connect with your audience</p>
+      <div className="container py-8">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Artist Dashboard</h1>
+            <p className="text-muted-foreground">Manage your music and connect with your audience</p>
           </div>
-          
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <ArtistProfileEditor />
-            
-            <div className="space-y-6">
-              <DashboardHeader />
-              <QuickStats />
-            </div>
+          <Button asChild variant="outline">
+            <Link to={`/artist/${artistId}`}><ExternalLink className="h-4 w-4 mr-2" />My Artist Page</Link>
+          </Button>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <ArtistProfileEditor artistProfileId={artistId} />
+          <div className="space-y-6">
+            <DashboardHeader />
+            <QuickStats />
           </div>
-          
-          <Tabs defaultValue="analytics" className="mb-8">
-            <TabsList className="mb-4">
-              <TabsTrigger value="analytics" className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger value="earnings" className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Earnings
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="analytics">
-              <DashboardTabs />
-            </TabsContent>
-            
-            <TabsContent value="earnings">
-              <EarningsDashboard />
-            </TabsContent>
-          </Tabs>
-          
-          <div className="grid md:grid-cols-2 gap-6 mt-8">
-            <InsightsSection />
-            <PromotionSection />
-          </div>
+        </div>
+
+        <Tabs defaultValue="analytics" className="mb-8">
+          <TabsList className="mb-4">
+            <TabsTrigger value="analytics" className="flex items-center gap-2"><BarChart3 className="h-4 w-4" />Analytics</TabsTrigger>
+            <TabsTrigger value="earnings" className="flex items-center gap-2"><DollarSign className="h-4 w-4" />Earnings</TabsTrigger>
+          </TabsList>
+          <TabsContent value="analytics"><DashboardTabs /></TabsContent>
+          <TabsContent value="earnings"><EarningsDashboard /></TabsContent>
+        </Tabs>
+
+        <div className="grid md:grid-cols-2 gap-6 mt-8">
+          <InsightsSection />
+          <PromotionSection />
         </div>
       </div>
     </MainLayout>
