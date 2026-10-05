@@ -35,6 +35,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isFullscreenPlayerOpen, setIsFullscreenPlayerOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
+  const { managed } = useManagedArtists();
   const navigate = useNavigate();
 
   useEffect(() => {
