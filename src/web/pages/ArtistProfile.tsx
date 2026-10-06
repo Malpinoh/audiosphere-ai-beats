@@ -10,6 +10,7 @@ import { ArtistTabs } from "@web/components/artist/ArtistTabs";
 import { ArtistStatsDisplay } from "@web/components/artist/ArtistStatsDisplay";
 import { ArtistLoadingState } from "@web/components/artist/ArtistLoadingState";
 import { ArtistNotFound } from "@web/components/artist/ArtistNotFound";
+import { ClaimEvidenceRequest } from "@web/components/artist/ClaimEvidenceRequest";
 import { ArtistClaimModal } from "@web/components/artist/ArtistClaimModal";
 import { useIsMobile } from "@web/hooks/use-mobile";
 import { useAuth } from "@web/contexts/AuthContext";
@@ -38,12 +39,21 @@ const ArtistProfile = () => {
   const { managed } = useManagedArtists();
   const isManager = !!artistProfile && managed.some((m) => m.artist_profile_id === artistProfile.id);
   const [claimStatus, setClaimStatus] = useState<string | null>(null);
+  const [claimId, setClaimId] = useState<string | null>(null);
+  const [evidenceRequest, setEvidenceRequest] = useState<string | null>(null);
+  const [claimReload, setClaimReload] = useState(0);
 
   useEffect(() => {
     if (!user || !artistProfile?.id) { setClaimStatus(null); return; }
-    (supabase.rpc as any)("my_artist_claim_status", { _artist_profile_id: artistProfile.id })
-      .then(({ data, error }: any) => { if (error) console.error(error); setClaimStatus(data ?? null); });
-  }, [user, artistProfile?.id]);
+    (supabase.rpc as any)("my_artist_claim_info", { _artist_profile_id: artistProfile.id })
+      .then(({ data, error }: any) => {
+        if (error) console.error(error);
+        const row = Array.isArray(data) ? data[0] : data;
+        setClaimStatus(row?.claim_status ?? null);
+        setClaimId(row?.claim_id ?? null);
+        setEvidenceRequest(row?.evidence_request ?? null);
+      });
+  }, [user, artistProfile?.id, claimReload]);
 
   const getAvatarImage = () => {
     if (artistProfile?.avatar_url) return artistProfile.avatar_url;
@@ -107,6 +117,8 @@ const ArtistProfile = () => {
           <p className="text-sm font-medium">Claim under review</p>
           <p className="text-xs text-muted-foreground">We'll let you know once MAUDIO has reviewed your evidence.</p>
         </div>
+      ) : claimStatus === "needs_evidence" && claimId ? (
+        <ClaimEvidenceRequest claimId={claimId} request={evidenceRequest} onResubmitted={() => setClaimReload((n) => n + 1)} />
       ) : claimStatus === "rejected" ? (
         <div className="mx-3 md:mx-4 mb-3 md:mb-4 rounded-md border border-border bg-muted/40 p-3 md:p-4">
           <p className="text-sm font-medium">Your claim wasn't approved</p>
