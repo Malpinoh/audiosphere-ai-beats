@@ -1584,6 +1584,14 @@ export type Database = {
         Args: { p_playlist_id: string; p_user_id: string }
         Returns: boolean
       }
+      my_artist_claim_info: {
+        Args: { _artist_profile_id: string }
+        Returns: {
+          claim_id: string
+          claim_status: string
+          evidence_request: string
+        }[]
+      }
       my_artist_claim_status: {
         Args: { _artist_profile_id: string }
         Returns: string
@@ -1595,6 +1603,18 @@ export type Database = {
       reorder_playlist_tracks: {
         Args: { p_playlist_id: string; p_track_positions: Json }
         Returns: undefined
+      }
+      request_artist_claim_evidence: {
+        Args: { claim_id: string; message: string }
+        Returns: boolean
+      }
+      resubmit_artist_claim: {
+        Args: {
+          claim_id: string
+          evidence_text: string
+          evidence_urls: string[]
+        }
+        Returns: boolean
       }
       update_listening_history: {
         Args: { p_listen_time?: number; p_track_id: string; p_user_id: string }
