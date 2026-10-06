@@ -30,7 +30,7 @@ interface ArtistClaim {
   artist_name: string;
   claimant_user_id: string;
   artist_profile_id: string;
-  claim_status: 'pending' | 'approved' | 'rejected';
+  claim_status: 'pending' | 'approved' | 'rejected' | 'needs_evidence';
   evidence_text: string;
   evidence_urls: string[] | null;
   submitted_at: string;
@@ -44,7 +44,7 @@ export function ArtistClaimsManagement() {
   const [selectedClaim, setSelectedClaim] = useState<ArtistClaim | null>(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewNotes, setReviewNotes] = useState("");
-  const [reviewAction, setReviewAction] = useState<'approve' | 'reject'>('approve');
+  const [reviewAction, setReviewAction] = useState<'approve' | 'reject' | 'evidence'>('approve');
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export function ArtistClaimsManagement() {
     }
   };
 
-  const handleReviewClaim = (claim: ArtistClaim, action: 'approve' | 'reject') => {
+  const handleReviewClaim = (claim: ArtistClaim, action: 'approve' | 'reject' | 'evidence') => {
     setSelectedClaim(claim);
     setReviewAction(action);
     setReviewModalOpen(true);
@@ -105,21 +105,27 @@ export function ArtistClaimsManagement() {
     
     try {
       // Single transactional server-side call — no browser fallback.
-      const fn = reviewAction === 'approve' ? 'approve_artist_claim' : 'reject_artist_claim';
-      const { error } = await (supabase.rpc as any)(fn, {
-        claim_id: selectedClaim.id,
-        admin_notes: reviewNotes.trim() || null,
-      });
+      if (reviewAction === 'evidence' && reviewNotes.trim().length < 5) {
+        toast.error("Tell the artist what evidence is needed");
+        setProcessing(false);
+        return;
+      }
+      const { error } = reviewAction === 'evidence'
+        ? await (supabase.rpc as any)('request_artist_claim_evidence', { claim_id: selectedClaim.id, message: reviewNotes.trim() })
+        : await (supabase.rpc as any)(reviewAction === 'approve' ? 'approve_artist_claim' : 'reject_artist_claim', {
+            claim_id: selectedClaim.id,
+            admin_notes: reviewNotes.trim() || null,
+          });
       if (error) throw error;
 
-      toast.success(reviewAction === 'approve' ? 'Claim approved — artist now manages this page' : 'Claim rejected');
+      toast.success(reviewAction === 'approve' ? 'Claim approved — artist now manages this page' : reviewAction === 'evidence' ? 'Evidence request sent to the artist' : 'Claim rejected');
       setReviewModalOpen(false);
       setSelectedClaim(null);
       setReviewNotes("");
       fetchClaims();
     } catch (error: any) {
       console.error('Error processing claim:', error);
-      toast.error(error?.message ? `Could not ${reviewAction} claim: ${error.message}` : "Failed to process claim");
+      toast.error(error?.message ? `Could not update claim: ${error.message}` : "Failed to process claim");
     } finally {
       setProcessing(false);
     }
@@ -130,9 +136,11 @@ export function ArtistClaimsManagement() {
       case 'pending':
         return <Badge variant="secondary">Pending</Badge>;
       case 'approved':
-        return <Badge variant="default" className="bg-green-500">Approved</Badge>;
+        return <Badge variant="default" >Approved</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Rejected</Badge>;
+      case 'needs_evidence':
+        return <Badge variant="outline" className="border-accent text-accent">Evidence requested</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -190,7 +198,7 @@ export function ArtistClaimsManagement() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleReviewClaim(claim, 'approve')}
-                      className="text-green-600 border-green-600 hover:bg-green-50"
+                      className="text-primary border-primary"
                     >
                       <Check className="h-4 w-4 mr-1" />
                       Approve
@@ -199,10 +207,13 @@ export function ArtistClaimsManagement() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleReviewClaim(claim, 'reject')}
-                      className="text-red-600 border-red-600 hover:bg-red-50"
+                      className="text-destructive border-destructive"
                     >
                       <X className="h-4 w-4 mr-1" />
                       Reject
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleReviewClaim(claim, 'evidence')}>
+                      Request evidence
                     </Button>
                   </div>
                 )}
@@ -217,7 +228,7 @@ export function ArtistClaimsManagement() {
           <DialogHeader>
             <DialogTitle>
               Review Claim: {selectedClaim?.artist_name}
-              {reviewAction && ` - ${reviewAction.charAt(0).toUpperCase() + reviewAction.slice(1)}`}
+              {reviewAction === 'evidence' ? ' - Request more evidence' : ` - ${reviewAction.charAt(0).toUpperCase() + reviewAction.slice(1)}`}
             </DialogTitle>
             <DialogDescription>
               Review the evidence provided by the claimant.
@@ -228,7 +239,7 @@ export function ArtistClaimsManagement() {
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium">Evidence Description:</Label>
-                <div className="mt-1 p-3 bg-gray-50 rounded-md text-sm">
+                <div className="mt-1 p-3 bg-muted rounded-md text-sm">
                   {selectedClaim.evidence_text}
                 </div>
               </div>
@@ -243,7 +254,7 @@ export function ArtistClaimsManagement() {
                         href={url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block text-blue-600 hover:underline text-sm"
+                        className="block text-primary hover:underline text-sm"
                       >
                         {url}
                       </a>
@@ -253,10 +264,10 @@ export function ArtistClaimsManagement() {
               )}
               
               <div>
-                <Label htmlFor="review-notes">Review Notes (Optional)</Label>
+                <Label htmlFor="review-notes">{reviewAction === 'evidence' ? 'Message to the artist (they will see this)' : 'Review Notes (Optional, private)'}</Label>
                 <Textarea
                   id="review-notes"
-                  placeholder="Add any notes about your decision..."
+                  placeholder={reviewAction === 'evidence' ? "e.g. Please share a link to your Spotify for Artists or distributor dashboard" : "Add any notes about your decision..."}
                   value={reviewNotes}
                   onChange={(e) => setReviewNotes(e.target.value)}
                   rows={3}
@@ -273,10 +284,10 @@ export function ArtistClaimsManagement() {
               <Button
                 onClick={submitReview}
                 disabled={processing}
-                variant={reviewAction === 'approve' ? 'default' : 'destructive'}
+                variant={reviewAction === 'reject' ? 'destructive' : 'default'}
               >
                 {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {reviewAction === 'approve' ? 'Approve Claim' : 'Reject Claim'}
+                {reviewAction === 'approve' ? 'Approve Claim' : reviewAction === 'evidence' ? 'Send Request' : 'Reject Claim'}
               </Button>
             )}
           </DialogFooter>
