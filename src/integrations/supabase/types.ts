@@ -325,6 +325,80 @@ export type Database = {
           },
         ]
       }
+      editorial_submissions: {
+        Row: {
+          admin_notes: string | null
+          artist_profile_id: string
+          created_at: string
+          id: string
+          pitch: string
+          playlist_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_by: string
+          track_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          artist_profile_id: string
+          created_at?: string
+          id?: string
+          pitch: string
+          playlist_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by?: string
+          track_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          artist_profile_id?: string
+          created_at?: string
+          id?: string
+          pitch?: string
+          playlist_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by?: string
+          track_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_submissions_artist_profile_id_fkey"
+            columns: ["artist_profile_id"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
+          {
+            foreignKeyName: "editorial_submissions_artist_profile_id_fkey"
+            columns: ["artist_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_submissions_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_submissions_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       featured_banners: {
         Row: {
           created_at: string
@@ -481,6 +555,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      listener_profiles: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          favorite_genres: string[]
+          prompt_dismissed_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          favorite_genres?: string[]
+          prompt_dismissed_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          favorite_genres?: string[]
+          prompt_dismissed_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       payout_requests: {
         Row: {
@@ -739,6 +843,79 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      release_boosts: {
+        Row: {
+          admin_notes: string | null
+          artist_profile_id: string
+          created_at: string
+          duration_days: number
+          ends_at: string | null
+          id: string
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          starts_at: string | null
+          status: string
+          target_genre: string | null
+          track_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          artist_profile_id: string
+          created_at?: string
+          duration_days?: number
+          ends_at?: string | null
+          id?: string
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          starts_at?: string | null
+          status?: string
+          target_genre?: string | null
+          track_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          artist_profile_id?: string
+          created_at?: string
+          duration_days?: number
+          ends_at?: string | null
+          id?: string
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          starts_at?: string | null
+          status?: string
+          target_genre?: string | null
+          track_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "release_boosts_artist_profile_id_fkey"
+            columns: ["artist_profile_id"]
+            isOneToOne: false
+            referencedRelation: "artist_earnings_summary"
+            referencedColumns: ["artist_id"]
+          },
+          {
+            foreignKeyName: "release_boosts_artist_profile_id_fkey"
+            columns: ["artist_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "release_boosts_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reports: {
         Row: {
@@ -1451,6 +1628,10 @@ export type Database = {
           track_id: string
         }[]
       }
+      get_artist_dashboard_stats: {
+        Args: { _artist_profile_id: string; _days?: number }
+        Returns: Json
+      }
       get_avatar_url: {
         Args: { avatar_path: string; fallback_name: string }
         Returns: string
@@ -1614,6 +1795,14 @@ export type Database = {
           evidence_text: string
           evidence_urls: string[]
         }
+        Returns: boolean
+      }
+      review_editorial_submission: {
+        Args: { _approve: boolean; _id: string; _notes?: string }
+        Returns: boolean
+      }
+      review_release_boost: {
+        Args: { _approve: boolean; _id: string; _notes?: string }
         Returns: boolean
       }
       update_listening_history: {
