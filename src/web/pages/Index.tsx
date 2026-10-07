@@ -11,6 +11,7 @@ import { SearchBar } from "@web/components/layout/SearchBar";
 import { useIsMobile } from "@web/hooks/use-mobile";
 import { MobileHomeHeader, type HomeFilter } from "@web/components/layout/MobileHomeHeader";
 import { OfflineHomeSection } from "@web/components/sections/OfflineHomeSection";
+import { MusicPreferencesCard } from "@web/components/profile/MusicPreferencesCard";
 import { isOnline as checkOnline, onNetworkChange } from "@mobile";
 
 const Index = () => {
@@ -44,6 +45,7 @@ const Index = () => {
           <>
           {/* Hero only on All */}
           {show("all") && <HeroSection />}
+          {show("all") && <MusicPreferencesCard />}
 
           {show("music") && <RecentPlaysSection />}
           {show("music") && <PersonalizedRecommendations />}
