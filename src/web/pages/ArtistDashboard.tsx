@@ -33,7 +33,7 @@ export default function ArtistDashboard() {
           </Button>
         </div>
 
-        {error && <div className="mb-6"><ErrorState title="Couldn't load your stats" description={error} onRetry={reload} /></div>}
+        {error && <div className="mb-6"><ErrorState title="Couldn't load your stats" message={error} onRetry={reload} /></div>}
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <ArtistProfileEditor artistProfileId={artistId} />
