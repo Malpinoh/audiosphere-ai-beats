@@ -11,6 +11,7 @@ import { CommentsManagement } from "@web/components/admin/CommentsManagement";
 import { VerificationManagement } from "@web/components/admin/VerificationManagement";
 import { PayoutsManagement } from "@web/components/admin/PayoutsManagement";
 import { ArtistClaimsManagement } from "@web/components/admin/ArtistClaimsManagement";
+import { PromotionRequestsManagement } from "@web/components/admin/PromotionRequestsManagement";
 import { FeaturedBannersManagement } from "@web/components/admin/FeaturedBannersManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@web/components/ui/tabs";
 import { 
@@ -24,7 +25,8 @@ import {
   DollarSign,
   Menu,
   Image as ImageIcon,
-  Crown
+  Crown,
+  Megaphone
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@web/components/ui/button";
@@ -39,6 +41,7 @@ const adminTabs = [
   { value: "uploads", label: "Uploads", icon: Upload },
   { value: "verification", label: "Verification", icon: Shield },
   { value: "claims", label: "Artist Claims", icon: Crown },
+  { value: "promotions", label: "Promotions", icon: Megaphone },
   { value: "reports", label: "Reports", icon: Flag },
   { value: "comments", label: "Comments", icon: MessageSquare },
   { value: "payouts", label: "Payouts", icon: DollarSign },
@@ -75,6 +78,7 @@ export default function AdminPanel() {
       case "comments": return <CommentsManagement />;
       case "payouts": return <PayoutsManagement />;
       case "claims": return <ArtistClaimsManagement />;
+      case "promotions": return <PromotionRequestsManagement />;
       case "banners": return <FeaturedBannersManagement />;
       default: return <Analytics />;
     }

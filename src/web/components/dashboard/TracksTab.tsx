@@ -26,7 +26,7 @@ interface Track {
   published: boolean;
 }
 
-export function TracksTab() {
+export function TracksTab({ artistId }: { artistId: string }) {
   const { user } = useAuth();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +46,7 @@ export function TracksTab() {
         const { data, error } = await supabase
           .from('tracks')
           .select('id, title, genre, play_count, like_count, uploaded_at, published')
-          .eq('user_id', userId)
+          .eq('artist_profile_id', artistId)
           .order('uploaded_at', { ascending: false });
           
         if (error) {
@@ -95,7 +95,7 @@ export function TracksTab() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, artistId]);
 
   if (loading) {
     return (
